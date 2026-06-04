@@ -27,7 +27,7 @@ class OrderCurvePoint:
 
 @dataclass(frozen=True)
 class GateDiagnosis:
-    chosen_order: int
+    chosen_order: int | None
     cv_curve: list[OrderCurvePoint]
     ceiling_detected: bool
     selected_reason: str
@@ -70,7 +70,8 @@ class AdaptiveOrderGate:
 
         Selection uses only the provided train-pair experience.  A return value
         with ``ceiling_detected=True`` means that no learned order compressed the
-        held-out surprise enough to beat the train-mean baseline.
+        held-out surprise enough to beat the train-mean baseline.  In that case
+        ``chosen_order`` is ``None`` because no order is justified by experience.
         """
 
         checked_pairs = _checked_pairs(pairs)
@@ -126,7 +127,7 @@ class AdaptiveOrderGate:
 
         if chosen_point is None:
             return GateDiagnosis(
-                chosen_order=0,
+                chosen_order=None,
                 cv_curve=cv_curve,
                 ceiling_detected=True,
                 selected_reason=selected_reason,
