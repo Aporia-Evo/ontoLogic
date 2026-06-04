@@ -233,7 +233,7 @@ def _ridge_predict(train_features: np.ndarray, train_targets: np.ndarray, held_f
 def _ridge_primal_predict(
     train_features: np.ndarray, train_targets: np.ndarray, held_features: np.ndarray, lambda_: float
 ) -> np.ndarray:
-    weights = _fit_ridge(train_features, train_targets, lambda_)
+    weights = _fit_ridge_primal(train_features, train_targets, lambda_)
     return np.asarray(held_features, dtype=np.float64) @ weights
 
 
@@ -257,11 +257,26 @@ def _ridge_sample_space_predict(
 
 
 def _fit_ridge(features: np.ndarray, targets: np.ndarray, lambda_: float) -> np.ndarray:
+    """Fit ridge weights, using sample-space algebra for wide matrices."""
+
     x, y, _ = _checked_ridge_arrays(features, targets, features, lambda_)
-    penalty = lambda_ * np.eye(x.shape[1], dtype=np.float64)
+    if x.shape[1] == 1:
+        return y.mean(axis=0, keepdims=True)
+    if lambda_ > 0 and x.shape[1] > x.shape[0]:
+        return _fit_ridge_dual_with_bias(x, y, lambda_)
+    return _fit_ridge_primal_checked(x, y, lambda_)
+
+
+def _fit_ridge_primal(features: np.ndarray, targets: np.ndarray, lambda_: float) -> np.ndarray:
+    x, y, _ = _checked_ridge_arrays(features, targets, features, lambda_)
+    return _fit_ridge_primal_checked(x, y, lambda_)
+
+
+def _fit_ridge_primal_checked(features: np.ndarray, targets: np.ndarray, lambda_: float) -> np.ndarray:
+    penalty = lambda_ * np.eye(features.shape[1], dtype=np.float64)
     penalty[0, 0] = 0.0  # do not regularize the bias column
-    lhs = x.T @ x + penalty
-    rhs = x.T @ y
+    lhs = features.T @ features + penalty
+    rhs = features.T @ targets
     return _linear_response(lhs, rhs)
 
 
@@ -293,6 +308,22 @@ def _linear_response(lhs: np.ndarray, rhs: np.ndarray) -> np.ndarray:
         return np.linalg.lstsq(lhs, rhs, rcond=None)[0]
     except np.linalg.LinAlgError:
         return np.linalg.pinv(lhs) @ rhs
+
+
+def _fit_ridge_dual_with_bias(features: np.ndarray, targets: np.ndarray, lambda_: float) -> np.ndarray:
+    """Fit ridge with an unpenalized bias using the sample-space system."""
+
+    non_bias = features[:, 1:]
+    feature_mean = non_bias.mean(axis=0, keepdims=True)
+    target_mean = targets.mean(axis=0, keepdims=True)
+    centered_features = non_bias - feature_mean
+    centered_targets = targets - target_mean
+
+    lhs = centered_features @ centered_features.T + lambda_ * np.eye(centered_features.shape[0], dtype=np.float64)
+    sample_weights = _linear_response(lhs, centered_targets)
+    coefficients = centered_features.T @ sample_weights
+    intercept = target_mean - feature_mean @ coefficients
+    return np.vstack([intercept, coefficients])
 
 
 def _mse(targets: np.ndarray, predictions: np.ndarray) -> float:
