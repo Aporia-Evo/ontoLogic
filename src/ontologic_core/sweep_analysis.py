@@ -12,7 +12,7 @@ from math import isfinite
 from statistics import mean
 from typing import Any
 
-_CONSERVATIVE_ADJACENT = {"healthy_adaptive", "under_climbing", "insufficient_data"}
+_CONSERVATIVE_ADJACENT = {"healthy_adaptive", "under_climbing"}
 _OPPOSITE_EXTREMES = {"over_climbing", "ceiling_dominated"}
 
 
@@ -39,17 +39,23 @@ def summarize_sweep(runs: list[dict[str, Any]]) -> dict[str, Any]:
     counts = Counter(regimes)
     dominant_regime = _dominant_regime(counts)
     healthy_count = counts.get("healthy_adaptive", 0)
+    insufficient_count = counts.get("insufficient_data", 0)
     adjacent_count = sum(counts.get(regime, 0) for regime in _CONSERVATIVE_ADJACENT)
     narrow_healthy = healthy_count == 1 and len(runs) >= 3
     extreme_flip = all(counts.get(regime, 0) > 0 for regime in _OPPOSITE_EXTREMES)
     most_adjacent = bool(runs) and adjacent_count / len(runs) >= 0.67
-    stable_regime = bool(runs) and most_adjacent and not narrow_healthy and not extreme_flip
+    has_informative_row = bool(runs) and insufficient_count < len(runs)
+    stable_regime = has_informative_row and most_adjacent and not narrow_healthy and not extreme_flip
 
     notes: list[str] = []
     if not runs:
         notes.append("no sweep rows were analyzed")
     if stable_regime:
-        notes.append("most rows are healthy_adaptive or conservatively adjacent")
+        notes.append("most informative rows are healthy_adaptive or conservatively adjacent")
+    if runs and insufficient_count == len(runs):
+        notes.append("all rows are insufficient_data; parameter stability cannot be assessed")
+    elif insufficient_count:
+        notes.append(f"{insufficient_count} rows are insufficient_data and do not support stability")
     if extreme_flip:
         notes.append("rows include both over_climbing and ceiling_dominated regimes")
     if narrow_healthy:

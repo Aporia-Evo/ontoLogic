@@ -37,6 +37,25 @@ def test_synthetic_sweep_same_regime_is_stable() -> None:
     assert report["runs"][0]["mean_relative_improvement"] == 0.34
 
 
+def test_synthetic_sweep_all_insufficient_data_is_not_stable() -> None:
+    runs = [_run("insufficient_data", index) for index in range(4)]
+
+    summary = summarize_sweep(runs)
+
+    assert summary["stable_regime"] is False
+    assert summary["dominant_regime"] == "insufficient_data"
+    assert "all rows are insufficient_data; parameter stability cannot be assessed" in summary["notes"]
+
+
+def test_synthetic_sweep_insufficient_rows_are_not_adjacent_evidence() -> None:
+    runs = [_run("healthy_adaptive", 0), _run("insufficient_data", 1), _run("insufficient_data", 2)]
+
+    summary = summarize_sweep(runs)
+
+    assert summary["stable_regime"] is False
+    assert "2 rows are insufficient_data and do not support stability" in summary["notes"]
+
+
 def test_synthetic_sweep_mixed_extremes_is_not_stable() -> None:
     runs = [
         _run("healthy_adaptive", 0),

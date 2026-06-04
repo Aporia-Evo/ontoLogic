@@ -288,6 +288,7 @@ The sweep output shape is:
 Classification guidance:
 
 - `stable_regime=true` when most rows are `healthy_adaptive` or conservatively adjacent, without an extreme flip.
+- `insufficient_data` rows are not evidence of stability; an all-insufficient sweep is reported as non-stable because parameter stability cannot be assessed.
 - Extreme flips are flagged when rows include both `over_climbing` and `ceiling_dominated`.
 - A narrow single `healthy_adaptive` row is treated as fragile rather than stable.
 
