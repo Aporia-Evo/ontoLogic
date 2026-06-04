@@ -105,6 +105,49 @@ python arc_ontology_lab.py \
 }
 ```
 
+
+## M16c status — ARC ontology lab runner
+
+M16c adds `arc_ontology_lab.py`, a diagnostic runner for ARC-style task directories. The runner:
+
+1. loads `*.json` tasks from `--data`, with optional `--limit`;
+2. extracts only `train` pair experience with `arc_factors.extract_task_experience()`;
+3. calls `AdaptiveOrderGate.grow_structure()` using `--max-order`, `--lambda`, and `--margin`;
+4. writes a JSON report with per-task `chosen_order`, `ceiling_detected`, `selected_reason`, `cv_curve`, `final_surprise`, and `final_complexity`;
+5. records per-task errors without stopping the whole lab run.
+
+This remains a microscope diagnostic, not a prediction pipeline. Test outputs are not needed for structure selection, and no held-out answers are read by the runner.
+
+### M16c usage
+
+```bash
+python arc_ontology_lab.py \
+  --data /tmp/arcagi2/data/training \
+  --limit 50 \
+  --max-order 3 \
+  --lambda 1.0 \
+  --margin 0.02 \
+  --json-out arc_ontology_diag.json
+```
+
+The output shape is:
+
+```json
+{
+  "summary": {
+    "tasks": 50,
+    "ok": 50,
+    "errors": 0,
+    "order_counts": {"1": 20, "2": 25, "3": 5, "none": 0},
+    "ceiling_detected": 7,
+    "mean_chosen_order": 1.8,
+    "mean_final_surprise": 0.42,
+    "mean_final_complexity": 0.03
+  },
+  "tasks_detail": []
+}
+```
+
 ## Kill criteria
 
 - If order growth always climbs to max order, the gate is overfitting.
