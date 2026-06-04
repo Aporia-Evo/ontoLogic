@@ -154,3 +154,77 @@ The output shape is:
 - If order growth never climbs even on synthetic order-2 worlds, the representation is too weak.
 - If ceiling detection never triggers on underdetermined/noise worlds, the precision/compression control is broken.
 - If implementation uses test outputs for selection, the B-lane boundary is violated.
+
+## M16d status — ontology-lab analysis layer
+
+M16d adds a post-hoc analysis layer for the diagnostic JSON written by the ARC ontology microscope. It reads `arc_ontology_diag.json` and summarizes whether the adaptive-order gate looks like a conservative structure-growth mechanism, a max-order climber, an under-climber, or a ceiling-heavy factorization.
+
+The analyzer reports:
+
+1. `chosen_order` distribution, including `none` for ceilings;
+2. `ceiling_detected` rate over successful task diagnostics;
+3. mean surprise and complexity by candidate order from the recorded CV curves;
+4. how often the chosen structure reaches the maximum recorded order;
+5. a gate regime label:
+   - `healthy_adaptive`,
+   - `over_climbing`,
+   - `under_climbing`,
+   - `ceiling_dominated`,
+   - `too_many_errors`,
+   - `insufficient_data`;
+6. interesting tasks for inspection, including ceilings, max-order choices, large surprise improvements, slight rejected higher-order improvements, and task errors.
+
+This remains an interpretability layer. It does not change the gate, factor extraction, or lab runner, and it does not predict ARC outputs.
+
+### M16d usage
+
+```bash
+python arc_ontology_lab.py \
+  --data /tmp/arcagi2/data/training \
+  --limit 50 \
+  --max-order 3 \
+  --lambda 1.0 \
+  --margin 0.02 \
+  --json-out arc_ontology_diag.json
+
+python analyze_ontology_report.py \
+  --report arc_ontology_diag.json \
+  --json-out arc_ontology_analysis.json \
+  --top 20
+```
+
+The analysis output shape is:
+
+```json
+{
+  "summary": {
+    "tasks": 50,
+    "ok": 48,
+    "errors": 2,
+    "regime": "healthy_adaptive",
+    "order_counts": {"1": 18, "2": 20, "3": 5, "none": 5},
+    "ceiling_rate": 0.10416666666666667,
+    "max_order_rate": 0.10416666666666667,
+    "mean_final_surprise": 0.42,
+    "mean_relative_improvement": 0.31,
+    "mean_surprise_by_order": {"1": 0.53, "2": 0.45, "3": 0.44},
+    "mean_complexity_by_order": {"1": 0.01, "2": 0.02, "3": 0.03}
+  },
+  "interpretation": [
+    "regime: healthy_adaptive",
+    "order_distribution: order 1=18, order 2=20, order 3=5, order none=5"
+  ],
+  "interesting_tasks": [
+    {
+      "task": "example_task",
+      "reason": "ceiling_detected",
+      "chosen_order": null,
+      "ceiling_detected": true,
+      "relative_improvement": 0.0,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise"
+    }
+  ]
+}
+```
+
+Use the regime and interesting-task list to decide the next scientific step: tune complexity pressure, inspect factor weakness, or broaden the task sample. The analyzer should not be used as an objective for exact-match improvement.
