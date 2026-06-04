@@ -243,6 +243,12 @@ def _fit_ridge(features: np.ndarray, targets: np.ndarray, lambda_: float) -> np.
     if lambda_ > 0 and features.shape[1] > features.shape[0]:
         return _fit_ridge_dual_with_bias(features, targets, lambda_)
 
+    return _fit_ridge_primal_with_bias(features, targets, lambda_)
+
+
+def _fit_ridge_primal_with_bias(features: np.ndarray, targets: np.ndarray, lambda_: float) -> np.ndarray:
+    """Fit ridge in feature space with an unpenalized bias column."""
+
     penalty = lambda_ * np.eye(features.shape[1], dtype=np.float64)
     penalty[0, 0] = 0.0  # do not regularize the bias column
     lhs = features.T @ features + penalty

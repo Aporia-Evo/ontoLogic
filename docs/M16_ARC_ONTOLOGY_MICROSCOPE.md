@@ -228,3 +228,66 @@ The analysis output shape is:
 ```
 
 Use the regime and interesting-task list to decide the next scientific step: tune complexity pressure, inspect factor weakness, or broaden the task sample. The analyzer should not be used as an objective for exact-match improvement.
+
+## M16f status — parameter stability sweep
+
+M16f adds a lambda/margin sweep around the ontology microscope. The purpose is to check whether the `healthy_adaptive` regime persists across nearby regularization and growth-margin settings, rather than depending on one narrow parameter choice.
+
+The sweep runner:
+
+1. enumerates every requested `lambda` and `margin` pair;
+2. calls the existing `arc_ontology_lab.run_lab()` for each pair;
+3. passes each lab report through `report_analysis.analyze_report()`;
+4. records only aggregate microscope diagnostics for each setting:
+   - `regime`,
+   - `order_counts`,
+   - `ceiling_rate`,
+   - `max_order_rate`,
+   - `mean_final_surprise`,
+   - `mean_relative_improvement`;
+5. summarizes whether the regime is stable, dominated by one label, mixed, or fragile.
+
+The stability rule is intentionally conservative. A sweep is stable when most settings are `healthy_adaptive` or conservatively adjacent. It is unstable when the same small grid includes both max-order climbing and ceiling-heavy behavior. It is fragile when only one inspected setting is `healthy_adaptive`.
+
+### M16f usage
+
+```bash
+python sweep_ontology_lab.py \
+  --data /tmp/arcagi2/data/training \
+  --limit 50 \
+  --lambdas 0.1,1.0,10.0 \
+  --margins 0.005,0.02,0.05 \
+  --max-order 3 \
+  --json-out arc_ontology_sweep_50.json
+```
+
+The sweep output shape is:
+
+```json
+{
+  "summary": {
+    "runs": 9,
+    "stable_regime": true,
+    "dominant_regime": "healthy_adaptive",
+    "regime_counts": {"healthy_adaptive": 8, "under_climbing": 1},
+    "notes": [
+      "most settings are healthy_adaptive or conservatively adjacent",
+      "mean ceiling_rate across settings: 0.260"
+    ]
+  },
+  "runs": [
+    {
+      "lambda": 1.0,
+      "margin": 0.02,
+      "regime": "healthy_adaptive",
+      "order_counts": {"1": 18, "2": 20, "3": 5, "none": 5},
+      "ceiling_rate": 0.26,
+      "max_order_rate": 0.02,
+      "mean_final_surprise": 0.42,
+      "mean_relative_improvement": 0.34
+    }
+  ]
+}
+```
+
+This is still a microscope stability check. It must not be interpreted as tuning for held-out exact match, and it does not add any new ARC output construction path.
