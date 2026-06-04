@@ -228,3 +228,67 @@ The analysis output shape is:
 ```
 
 Use the regime and interesting-task list to decide the next scientific step: tune complexity pressure, inspect factor weakness, or broaden the task sample. The analyzer should not be used as an objective for exact-match improvement.
+
+## M16f status — parameter stability sweep
+
+M16f adds a lambda/margin sweep for the ontology microscope. The sweep asks whether the qualitative `healthy_adaptive` regime is stable across nearby regularization and structure-growth margin settings. It is explicitly a stability diagnostic, not a route for improving exact-match outcomes.
+
+The sweep runner:
+
+1. iterates over every requested `lambda` and `margin` pair;
+2. calls `arc_ontology_lab.run_lab()` for each pair using train-pair experience only;
+3. calls `report_analysis.analyze_report()` on each diagnostic report;
+4. records the compact post-hoc fields needed to compare qualitative behavior:
+   - `regime`,
+   - `order_counts`,
+   - `ceiling_rate`,
+   - `max_order_rate`,
+   - `mean_final_surprise`,
+   - `mean_relative_improvement`;
+5. summarizes whether most rows remain `healthy_adaptive` or conservatively adjacent, and flags narrow or extreme regime flips.
+
+### M16f usage
+
+```bash
+python sweep_ontology_lab.py \
+  --data /tmp/arcagi2/data/training \
+  --limit 50 \
+  --lambdas 0.1,1.0,10.0 \
+  --margins 0.005,0.02,0.05 \
+  --max-order 3 \
+  --json-out arc_ontology_sweep_50.json
+```
+
+The sweep output shape is:
+
+```json
+{
+  "summary": {
+    "runs": 9,
+    "stable_regime": true,
+    "dominant_regime": "healthy_adaptive",
+    "regime_counts": {"healthy_adaptive": 8, "under_climbing": 1},
+    "notes": ["most rows are healthy_adaptive or conservatively adjacent"]
+  },
+  "runs": [
+    {
+      "lambda": 1.0,
+      "margin": 0.02,
+      "regime": "healthy_adaptive",
+      "order_counts": {"1": 18, "2": 20, "3": 5, "none": 5},
+      "ceiling_rate": 0.10416666666666667,
+      "max_order_rate": 0.10416666666666667,
+      "mean_final_surprise": 0.42,
+      "mean_relative_improvement": 0.31
+    }
+  ]
+}
+```
+
+Classification guidance:
+
+- `stable_regime=true` when most rows are `healthy_adaptive` or conservatively adjacent, without an extreme flip.
+- Extreme flips are flagged when rows include both `over_climbing` and `ceiling_dominated`.
+- A narrow single `healthy_adaptive` row is treated as fragile rather than stable.
+
+M16f should be used to check robustness of the microscope setting, not to tune for held-out exactness. The gate still chooses structure only from train-pair experience, and the sweep records only post-hoc diagnostic aggregates.
