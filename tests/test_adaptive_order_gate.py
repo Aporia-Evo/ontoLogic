@@ -70,6 +70,8 @@ def test_underdetermined_parity_like_world_does_not_blindly_climb_to_max_order()
     diagnosis = gate.grow_structure(pairs)
 
     assert diagnosis.ceiling_detected or diagnosis.chosen_order < 3
+    if diagnosis.ceiling_detected:
+        assert diagnosis.chosen_order is None
 
 
 def test_no_forbidden_public_function_names() -> None:
