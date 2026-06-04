@@ -1,0 +1,1769 @@
+{
+  "summary": {
+    "ceiling_detected": 13,
+    "errors": 0,
+    "mean_chosen_order": 1.2972972972972974,
+    "mean_final_complexity": 0.006506712505853568,
+    "mean_final_surprise": 3.450402110020911,
+    "ok": 50,
+    "order_counts": {
+      "1": 27,
+      "2": 9,
+      "3": 1,
+      "none": 13
+    },
+    "tasks": 50
+  },
+  "tasks_detail": [
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 3.90625,
+          "complexity": 0.0014166666666666668,
+          "num_features": 51,
+          "order": 1,
+          "score": 3.6931715994294523,
+          "surprise": 3.6917549327627857
+        },
+        {
+          "baseline_surprise": 3.90625,
+          "complexity": 0.036833333333333336,
+          "num_features": 1326,
+          "order": 2,
+          "score": 3.9023907028775255,
+          "surprise": 3.865557369544192
+        },
+        {
+          "baseline_surprise": 3.90625,
+          "complexity": 0.6507222222222223,
+          "num_features": 23426,
+          "order": 3,
+          "score": 15.087003346296918,
+          "surprise": 14.436281124074695
+        }
+      ],
+      "final_complexity": 0.0014166666666666668,
+      "final_surprise": 3.6917549327627857,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 0.213078, above margin 0.02",
+      "status": "ok",
+      "task": "00576224"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 7.920576131687243,
+          "complexity": 0.00025185185185185185,
+          "num_features": 51,
+          "order": 1,
+          "score": 4.898722613387118,
+          "surprise": 4.8984707615352665
+        },
+        {
+          "baseline_surprise": 7.920576131687243,
+          "complexity": 0.006548148148148148,
+          "num_features": 1326,
+          "order": 2,
+          "score": 9.291208524896687,
+          "surprise": 9.284660376748539
+        },
+        {
+          "baseline_surprise": 7.920576131687243,
+          "complexity": 0.11568395061728395,
+          "num_features": 23426,
+          "order": 3,
+          "score": 17.700344639083692,
+          "surprise": 17.584660688466407
+        }
+      ],
+      "final_complexity": 0.00025185185185185185,
+      "final_surprise": 4.8984707615352665,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 3.02185, above margin 0.02",
+      "status": "ok",
+      "task": "007bbfb7"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 1.9328222615576842,
+          "complexity": 0.00010408163265306123,
+          "num_features": 51,
+          "order": 1,
+          "score": 1.365553617136925,
+          "surprise": 1.365449535504272
+        },
+        {
+          "baseline_surprise": 1.9328222615576842,
+          "complexity": 0.002706122448979592,
+          "num_features": 1326,
+          "order": 2,
+          "score": 2.549269601313947,
+          "surprise": 2.546563478864967
+        },
+        {
+          "baseline_surprise": 1.9328222615576842,
+          "complexity": 0.047808163265306125,
+          "num_features": 23426,
+          "order": 3,
+          "score": 4.155540307035006,
+          "surprise": 4.1077321437697
+        }
+      ],
+      "final_complexity": 0.00010408163265306123,
+      "final_surprise": 1.365449535504272,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 0.567269, above margin 0.02",
+      "status": "ok",
+      "task": "009d5c81"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 2.052947054519447,
+          "complexity": 0.00013858695652173915,
+          "num_features": 51,
+          "order": 1,
+          "score": 0.6036852247031725,
+          "surprise": 0.6035466377466508
+        },
+        {
+          "baseline_surprise": 2.052947054519447,
+          "complexity": 0.0036032608695652176,
+          "num_features": 1326,
+          "order": 2,
+          "score": 0.665459081454902,
+          "surprise": 0.6618558205853368
+        },
+        {
+          "baseline_surprise": 2.052947054519447,
+          "complexity": 0.06365760869565218,
+          "num_features": 23426,
+          "order": 3,
+          "score": 0.8136900591463069,
+          "surprise": 0.7500324504506547
+        }
+      ],
+      "final_complexity": 0.00013858695652173915,
+      "final_surprise": 0.6035466377466508,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 1.44926, above margin 0.02",
+      "status": "ok",
+      "task": "00d62c1b"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 2,
+      "cv_curve": [
+        {
+          "baseline_surprise": 4.615131790258296,
+          "complexity": 0.00019465648854961832,
+          "num_features": 51,
+          "order": 1,
+          "score": 0.7236249391182518,
+          "surprise": 0.7234302826297021
+        },
+        {
+          "baseline_surprise": 4.615131790258296,
+          "complexity": 0.005061068702290077,
+          "num_features": 1326,
+          "order": 2,
+          "score": 0.6880443859492583,
+          "surprise": 0.6829833172469683
+        },
+        {
+          "baseline_surprise": 4.615131790258296,
+          "complexity": 0.08941221374045802,
+          "num_features": 23426,
+          "order": 3,
+          "score": 0.7206141287409379,
+          "surprise": 0.6312019150004798
+        }
+      ],
+      "final_complexity": 0.005061068702290077,
+      "final_surprise": 0.6829833172469683,
+      "selected_reason": "order 2 accepted: penalized surprise improved by 0.0355806, above margin 0.02",
+      "status": "ok",
+      "task": "00dbd492"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 0.997713763145862,
+          "complexity": 0.0012592592592592594,
+          "num_features": 51,
+          "order": 1,
+          "score": 0.7287155967613109,
+          "surprise": 0.7274563375020516
+        },
+        {
+          "baseline_surprise": 0.997713763145862,
+          "complexity": 0.032740740740740744,
+          "num_features": 1326,
+          "order": 2,
+          "score": 1.1048105085395268,
+          "surprise": 1.072069767798786
+        },
+        {
+          "baseline_surprise": 0.997713763145862,
+          "complexity": 0.5784197530864198,
+          "num_features": 23426,
+          "order": 3,
+          "score": 4.239192632677944,
+          "surprise": 3.660772879591524
+        }
+      ],
+      "final_complexity": 0.0012592592592592594,
+      "final_surprise": 0.7274563375020516,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 0.268998, above margin 0.02",
+      "status": "ok",
+      "task": "017c7c7b"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 3,
+      "cv_curve": [
+        {
+          "baseline_surprise": 8.293272864701436,
+          "complexity": 0.0005151515151515152,
+          "num_features": 51,
+          "order": 1,
+          "score": 5.33670444445586,
+          "surprise": 5.336189292940708
+        },
+        {
+          "baseline_surprise": 8.293272864701436,
+          "complexity": 0.013393939393939394,
+          "num_features": 1326,
+          "order": 2,
+          "score": 3.1166643270907324,
+          "surprise": 3.103270387696793
+        },
+        {
+          "baseline_surprise": 8.293272864701436,
+          "complexity": 0.23662626262626266,
+          "num_features": 23426,
+          "order": 3,
+          "score": 2.781088192620612,
+          "surprise": 2.544461929994349
+        }
+      ],
+      "final_complexity": 0.23662626262626266,
+      "final_surprise": 2.544461929994349,
+      "selected_reason": "order 3 accepted: penalized surprise improved by 0.335576, above margin 0.02",
+      "status": "ok",
+      "task": "025d127b"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 2,
+      "cv_curve": [
+        {
+          "baseline_surprise": 3.59275,
+          "complexity": 0.00034,
+          "num_features": 51,
+          "order": 1,
+          "score": 2.2501872881446063,
+          "surprise": 2.2498472881446063
+        },
+        {
+          "baseline_surprise": 3.59275,
+          "complexity": 0.00884,
+          "num_features": 1326,
+          "order": 2,
+          "score": 1.3737651004447815,
+          "surprise": 1.3649251004447815
+        },
+        {
+          "baseline_surprise": 3.59275,
+          "complexity": 0.15617333333333336,
+          "num_features": 23426,
+          "order": 3,
+          "score": 2.0920732983045776,
+          "surprise": 1.935899964971244
+        }
+      ],
+      "final_complexity": 0.00884,
+      "final_surprise": 1.3649251004447815,
+      "selected_reason": "order 2 accepted: penalized surprise improved by 0.876422, above margin 0.02",
+      "status": "ok",
+      "task": "03560426"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 1.2038648162716836,
+          "complexity": 7.709750566893424e-05,
+          "num_features": 51,
+          "order": 1,
+          "score": 0.7445141923814181,
+          "surprise": 0.7444370948757492
+        },
+        {
+          "baseline_surprise": 1.2038648162716836,
+          "complexity": 0.00200453514739229,
+          "num_features": 1326,
+          "order": 2,
+          "score": 0.8182872757115834,
+          "surprise": 0.8162827405641911
+        },
+        {
+          "baseline_surprise": 1.2038648162716836,
+          "complexity": 0.03541345427059713,
+          "num_features": 23426,
+          "order": 3,
+          "score": 1.0163873212525356,
+          "surprise": 0.9809738669819384
+        }
+      ],
+      "final_complexity": 7.709750566893424e-05,
+      "final_surprise": 0.7444370948757492,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 0.459351, above margin 0.02",
+      "status": "ok",
+      "task": "045e512c"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "cv_curve": [
+        {
+          "baseline_surprise": 0.7325102880658436,
+          "complexity": 0.003777777777777778,
+          "num_features": 51,
+          "order": 1,
+          "score": 1.0403873551758505,
+          "surprise": 1.0366095773980726
+        },
+        {
+          "baseline_surprise": 0.7325102880658436,
+          "complexity": 0.09822222222222222,
+          "num_features": 1326,
+          "order": 2,
+          "score": 1.3704136260109947,
+          "surprise": 1.2721914037887725
+        },
+        {
+          "baseline_surprise": 0.7325102880658436,
+          "complexity": 1.7352592592592595,
+          "num_features": 23426,
+          "order": 3,
+          "score": 3.0214391080887735,
+          "surprise": 1.2861798488295142
+        }
+      ],
+      "final_complexity": 0.0,
+      "final_surprise": 0.7325102880658436,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "status": "ok",
+      "task": "0520fde7"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "cv_curve": [
+        {
+          "baseline_surprise": 7.164514785506039,
+          "complexity": 0.0006938775510204082,
+          "num_features": 51,
+          "order": 1,
+          "score": 8.933691426041568,
+          "surprise": 8.932997548490548
+        },
+        {
+          "baseline_surprise": 7.164514785506039,
+          "complexity": 0.018040816326530613,
+          "num_features": 1326,
+          "order": 2,
+          "score": 23.210638216153026,
+          "surprise": 23.192597399826496
+        },
+        {
+          "baseline_surprise": 7.164514785506039,
+          "complexity": 0.31872108843537417,
+          "num_features": 23426,
+          "order": 3,
+          "score": 43.92850366013762,
+          "surprise": 43.60978257170225
+        }
+      ],
+      "final_complexity": 0.0,
+      "final_surprise": 7.164514785506039,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "status": "ok",
+      "task": "05269061"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 10.855829012345682,
+          "complexity": 3.777777777777778e-05,
+          "num_features": 51,
+          "order": 1,
+          "score": 8.717684716090833,
+          "surprise": 8.717646938313056
+        },
+        {
+          "baseline_surprise": 10.855829012345682,
+          "complexity": 0.0009822222222222222,
+          "num_features": 1326,
+          "order": 2,
+          "score": 9.866157889093152,
+          "surprise": 9.86517566687093
+        },
+        {
+          "baseline_surprise": 10.855829012345682,
+          "complexity": 0.017352592592592593,
+          "num_features": 23426,
+          "order": 3,
+          "score": 21.186858378437524,
+          "surprise": 21.16950578584493
+        }
+      ],
+      "final_complexity": 3.777777777777778e-05,
+      "final_surprise": 8.717646938313056,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 2.13814, above margin 0.02",
+      "status": "ok",
+      "task": "05a7bcf2"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 2.5176386356097527,
+          "complexity": 0.0003128834355828221,
+          "num_features": 51,
+          "order": 1,
+          "score": 0.32523289272518563,
+          "surprise": 0.3249200092896028
+        },
+        {
+          "baseline_surprise": 2.5176386356097527,
+          "complexity": 0.008134969325153375,
+          "num_features": 1326,
+          "order": 2,
+          "score": 0.587540129999984,
+          "surprise": 0.5794051606748306
+        },
+        {
+          "baseline_surprise": 2.5176386356097527,
+          "complexity": 0.14371779141104296,
+          "num_features": 23426,
+          "order": 3,
+          "score": 1.1380759105281926,
+          "surprise": 0.9943581191171497
+        }
+      ],
+      "final_complexity": 0.0003128834355828221,
+      "final_surprise": 0.3249200092896028,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 2.19241, above margin 0.02",
+      "status": "ok",
+      "task": "05f2a901"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 6.753976018467686,
+          "complexity": 7.024793388429752e-05,
+          "num_features": 51,
+          "order": 1,
+          "score": 0.7654709074126883,
+          "surprise": 0.765400659478804
+        },
+        {
+          "baseline_surprise": 6.753976018467686,
+          "complexity": 0.0018264462809917355,
+          "num_features": 1326,
+          "order": 2,
+          "score": 0.7769158860210418,
+          "surprise": 0.7750894397400501
+        },
+        {
+          "baseline_surprise": 6.753976018467686,
+          "complexity": 0.032267217630853995,
+          "num_features": 23426,
+          "order": 3,
+          "score": 1.330373302706454,
+          "surprise": 1.2981060850755999
+        }
+      ],
+      "final_complexity": 7.024793388429752e-05,
+      "final_surprise": 0.765400659478804,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 5.98851, above margin 0.02",
+      "status": "ok",
+      "task": "0607ce86"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 6.308997612152619,
+          "complexity": 0.0004197530864197531,
+          "num_features": 51,
+          "order": 1,
+          "score": 5.923853214355509,
+          "surprise": 5.923433461269089
+        },
+        {
+          "baseline_surprise": 6.308997612152619,
+          "complexity": 0.01091358024691358,
+          "num_features": 1326,
+          "order": 2,
+          "score": 7.3963095302476916,
+          "surprise": 7.3853959500007775
+        },
+        {
+          "baseline_surprise": 6.308997612152619,
+          "complexity": 0.19280658436213993,
+          "num_features": 23426,
+          "order": 3,
+          "score": 48.35153769848404,
+          "surprise": 48.1587311141219
+        }
+      ],
+      "final_complexity": 0.0004197530864197531,
+      "final_surprise": 5.923433461269089,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 0.385144, above margin 0.02",
+      "status": "ok",
+      "task": "0692e18c"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 10.91665269155965,
+          "complexity": 6.995884773662552e-05,
+          "num_features": 51,
+          "order": 1,
+          "score": 2.6533813927373577,
+          "surprise": 2.653311433889621
+        },
+        {
+          "baseline_surprise": 10.91665269155965,
+          "complexity": 0.0018189300411522635,
+          "num_features": 1326,
+          "order": 2,
+          "score": 3.276883305537564,
+          "surprise": 3.2750643754964117
+        },
+        {
+          "baseline_surprise": 10.91665269155965,
+          "complexity": 0.03213443072702332,
+          "num_features": 23426,
+          "order": 3,
+          "score": 7.97928670530871,
+          "surprise": 7.947152274581687
+        }
+      ],
+      "final_complexity": 6.995884773662552e-05,
+      "final_surprise": 2.653311433889621,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 8.26327, above margin 0.02",
+      "status": "ok",
+      "task": "06df4c85"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 3.7820638888888896,
+          "complexity": 0.0001275,
+          "num_features": 51,
+          "order": 1,
+          "score": 2.44241623957453,
+          "surprise": 2.44228873957453
+        },
+        {
+          "baseline_surprise": 3.7820638888888896,
+          "complexity": 0.0033150000000000002,
+          "num_features": 1326,
+          "order": 2,
+          "score": 2.810231095693244,
+          "surprise": 2.8069160956932437
+        },
+        {
+          "baseline_surprise": 3.7820638888888896,
+          "complexity": 0.058565000000000006,
+          "num_features": 23426,
+          "order": 3,
+          "score": 4.065244395165081,
+          "surprise": 4.006679395165081
+        }
+      ],
+      "final_complexity": 0.0001275,
+      "final_surprise": 2.44228873957453,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 1.33965, above margin 0.02",
+      "status": "ok",
+      "task": "070dd51e"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 1.1787837219935986,
+          "complexity": 0.0006296296296296297,
+          "num_features": 51,
+          "order": 1,
+          "score": 0.22439148207865584,
+          "surprise": 0.22376185244902622
+        },
+        {
+          "baseline_surprise": 1.1787837219935986,
+          "complexity": 0.016370370370370372,
+          "num_features": 1326,
+          "order": 2,
+          "score": 0.4033940620692784,
+          "surprise": 0.38702369169890805
+        },
+        {
+          "baseline_surprise": 1.1787837219935986,
+          "complexity": 0.2892098765432099,
+          "num_features": 23426,
+          "order": 3,
+          "score": 0.7358801585665546,
+          "surprise": 0.44667028202334474
+        }
+      ],
+      "final_complexity": 0.0006296296296296297,
+      "final_surprise": 0.22376185244902622,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 0.954392, above margin 0.02",
+      "status": "ok",
+      "task": "08ed6ac7"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 5.434055050884502,
+          "complexity": 0.00021074380165289258,
+          "num_features": 51,
+          "order": 1,
+          "score": 3.166726233041804,
+          "surprise": 3.166515489240151
+        },
+        {
+          "baseline_surprise": 5.434055050884502,
+          "complexity": 0.005479338842975207,
+          "num_features": 1326,
+          "order": 2,
+          "score": 3.598494674184673,
+          "surprise": 3.593015335341698
+        },
+        {
+          "baseline_surprise": 5.434055050884502,
+          "complexity": 0.09680165289256198,
+          "num_features": 23426,
+          "order": 3,
+          "score": 6.515682106346171,
+          "surprise": 6.418880453453609
+        }
+      ],
+      "final_complexity": 0.00021074380165289258,
+      "final_surprise": 3.166515489240151,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 2.26733, above margin 0.02",
+      "status": "ok",
+      "task": "09629e4f"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 2,
+      "cv_curve": [
+        {
+          "baseline_surprise": 7.280092592592592,
+          "complexity": 0.0003541666666666667,
+          "num_features": 51,
+          "order": 1,
+          "score": 4.326730819489877,
+          "surprise": 4.32637665282321
+        },
+        {
+          "baseline_surprise": 7.280092592592592,
+          "complexity": 0.009208333333333334,
+          "num_features": 1326,
+          "order": 2,
+          "score": 3.4012780247267016,
+          "surprise": 3.392069691393368
+        },
+        {
+          "baseline_surprise": 7.280092592592592,
+          "complexity": 0.16268055555555558,
+          "num_features": 23426,
+          "order": 3,
+          "score": 3.6585597351131174,
+          "surprise": 3.4958791795575617
+        }
+      ],
+      "final_complexity": 0.009208333333333334,
+      "final_surprise": 3.392069691393368,
+      "selected_reason": "order 2 accepted: penalized surprise improved by 0.925453, above margin 0.02",
+      "status": "ok",
+      "task": "0962bcdd"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 1.0408673098046173,
+          "complexity": 6.280788177339902e-05,
+          "num_features": 51,
+          "order": 1,
+          "score": 0.42539325527284066,
+          "surprise": 0.4253304473910673
+        },
+        {
+          "baseline_surprise": 1.0408673098046173,
+          "complexity": 0.0016330049261083744,
+          "num_features": 1326,
+          "order": 2,
+          "score": 0.6394274034202855,
+          "surprise": 0.6377943984941771
+        },
+        {
+          "baseline_surprise": 1.0408673098046173,
+          "complexity": 0.028849753694581284,
+          "num_features": 23426,
+          "order": 3,
+          "score": 1.6042710865710395,
+          "surprise": 1.5754213328764581
+        }
+      ],
+      "final_complexity": 6.280788177339902e-05,
+      "final_surprise": 0.4253304473910673,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 0.615474, above margin 0.02",
+      "status": "ok",
+      "task": "09c534e7"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "cv_curve": [
+        {
+          "baseline_surprise": 7.3275720164609055,
+          "complexity": 0.00425,
+          "num_features": 51,
+          "order": 1,
+          "score": 8.891909601885796,
+          "surprise": 8.887659601885796
+        },
+        {
+          "baseline_surprise": 7.3275720164609055,
+          "complexity": 0.1105,
+          "num_features": 1326,
+          "order": 2,
+          "score": 9.023970427312504,
+          "surprise": 8.913470427312504
+        },
+        {
+          "baseline_surprise": 7.3275720164609055,
+          "complexity": 1.9521666666666668,
+          "num_features": 23426,
+          "order": 3,
+          "score": 10.289636279027523,
+          "surprise": 8.337469612360856
+        }
+      ],
+      "final_complexity": 0.0,
+      "final_surprise": 7.3275720164609055,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "status": "ok",
+      "task": "0a1d4ef5"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 1.3869202811716423,
+          "complexity": 0.00015477996965098637,
+          "num_features": 51,
+          "order": 1,
+          "score": 0.4434789064905301,
+          "surprise": 0.44332412652087916
+        },
+        {
+          "baseline_surprise": 1.3869202811716423,
+          "complexity": 0.004024279210925645,
+          "num_features": 1326,
+          "order": 2,
+          "score": 0.4630631057239095,
+          "surprise": 0.4590388265129839
+        },
+        {
+          "baseline_surprise": 1.3869202811716423,
+          "complexity": 0.07109559939301974,
+          "num_features": 23426,
+          "order": 3,
+          "score": 0.6134232047939083,
+          "surprise": 0.5423276054008885
+        }
+      ],
+      "final_complexity": 0.00015477996965098637,
+      "final_surprise": 0.44332412652087916,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 0.943441, above margin 0.02",
+      "status": "ok",
+      "task": "0a2355a6"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "cv_curve": [
+        {
+          "baseline_surprise": 4.159973929474515,
+          "complexity": 0.00012734082397003747,
+          "num_features": 51,
+          "order": 1,
+          "score": 5.169503972009263,
+          "surprise": 5.169376631185293
+        },
+        {
+          "baseline_surprise": 4.159973929474515,
+          "complexity": 0.003310861423220974,
+          "num_features": 1326,
+          "order": 2,
+          "score": 6.674782593916267,
+          "surprise": 6.671471732493046
+        },
+        {
+          "baseline_surprise": 4.159973929474515,
+          "complexity": 0.058491885143570545,
+          "num_features": 23426,
+          "order": 3,
+          "score": 7.267808919848087,
+          "surprise": 7.209317034704516
+        }
+      ],
+      "final_complexity": 0.0,
+      "final_surprise": 4.159973929474515,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "status": "ok",
+      "task": "0a938d79"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "cv_curve": [
+        {
+          "baseline_surprise": 2.6571041002978792,
+          "complexity": 0.0004700460829493088,
+          "num_features": 51,
+          "order": 1,
+          "score": 2.9105265358217007,
+          "surprise": 2.9100564897387513
+        },
+        {
+          "baseline_surprise": 2.6571041002978792,
+          "complexity": 0.012221198156682028,
+          "num_features": 1326,
+          "order": 2,
+          "score": 6.6971768080595995,
+          "surprise": 6.684955609902917
+        },
+        {
+          "baseline_surprise": 2.6571041002978792,
+          "complexity": 0.2159078341013825,
+          "num_features": 23426,
+          "order": 3,
+          "score": 9.097307247653575,
+          "surprise": 8.881399413552192
+        }
+      ],
+      "final_complexity": 0.0,
+      "final_surprise": 2.6571041002978792,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "status": "ok",
+      "task": "0b148d64"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "cv_curve": [
+        {
+          "baseline_surprise": 0.05704691358024691,
+          "complexity": 0.00022666666666666668,
+          "num_features": 51,
+          "order": 1,
+          "score": 0.04485969218337203,
+          "surprise": 0.044633025516705366
+        },
+        {
+          "baseline_surprise": 0.05704691358024691,
+          "complexity": 0.005893333333333334,
+          "num_features": 1326,
+          "order": 2,
+          "score": 0.05002575410270347,
+          "surprise": 0.044132420769370136
+        },
+        {
+          "baseline_surprise": 0.05704691358024691,
+          "complexity": 0.10411555555555556,
+          "num_features": 23426,
+          "order": 3,
+          "score": 0.14874691649802552,
+          "surprise": 0.04463136094246995
+        }
+      ],
+      "final_complexity": 0.0,
+      "final_surprise": 0.05704691358024691,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "status": "ok",
+      "task": "0b17323b"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "cv_curve": [
+        {
+          "baseline_surprise": 5.057741769547325,
+          "complexity": 0.0009444444444444445,
+          "num_features": 51,
+          "order": 1,
+          "score": 5.748984004872004,
+          "surprise": 5.74803956042756
+        },
+        {
+          "baseline_surprise": 5.057741769547325,
+          "complexity": 0.024555555555555556,
+          "num_features": 1326,
+          "order": 2,
+          "score": 8.973107915483359,
+          "surprise": 8.948552359927804
+        },
+        {
+          "baseline_surprise": 5.057741769547325,
+          "complexity": 0.4338148148148149,
+          "num_features": 23426,
+          "order": 3,
+          "score": 12.917255080209586,
+          "surprise": 12.483440265394771
+        }
+      ],
+      "final_complexity": 0.0,
+      "final_surprise": 5.057741769547325,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "status": "ok",
+      "task": "0bb8deee"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 2,
+      "cv_curve": [
+        {
+          "baseline_surprise": 4.526316666666667,
+          "complexity": 0.00034,
+          "num_features": 51,
+          "order": 1,
+          "score": 2.8642451177103254,
+          "surprise": 2.8639051177103254
+        },
+        {
+          "baseline_surprise": 4.526316666666667,
+          "complexity": 0.00884,
+          "num_features": 1326,
+          "order": 2,
+          "score": 2.8289578000215725,
+          "surprise": 2.8201178000215723
+        },
+        {
+          "baseline_surprise": 4.526316666666667,
+          "complexity": 0.15617333333333336,
+          "num_features": 23426,
+          "order": 3,
+          "score": 2.9996881810592373,
+          "surprise": 2.843514847725904
+        }
+      ],
+      "final_complexity": 0.00884,
+      "final_surprise": 2.8201178000215723,
+      "selected_reason": "order 2 accepted: penalized surprise improved by 0.0352873, above margin 0.02",
+      "status": "ok",
+      "task": "0becf7df"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "cv_curve": [
+        {
+          "baseline_surprise": 5.836805555555556,
+          "complexity": 0.0007083333333333334,
+          "num_features": 51,
+          "order": 1,
+          "score": 7.974169793817884,
+          "surprise": 7.97346146048455
+        },
+        {
+          "baseline_surprise": 5.836805555555556,
+          "complexity": 0.018416666666666668,
+          "num_features": 1326,
+          "order": 2,
+          "score": 7.422473312400213,
+          "surprise": 7.404056645733546
+        },
+        {
+          "baseline_surprise": 5.836805555555556,
+          "complexity": 0.32536111111111116,
+          "num_features": 23426,
+          "order": 3,
+          "score": 10.199032045444794,
+          "surprise": 9.873670934333683
+        }
+      ],
+      "final_complexity": 0.0,
+      "final_surprise": 5.836805555555556,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "status": "ok",
+      "task": "0c786b71"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "cv_curve": [
+        {
+          "baseline_surprise": 13.858024691358025,
+          "complexity": 0.0010625,
+          "num_features": 51,
+          "order": 1,
+          "score": 17.10125207961375,
+          "surprise": 17.10018957961375
+        },
+        {
+          "baseline_surprise": 13.858024691358025,
+          "complexity": 0.027625,
+          "num_features": 1326,
+          "order": 2,
+          "score": 27.229151974869126,
+          "surprise": 27.201526974869125
+        },
+        {
+          "baseline_surprise": 13.858024691358025,
+          "complexity": 0.4880416666666667,
+          "num_features": 23426,
+          "order": 3,
+          "score": 28.283382594078475,
+          "surprise": 27.795340927411807
+        }
+      ],
+      "final_complexity": 0.0,
+      "final_surprise": 13.858024691358025,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "status": "ok",
+      "task": "0c9aba6e"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 4.198267540517197,
+          "complexity": 0.0004197530864197531,
+          "num_features": 51,
+          "order": 1,
+          "score": 2.946073603315472,
+          "surprise": 2.945653850229052
+        },
+        {
+          "baseline_surprise": 4.198267540517197,
+          "complexity": 0.01091358024691358,
+          "num_features": 1326,
+          "order": 2,
+          "score": 3.6927944235011174,
+          "surprise": 3.681880843254204
+        },
+        {
+          "baseline_surprise": 4.198267540517197,
+          "complexity": 0.19280658436213993,
+          "num_features": 23426,
+          "order": 3,
+          "score": 5.094750416516944,
+          "surprise": 4.901943832154804
+        }
+      ],
+      "final_complexity": 0.0004197530864197531,
+      "final_surprise": 2.945653850229052,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 1.25219, above margin 0.02",
+      "status": "ok",
+      "task": "0ca9ddb6"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 6.765432098765433,
+          "complexity": 0.0028333333333333335,
+          "num_features": 51,
+          "order": 1,
+          "score": 6.253960676747978,
+          "surprise": 6.251127343414645
+        },
+        {
+          "baseline_surprise": 6.765432098765433,
+          "complexity": 0.07366666666666667,
+          "num_features": 1326,
+          "order": 2,
+          "score": 6.568750131285522,
+          "surprise": 6.495083464618855
+        },
+        {
+          "baseline_surprise": 6.765432098765433,
+          "complexity": 1.3014444444444446,
+          "num_features": 23426,
+          "order": 3,
+          "score": 8.284127593600042,
+          "surprise": 6.982683149155598
+        }
+      ],
+      "final_complexity": 0.0028333333333333335,
+      "final_surprise": 6.251127343414645,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 0.511471, above margin 0.02",
+      "status": "ok",
+      "task": "0d3d703e"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 0.5456560973239738,
+          "complexity": 0.00013043478260869567,
+          "num_features": 51,
+          "order": 1,
+          "score": 0.10572031115824915,
+          "surprise": 0.10558987637564045
+        },
+        {
+          "baseline_surprise": 0.5456560973239738,
+          "complexity": 0.0033913043478260873,
+          "num_features": 1326,
+          "order": 2,
+          "score": 0.09930362020311596,
+          "surprise": 0.09591231585528988
+        },
+        {
+          "baseline_surprise": 0.5456560973239738,
+          "complexity": 0.059913043478260875,
+          "num_features": 23426,
+          "order": 3,
+          "score": 0.24053268792356267,
+          "surprise": 0.1806196444453018
+        }
+      ],
+      "final_complexity": 0.00013043478260869567,
+      "final_surprise": 0.10558987637564045,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 0.439936, above margin 0.02",
+      "status": "ok",
+      "task": "0d87d2a6"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 1.6891861903710448,
+          "complexity": 0.00014868804664723033,
+          "num_features": 51,
+          "order": 1,
+          "score": 1.6202425156008693,
+          "surprise": 1.620093827554222
+        },
+        {
+          "baseline_surprise": 1.6891861903710448,
+          "complexity": 0.0038658892128279887,
+          "num_features": 1326,
+          "order": 2,
+          "score": 2.1144380157170386,
+          "surprise": 2.1105721265042106
+        },
+        {
+          "baseline_surprise": 1.6891861903710448,
+          "complexity": 0.06829737609329446,
+          "num_features": 23426,
+          "order": 3,
+          "score": 4.177977341616528,
+          "surprise": 4.109679965523234
+        }
+      ],
+      "final_complexity": 0.00014868804664723033,
+      "final_surprise": 1.620093827554222,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 0.0689437, above margin 0.02",
+      "status": "ok",
+      "task": "0e206a2e"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 2.905768938996067,
+          "complexity": 0.00015088757396449705,
+          "num_features": 51,
+          "order": 1,
+          "score": 2.8205560338848468,
+          "surprise": 2.820405146310882
+        },
+        {
+          "baseline_surprise": 2.905768938996067,
+          "complexity": 0.003923076923076923,
+          "num_features": 1326,
+          "order": 2,
+          "score": 2.863574893431103,
+          "surprise": 2.859651816508026
+        },
+        {
+          "baseline_surprise": 2.905768938996067,
+          "complexity": 0.06930769230769232,
+          "num_features": 23426,
+          "order": 3,
+          "score": 3.346965879599664,
+          "surprise": 3.277658187291972
+        }
+      ],
+      "final_complexity": 0.00015088757396449705,
+      "final_surprise": 2.820405146310882,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 0.0852129, above margin 0.02",
+      "status": "ok",
+      "task": "0e671a1a"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 2,
+      "cv_curve": [
+        {
+          "baseline_surprise": 9.923800274348423,
+          "complexity": 0.00011333333333333334,
+          "num_features": 51,
+          "order": 1,
+          "score": 6.862127981280165,
+          "surprise": 6.862014647946832
+        },
+        {
+          "baseline_surprise": 9.923800274348423,
+          "complexity": 0.002946666666666667,
+          "num_features": 1326,
+          "order": 2,
+          "score": 6.240095486419845,
+          "surprise": 6.237148819753179
+        },
+        {
+          "baseline_surprise": 9.923800274348423,
+          "complexity": 0.05205777777777778,
+          "num_features": 23426,
+          "order": 3,
+          "score": 6.2752954961801946,
+          "surprise": 6.223237718402417
+        }
+      ],
+      "final_complexity": 0.002946666666666667,
+      "final_surprise": 6.237148819753179,
+      "selected_reason": "order 2 accepted: penalized surprise improved by 0.622032, above margin 0.02",
+      "status": "ok",
+      "task": "0f63c0b9"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 1.369907045169283,
+          "complexity": 0.00017708333333333335,
+          "num_features": 51,
+          "order": 1,
+          "score": 0.276181500034458,
+          "surprise": 0.2760044167011247
+        },
+        {
+          "baseline_surprise": 1.369907045169283,
+          "complexity": 0.004604166666666667,
+          "num_features": 1326,
+          "order": 2,
+          "score": 0.5022185317667023,
+          "surprise": 0.49761436510003565
+        },
+        {
+          "baseline_surprise": 1.369907045169283,
+          "complexity": 0.08134027777777779,
+          "num_features": 23426,
+          "order": 3,
+          "score": 0.7124691068048153,
+          "surprise": 0.6311288290270376
+        }
+      ],
+      "final_complexity": 0.00017708333333333335,
+      "final_surprise": 0.2760044167011247,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 1.09373, above margin 0.02",
+      "status": "ok",
+      "task": "103eff5b"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 14.33469660495847,
+          "complexity": 0.0005,
+          "num_features": 51,
+          "order": 1,
+          "score": 14.165239768122348,
+          "surprise": 14.164739768122347
+        },
+        {
+          "baseline_surprise": 14.33469660495847,
+          "complexity": 0.013000000000000001,
+          "num_features": 1326,
+          "order": 2,
+          "score": 18.037149086413525,
+          "surprise": 18.024149086413523
+        },
+        {
+          "baseline_surprise": 14.33469660495847,
+          "complexity": 0.22966666666666669,
+          "num_features": 23426,
+          "order": 3,
+          "score": 44.32192099990313,
+          "surprise": 44.09225433323646
+        }
+      ],
+      "final_complexity": 0.0005,
+      "final_surprise": 14.164739768122347,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 0.169457, above margin 0.02",
+      "status": "ok",
+      "task": "10fcaaa3"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 2,
+      "cv_curve": [
+        {
+          "baseline_surprise": 3.111683333333333,
+          "complexity": 0.00034,
+          "num_features": 51,
+          "order": 1,
+          "score": 0.2849210306821683,
+          "surprise": 0.2845810306821683
+        },
+        {
+          "baseline_surprise": 3.111683333333333,
+          "complexity": 0.00884,
+          "num_features": 1326,
+          "order": 2,
+          "score": 0.231793024710144,
+          "surprise": 0.222953024710144
+        },
+        {
+          "baseline_surprise": 3.111683333333333,
+          "complexity": 0.15617333333333336,
+          "num_features": 23426,
+          "order": 3,
+          "score": 0.3934313318257629,
+          "surprise": 0.23725799849242954
+        }
+      ],
+      "final_complexity": 0.00884,
+      "final_surprise": 0.222953024710144,
+      "selected_reason": "order 2 accepted: penalized surprise improved by 0.053128, above margin 0.02",
+      "status": "ok",
+      "task": "11852cab"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "cv_curve": [
+        {
+          "baseline_surprise": 11.514968598890208,
+          "complexity": 0.00047222222222222224,
+          "num_features": 51,
+          "order": 1,
+          "score": 11.62132815699785,
+          "surprise": 11.620855934775626
+        },
+        {
+          "baseline_surprise": 11.514968598890208,
+          "complexity": 0.012277777777777778,
+          "num_features": 1326,
+          "order": 2,
+          "score": 12.158029865687782,
+          "surprise": 12.145752087910004
+        },
+        {
+          "baseline_surprise": 11.514968598890208,
+          "complexity": 0.21690740740740744,
+          "num_features": 23426,
+          "order": 3,
+          "score": 88.33030387006397,
+          "surprise": 88.11339646265657
+        }
+      ],
+      "final_complexity": 0.0,
+      "final_surprise": 11.514968598890208,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "status": "ok",
+      "task": "1190bc91"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "cv_curve": [
+        {
+          "baseline_surprise": 1.615268329554044,
+          "complexity": 0.002318181818181818,
+          "num_features": 51,
+          "order": 1,
+          "score": 1.6498322080432992,
+          "surprise": 1.6475140262251173
+        },
+        {
+          "baseline_surprise": 1.615268329554044,
+          "complexity": 0.060272727272727276,
+          "num_features": 1326,
+          "order": 2,
+          "score": 1.7200068427113548,
+          "surprise": 1.6597341154386276
+        },
+        {
+          "baseline_surprise": 1.615268329554044,
+          "complexity": 1.0648181818181819,
+          "num_features": 23426,
+          "order": 3,
+          "score": 2.70932525694216,
+          "surprise": 1.6445070751239783
+        }
+      ],
+      "final_complexity": 0.0,
+      "final_surprise": 1.615268329554044,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "status": "ok",
+      "task": "1190e5a7"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 0.6589405132873498,
+          "complexity": 0.00020118343195266273,
+          "num_features": 51,
+          "order": 1,
+          "score": 0.5695214463794394,
+          "surprise": 0.5693202629474867
+        },
+        {
+          "baseline_surprise": 0.6589405132873498,
+          "complexity": 0.005230769230769231,
+          "num_features": 1326,
+          "order": 2,
+          "score": 0.8026206976045532,
+          "surprise": 0.797389928373784
+        },
+        {
+          "baseline_surprise": 0.6589405132873498,
+          "complexity": 0.09241025641025642,
+          "num_features": 23426,
+          "order": 3,
+          "score": 2.1848066816740057,
+          "surprise": 2.0923964252637495
+        }
+      ],
+      "final_complexity": 0.00020118343195266273,
+      "final_surprise": 0.5693202629474867,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 0.0894191, above margin 0.02",
+      "status": "ok",
+      "task": "11dc524f"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 2,
+      "cv_curve": [
+        {
+          "baseline_surprise": 1.0733095156106518,
+          "complexity": 0.0004047619047619048,
+          "num_features": 51,
+          "order": 1,
+          "score": 0.8090108434831506,
+          "surprise": 0.8086060815783886
+        },
+        {
+          "baseline_surprise": 1.0733095156106518,
+          "complexity": 0.010523809523809524,
+          "num_features": 1326,
+          "order": 2,
+          "score": 0.7761760669876322,
+          "surprise": 0.7656522574638227
+        },
+        {
+          "baseline_surprise": 1.0733095156106518,
+          "complexity": 0.18592063492063493,
+          "num_features": 23426,
+          "order": 3,
+          "score": 1.0067955091480547,
+          "surprise": 0.8208748742274199
+        }
+      ],
+      "final_complexity": 0.010523809523809524,
+      "final_surprise": 0.7656522574638227,
+      "selected_reason": "order 2 accepted: penalized surprise improved by 0.0328348, above margin 0.02",
+      "status": "ok",
+      "task": "11e1fe23"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 7.916148866556668,
+          "complexity": 0.0003863636363636364,
+          "num_features": 51,
+          "order": 1,
+          "score": 3.839951114893792,
+          "surprise": 3.8395647512574285
+        },
+        {
+          "baseline_surprise": 7.916148866556668,
+          "complexity": 0.010045454545454547,
+          "num_features": 1326,
+          "order": 2,
+          "score": 3.860766157906511,
+          "surprise": 3.8507207033610564
+        },
+        {
+          "baseline_surprise": 7.916148866556668,
+          "complexity": 0.17746969696969697,
+          "num_features": 23426,
+          "order": 3,
+          "score": 8.608692806583058,
+          "surprise": 8.431223109613361
+        }
+      ],
+      "final_complexity": 0.0003863636363636364,
+      "final_surprise": 3.8395647512574285,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 4.0762, above margin 0.02",
+      "status": "ok",
+      "task": "12422b43"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "cv_curve": [
+        {
+          "baseline_surprise": 6.333447499370118,
+          "complexity": 0.0011333333333333334,
+          "num_features": 51,
+          "order": 1,
+          "score": 7.638746169827448,
+          "surprise": 7.637612836494115
+        },
+        {
+          "baseline_surprise": 6.333447499370118,
+          "complexity": 0.02946666666666667,
+          "num_features": 1326,
+          "order": 2,
+          "score": 9.226126770665642,
+          "surprise": 9.196660103998976
+        },
+        {
+          "baseline_surprise": 6.333447499370118,
+          "complexity": 0.5205777777777778,
+          "num_features": 23426,
+          "order": 3,
+          "score": 11.001073824736164,
+          "surprise": 10.480496046958386
+        }
+      ],
+      "final_complexity": 0.0,
+      "final_surprise": 6.333447499370118,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "status": "ok",
+      "task": "12997ef3"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 2,
+      "cv_curve": [
+        {
+          "baseline_surprise": 8.868579209168484,
+          "complexity": 0.000576271186440678,
+          "num_features": 51,
+          "order": 1,
+          "score": 1.9014221324540137,
+          "surprise": 1.900845861267573
+        },
+        {
+          "baseline_surprise": 8.868579209168484,
+          "complexity": 0.014983050847457628,
+          "num_features": 1326,
+          "order": 2,
+          "score": 1.7865739686632933,
+          "surprise": 1.7715909178158358
+        },
+        {
+          "baseline_surprise": 8.868579209168484,
+          "complexity": 0.26470056497175143,
+          "num_features": 23426,
+          "order": 3,
+          "score": 2.006066059460032,
+          "surprise": 1.7413654944882806
+        }
+      ],
+      "final_complexity": 0.014983050847457628,
+      "final_surprise": 1.7715909178158358,
+      "selected_reason": "order 2 accepted: penalized surprise improved by 0.114848, above margin 0.02",
+      "status": "ok",
+      "task": "12eac192"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 7.588487959366222,
+          "complexity": 0.00012734082397003747,
+          "num_features": 51,
+          "order": 1,
+          "score": 6.842600536822705,
+          "surprise": 6.8424731959987355
+        },
+        {
+          "baseline_surprise": 7.588487959366222,
+          "complexity": 0.003310861423220974,
+          "num_features": 1326,
+          "order": 2,
+          "score": 9.580296681963528,
+          "surprise": 9.576985820540306
+        },
+        {
+          "baseline_surprise": 7.588487959366222,
+          "complexity": 0.058491885143570545,
+          "num_features": 23426,
+          "order": 3,
+          "score": 11.538216926381953,
+          "surprise": 11.479725041238382
+        }
+      ],
+      "final_complexity": 0.00012734082397003747,
+      "final_surprise": 6.8424731959987355,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 0.745887, above margin 0.02",
+      "status": "ok",
+      "task": "13713586"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "cv_curve": [
+        {
+          "baseline_surprise": 7.4711934156378605,
+          "complexity": 0.003777777777777778,
+          "num_features": 51,
+          "order": 1,
+          "score": 11.7089158650844,
+          "surprise": 11.705138087306622
+        },
+        {
+          "baseline_surprise": 7.4711934156378605,
+          "complexity": 0.09822222222222222,
+          "num_features": 1326,
+          "order": 2,
+          "score": 11.577476529777574,
+          "surprise": 11.479254307555351
+        },
+        {
+          "baseline_surprise": 7.4711934156378605,
+          "complexity": 1.7352592592592595,
+          "num_features": 23426,
+          "order": 3,
+          "score": 13.125694798331509,
+          "surprise": 11.390435539072248
+        }
+      ],
+      "final_complexity": 0.0,
+      "final_surprise": 7.4711934156378605,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "status": "ok",
+      "task": "137eaa0f"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 2,
+      "cv_curve": [
+        {
+          "baseline_surprise": 4.127999999999999,
+          "complexity": 0.00034,
+          "num_features": 51,
+          "order": 1,
+          "score": 0.30934729086049867,
+          "surprise": 0.30900729086049866
+        },
+        {
+          "baseline_surprise": 4.127999999999999,
+          "complexity": 0.00884,
+          "num_features": 1326,
+          "order": 2,
+          "score": 0.17190359284162005,
+          "surprise": 0.16306359284162006
+        },
+        {
+          "baseline_surprise": 4.127999999999999,
+          "complexity": 0.15617333333333336,
+          "num_features": 23426,
+          "order": 3,
+          "score": 0.3887839380166378,
+          "surprise": 0.23261060468330444
+        }
+      ],
+      "final_complexity": 0.00884,
+      "final_surprise": 0.16306359284162006,
+      "selected_reason": "order 2 accepted: penalized surprise improved by 0.137444, above margin 0.02",
+      "status": "ok",
+      "task": "137f0df0"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "cv_curve": [
+        {
+          "baseline_surprise": 3.591304693402701,
+          "complexity": 0.00020773930753564156,
+          "num_features": 51,
+          "order": 1,
+          "score": 2.217153999114718,
+          "surprise": 2.2169462598071825
+        },
+        {
+          "baseline_surprise": 3.591304693402701,
+          "complexity": 0.005401221995926681,
+          "num_features": 1326,
+          "order": 2,
+          "score": 2.718814008900814,
+          "surprise": 2.7134127869048874
+        },
+        {
+          "baseline_surprise": 3.591304693402701,
+          "complexity": 0.09542158859470469,
+          "num_features": 23426,
+          "order": 3,
+          "score": 3.134770691731243,
+          "surprise": 3.0393491031365385
+        }
+      ],
+      "final_complexity": 0.00020773930753564156,
+      "final_surprise": 2.2169462598071825,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 1.37415, above margin 0.02",
+      "status": "ok",
+      "task": "13f06aa5"
+    }
+  ]
+}

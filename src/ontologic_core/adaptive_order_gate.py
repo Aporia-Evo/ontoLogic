@@ -225,6 +225,24 @@ def _loo_ridge_surprise(pairs: list[PairExperience], lambda_: float) -> float:
 
 
 def _fit_ridge(features: np.ndarray, targets: np.ndarray, lambda_: float) -> np.ndarray:
+    """Fit ridge weights while avoiding huge primal systems when possible.
+
+    The first column is the bias term produced by ``_expand_features`` and is
+    kept unpenalized.  For expanded ARC factors, interaction order 3 can have
+    many more columns than train cells; in that common regime the centered dual
+    system is equivalent for positive ``lambda_`` and avoids constructing a
+    very large feature-by-feature matrix.
+    """
+
+    if features.shape[1] == 0:
+        raise ValueError("ridge features must include at least a bias column")
+
+    if features.shape[1] == 1:
+        return targets.mean(axis=0, keepdims=True)
+
+    if lambda_ > 0 and features.shape[1] > features.shape[0]:
+        return _fit_ridge_dual_with_bias(features, targets, lambda_)
+
     penalty = lambda_ * np.eye(features.shape[1], dtype=np.float64)
     penalty[0, 0] = 0.0  # do not regularize the bias column
     lhs = features.T @ features + penalty
@@ -234,6 +252,27 @@ def _fit_ridge(features: np.ndarray, targets: np.ndarray, lambda_: float) -> np.
     except np.linalg.LinAlgError:
         weights = np.linalg.pinv(lhs) @ rhs
     return weights
+
+
+def _fit_ridge_dual_with_bias(features: np.ndarray, targets: np.ndarray, lambda_: float) -> np.ndarray:
+    """Fit ridge with an unpenalized bias using the sample-space system."""
+
+    non_bias = features[:, 1:]
+    feature_mean = non_bias.mean(axis=0, keepdims=True)
+    target_mean = targets.mean(axis=0, keepdims=True)
+    centered_features = non_bias - feature_mean
+    centered_targets = targets - target_mean
+
+    lhs = centered_features @ centered_features.T
+    lhs.flat[:: lhs.shape[0] + 1] += lambda_
+    try:
+        dual_weights = np.linalg.solve(lhs, centered_targets)
+    except np.linalg.LinAlgError:
+        dual_weights = np.linalg.pinv(lhs) @ centered_targets
+
+    coefficients = centered_features.T @ dual_weights
+    intercept = target_mean - feature_mean @ coefficients
+    return np.vstack([intercept, coefficients])
 
 
 def _mse(targets: np.ndarray, predictions: np.ndarray) -> float:
