@@ -1,0 +1,196 @@
+{
+  "interesting_tasks": [
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "reason": "ceiling_detected",
+      "relative_improvement": 0.0,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "task": "0520fde7"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "reason": "ceiling_detected",
+      "relative_improvement": 0.0,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "task": "05269061"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "reason": "ceiling_detected",
+      "relative_improvement": 0.0,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "task": "0a1d4ef5"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "reason": "ceiling_detected",
+      "relative_improvement": 0.0,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "task": "0a938d79"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "reason": "ceiling_detected",
+      "relative_improvement": 0.0,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "task": "0b148d64"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "reason": "ceiling_detected",
+      "relative_improvement": 0.0,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "task": "0b17323b"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "reason": "ceiling_detected",
+      "relative_improvement": 0.0,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "task": "0bb8deee"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "reason": "ceiling_detected",
+      "relative_improvement": 0.0,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "task": "0c786b71"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "reason": "ceiling_detected",
+      "relative_improvement": 0.0,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "task": "0c9aba6e"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "reason": "ceiling_detected",
+      "relative_improvement": 0.0,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "task": "1190bc91"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "reason": "ceiling_detected",
+      "relative_improvement": 0.0,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "task": "1190e5a7"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "reason": "ceiling_detected",
+      "relative_improvement": 0.0,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "task": "12997ef3"
+    },
+    {
+      "ceiling_detected": true,
+      "chosen_order": null,
+      "reason": "ceiling_detected",
+      "relative_improvement": 0.0,
+      "selected_reason": "ceiling_detected: no learned order beat the baseline surprise",
+      "task": "137eaa0f"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 3,
+      "reason": "max_order_reached",
+      "relative_improvement": 0.6931896524441739,
+      "selected_reason": "order 3 accepted: penalized surprise improved by 0.335576, above margin 0.02",
+      "task": "025d127b"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 2,
+      "reason": "large_surprise_improvement",
+      "relative_improvement": 0.9604981606488323,
+      "selected_reason": "order 2 accepted: penalized surprise improved by 0.137444, above margin 0.02",
+      "task": "137f0df0"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 2,
+      "reason": "large_surprise_improvement",
+      "relative_improvement": 0.9283497063079006,
+      "selected_reason": "order 2 accepted: penalized surprise improved by 0.053128, above margin 0.02",
+      "task": "11852cab"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "reason": "large_surprise_improvement",
+      "relative_improvement": 0.8866740631909359,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 5.98851, above margin 0.02",
+      "task": "0607ce86"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "reason": "large_surprise_improvement",
+      "relative_improvement": 0.8709425551809147,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 2.19241, above margin 0.02",
+      "task": "05f2a901"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 2,
+      "reason": "large_surprise_improvement",
+      "relative_improvement": 0.8520121746710198,
+      "selected_reason": "order 2 accepted: penalized surprise improved by 0.0355806, above margin 0.02",
+      "task": "00dbd492"
+    },
+    {
+      "ceiling_detected": false,
+      "chosen_order": 1,
+      "reason": "large_surprise_improvement",
+      "relative_improvement": 0.8101756511613575,
+      "selected_reason": "order 1 accepted: penalized surprise beat the baseline by 0.954392, above margin 0.02",
+      "task": "08ed6ac7"
+    }
+  ],
+  "interpretation": [
+    "regime: healthy_adaptive",
+    "order_distribution: order 1=27, order 2=9, order 3=1, order none=13",
+    "ceiling rate is 26.0%; max-order rate is 2.0%.",
+    "The gate uses multiple orders without max-order dominance, consistent with conservative adaptive structure_growth."
+  ],
+  "summary": {
+    "ceiling_rate": 0.26,
+    "errors": 0,
+    "max_order_rate": 0.02,
+    "mean_complexity_by_order": {
+      "1": 0.0006821455303887872,
+      "2": 0.01773578379010847,
+      "3": 0.3133321802919163
+    },
+    "mean_final_surprise": 3.450402110020911,
+    "mean_relative_improvement": 0.3466325790116534,
+    "mean_surprise_by_order": {
+      "1": 3.896958301243757,
+      "2": 4.881048245019577,
+      "3": 9.503066376833372
+    },
+    "ok": 50,
+    "order_counts": {
+      "1": 27,
+      "2": 9,
+      "3": 1,
+      "none": 13
+    },
+    "regime": "healthy_adaptive",
+    "tasks": 50
+  }
+}
