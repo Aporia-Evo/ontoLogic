@@ -5,7 +5,7 @@ from pathlib import Path
 
 import numpy as np
 
-from ontologic_core.adaptive_order_gate import ridge_predict, ridge_primal_predict, ridge_sample_space_predict
+from ontologic_core.adaptive_order_gate import _ridge_predict, _ridge_primal_predict, _ridge_sample_space_predict
 from ontologic_core.sweep_analysis import build_run_record, build_sweep_report, summarize_sweep
 
 
@@ -85,9 +85,9 @@ def test_sample_space_ridge_matches_primal_on_small_held_rows() -> None:
     held_y = held_x @ true_weights
 
     lambda_ = 0.7
-    primal = ridge_primal_predict(train_x, train_y, held_x, lambda_)
-    sample_space = ridge_sample_space_predict(train_x, train_y, held_x, lambda_)
-    memory_safe = ridge_predict(train_x, train_y, held_x, lambda_)
+    primal = _ridge_primal_predict(train_x, train_y, held_x, lambda_)
+    sample_space = _ridge_sample_space_predict(train_x, train_y, held_x, lambda_)
+    memory_safe = _ridge_predict(train_x, train_y, held_x, lambda_)
 
     assert np.allclose(sample_space, primal, atol=1e-10)
     assert np.allclose(memory_safe, primal, atol=1e-10)

@@ -218,67 +218,51 @@ def _loo_ridge_surprise(pairs: list[PairExperience], lambda_: float) -> float:
     for held_index, held_pair in enumerate(pairs):
         train_x = np.vstack([pair.features for i, pair in enumerate(pairs) if i != held_index])
         train_y = np.vstack([pair.targets for i, pair in enumerate(pairs) if i != held_index])
-        prediction = ridge_predict(train_x, train_y, held_pair.features, lambda_)
+        prediction = _ridge_predict(train_x, train_y, held_pair.features, lambda_)
         held_surprises.append(_mse(held_pair.targets, prediction))
     return float(np.mean(held_surprises))
 
 
-def ridge_predict(train_features: np.ndarray, train_targets: np.ndarray, held_features: np.ndarray, lambda_: float) -> np.ndarray:
-    """Estimate held rows with a memory-aware ridge path.
-
-    The sample-space path is preferred when feature width exceeds sample count;
-    it avoids forming a wide feature-by-feature system while preserving the
-    unregularized bias column used by the primal path.
-    """
-
+def _ridge_predict(train_features: np.ndarray, train_targets: np.ndarray, held_features: np.ndarray, lambda_: float) -> np.ndarray:
     train_x = np.asarray(train_features, dtype=np.float64)
-    held_x = np.asarray(held_features, dtype=np.float64)
     if train_x.shape[1] > train_x.shape[0]:
-        return ridge_sample_space_predict(train_x, train_targets, held_x, lambda_)
-    return ridge_primal_predict(train_x, train_targets, held_x, lambda_)
+        return _ridge_sample_space_predict(train_x, train_targets, held_features, lambda_)
+    return _ridge_primal_predict(train_x, train_targets, held_features, lambda_)
 
 
-def ridge_primal_predict(train_features: np.ndarray, train_targets: np.ndarray, held_features: np.ndarray, lambda_: float) -> np.ndarray:
-    """Estimate held rows via the feature-space ridge equations."""
-
-    weights = _fit_ridge_primal(train_features, train_targets, lambda_)
+def _ridge_primal_predict(
+    train_features: np.ndarray, train_targets: np.ndarray, held_features: np.ndarray, lambda_: float
+) -> np.ndarray:
+    weights = _fit_ridge(train_features, train_targets, lambda_)
     return np.asarray(held_features, dtype=np.float64) @ weights
 
 
-def ridge_sample_space_predict(
+def _ridge_sample_space_predict(
     train_features: np.ndarray, train_targets: np.ndarray, held_features: np.ndarray, lambda_: float
 ) -> np.ndarray:
-    """Estimate held rows via the sample-space ridge equations."""
-
     train_x, train_y, held_x = _checked_ridge_arrays(train_features, train_targets, held_features, lambda_)
-    x_mean, y_mean, train_centered, _ = _center_for_unregularized_bias(train_x, train_y, held_x)
+    x_body = train_x[:, 1:]
+    held_body = held_x[:, 1:]
+    x_mean = x_body.mean(axis=0, keepdims=True)
+    y_mean = train_y.mean(axis=0, keepdims=True)
+    train_centered = x_body - x_mean
     if train_centered.shape[1] == 0:
         return np.repeat(y_mean, held_x.shape[0], axis=0)
 
-    gram = train_centered @ train_centered.T
-    lhs = gram + lambda_ * np.eye(gram.shape[0], dtype=np.float64)
+    lhs = train_centered @ train_centered.T + lambda_ * np.eye(train_centered.shape[0], dtype=np.float64)
     alpha = _linear_response(lhs, train_y - y_mean)
     slopes = train_centered.T @ alpha
     intercept = y_mean - x_mean @ slopes
-    return intercept + held_x[:, 1:] @ slopes
+    return intercept + held_body @ slopes
 
 
 def _fit_ridge(features: np.ndarray, targets: np.ndarray, lambda_: float) -> np.ndarray:
-    return _fit_ridge_primal(features, targets, lambda_)
-
-
-def _fit_ridge_primal(features: np.ndarray, targets: np.ndarray, lambda_: float) -> np.ndarray:
-    train_x, train_y, _ = _checked_ridge_arrays(features, targets, features, lambda_)
-    x_mean, y_mean, train_centered, _ = _center_for_unregularized_bias(train_x, train_y, train_x)
-    if train_centered.shape[1] == 0:
-        return np.vstack([y_mean, np.zeros((0, train_y.shape[1]), dtype=np.float64)])
-
-    penalty = lambda_ * np.eye(train_centered.shape[1], dtype=np.float64)
-    lhs = train_centered.T @ train_centered + penalty
-    rhs = train_centered.T @ (train_y - y_mean)
-    slopes = _linear_response(lhs, rhs)
-    intercept = y_mean - x_mean @ slopes
-    return np.vstack([intercept, slopes])
+    x, y, _ = _checked_ridge_arrays(features, targets, features, lambda_)
+    penalty = lambda_ * np.eye(x.shape[1], dtype=np.float64)
+    penalty[0, 0] = 0.0  # do not regularize the bias column
+    lhs = x.T @ x + penalty
+    rhs = x.T @ y
+    return _linear_response(lhs, rhs)
 
 
 def _checked_ridge_arrays(
@@ -302,16 +286,6 @@ def _checked_ridge_arrays(
     if lambda_ < 0:
         raise ValueError("lambda_ must be non-negative")
     return train_x, train_y, held_x
-
-
-def _center_for_unregularized_bias(
-    train_x: np.ndarray, train_y: np.ndarray, held_x: np.ndarray
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    x_without_bias = train_x[:, 1:]
-    held_without_bias = held_x[:, 1:]
-    x_mean = x_without_bias.mean(axis=0, keepdims=True)
-    y_mean = train_y.mean(axis=0, keepdims=True)
-    return x_mean, y_mean, x_without_bias - x_mean, held_without_bias - x_mean
 
 
 def _linear_response(lhs: np.ndarray, rhs: np.ndarray) -> np.ndarray:
