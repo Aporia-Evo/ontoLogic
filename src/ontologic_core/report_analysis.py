@@ -1,7 +1,7 @@
 """Analysis layer for ontology-lab diagnostic reports.
 
 This module reads structure-growth diagnostics and summarizes gate behavior.
-It does not build predictions or change the adaptive-order gate.
+It does not build held-out grids or change the adaptive-order gate.
 """
 
 from __future__ import annotations

@@ -90,6 +90,25 @@ def test_compact_run_keeps_required_fields() -> None:
     }
 
 
+
+
+def test_sweep_report_can_record_factor_mode() -> None:
+    runs = [_run("healthy_adaptive")]
+
+    report = build_sweep_report(runs, factor_mode="hierarchical")
+    compact = compact_run(
+        1.0,
+        0.02,
+        {"summary": runs[0]},
+        factor_mode="hierarchical",
+        factor_groups=["basic", "component_geometry"],
+    )
+
+    assert report["metadata"]["factor_mode"] == "hierarchical"
+    assert compact["factor_mode"] == "hierarchical"
+    assert compact["factor_groups"] == ["basic", "component_geometry"]
+
+
 def test_sweep_analysis_has_no_forbidden_growth_api_name() -> None:
     source = Path("src/ontologic_core/sweep_analysis.py").read_text(encoding="utf-8")
     tree = ast.parse(source)

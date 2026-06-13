@@ -19,7 +19,16 @@ if _SRC.exists():
     sys.path.insert(0, str(_SRC))
 
 from ontologic_core.adaptive_order_gate import AdaptiveOrderGate, GateDiagnosis, OrderCurvePoint
-from ontologic_core.arc_factors import extract_task_experience
+from ontologic_core.arc_factors import (
+    ALL_FACTOR_GROUPS,
+    factor_group_widths,
+    extract_task_experience,
+    normalize_factor_groups,
+    total_factor_width,
+)
+
+_FACTOR_MODES = ("basic", "hierarchical")
+_FACTOR_GROUPS = ALL_FACTOR_GROUPS
 
 
 def _finite_or_none(value: float | int | None) -> float | int | None:
@@ -60,13 +69,26 @@ def _diagnosis_to_json(task_name: str, diagnosis: GateDiagnosis) -> dict[str, An
     }
 
 
-def diagnose_task(task_name: str, task: dict[str, Any], *, max_order: int, lambda_: float, margin: float) -> dict[str, Any]:
+def diagnose_task(
+    task_name: str,
+    task: dict[str, Any],
+    *,
+    max_order: int,
+    lambda_: float,
+    margin: float,
+    factor_mode: str = "basic",
+    factor_groups: list[str] | tuple[str, ...] | None = None,
+) -> dict[str, Any]:
     """Extract train-pair experience and run train-only structure growth."""
 
-    pairs = extract_task_experience(task)
+    active_groups = _validate_factor_request(factor_mode, factor_groups)
+    pairs = _extract_task_experience_with_mode(task, factor_mode, active_groups)
     gate = AdaptiveOrderGate(max_order=max_order, lambda_=lambda_, margin=margin)
     diagnosis = gate.grow_structure(pairs)
-    return _diagnosis_to_json(task_name, diagnosis)
+    detail = _diagnosis_to_json(task_name, diagnosis)
+    detail["feature_width"] = int(pairs[0].features.shape[1])
+    detail["factor_groups"] = list(active_groups)
+    return detail
 
 
 def _error_detail(task_name: str, exc: Exception) -> dict[str, Any]:
@@ -136,9 +158,50 @@ def _summary(details: list[dict[str, Any]], max_order: int) -> dict[str, Any]:
     }
 
 
-def run_lab(data: str | Path, *, limit: int | None = None, max_order: int = 3, lambda_: float = 1.0, margin: float = 0.02) -> dict[str, Any]:
+def _parse_factor_groups(raw: str | None) -> list[str] | None:
+    if raw is None:
+        return None
+    groups = [item.strip() for item in raw.split(",") if item.strip()]
+    if not groups:
+        raise argparse.ArgumentTypeError("at least one factor group is required")
+    return groups
+
+
+def _validate_factor_request(
+    factor_mode: str,
+    factor_groups: list[str] | tuple[str, ...] | None = None,
+) -> tuple[str, ...]:
+    if factor_mode not in _FACTOR_MODES:
+        raise ValueError(f"factor_mode must be one of {_FACTOR_MODES}, got {factor_mode!r}")
+    return normalize_factor_groups(factor_mode, factor_groups)
+
+
+def _extract_task_experience_with_mode(
+    task: dict[str, Any],
+    factor_mode: str,
+    factor_groups: tuple[str, ...],
+):
+    try:
+        return extract_task_experience(task, mode=factor_mode, factor_groups=factor_groups)
+    except TypeError as exc:
+        if factor_mode == "basic" and factor_groups == ("basic",) and "mode" in str(exc):
+            return extract_task_experience(task)
+        raise
+
+
+def run_lab(
+    data: str | Path,
+    *,
+    limit: int | None = None,
+    max_order: int = 3,
+    lambda_: float = 1.0,
+    margin: float = 0.02,
+    factor_mode: str = "basic",
+    factor_groups: list[str] | tuple[str, ...] | None = None,
+) -> dict[str, Any]:
     """Run ARC ontology microscope diagnostics over a directory of JSON tasks."""
 
+    active_groups = _validate_factor_request(factor_mode, factor_groups)
     data_path = Path(data)
     task_paths = sorted(data_path.glob("*.json"))
     if limit is not None and limit > 0:
@@ -150,11 +213,27 @@ def run_lab(data: str | Path, *, limit: int | None = None, max_order: int = 3, l
         try:
             with task_path.open("r", encoding="utf-8") as handle:
                 task = json.load(handle)
-            details.append(diagnose_task(task_name, task, max_order=max_order, lambda_=lambda_, margin=margin))
+            details.append(
+                diagnose_task(
+                    task_name,
+                    task,
+                    max_order=max_order,
+                    lambda_=lambda_,
+                    margin=margin,
+                    factor_mode=factor_mode,
+                    factor_groups=active_groups,
+                )
+            )
         except Exception as exc:  # keep one malformed task from aborting the lab run
             details.append(_error_detail(task_name, exc))
 
     return {
+        "metadata": {
+            "factor_mode": factor_mode,
+            "factor_groups": list(active_groups),
+            "factor_group_widths": factor_group_widths(factor_mode, active_groups),
+            "feature_width": total_factor_width(factor_mode, active_groups),
+        },
         "summary": _summary(details, max_order),
         "tasks_detail": details,
     }
@@ -179,6 +258,13 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-order", type=int, default=3, help="Maximum interaction order for structure growth")
     parser.add_argument("--lambda", dest="lambda_", type=float, default=1.0, help="Complexity pressure used by the gate")
     parser.add_argument("--margin", type=float, default=0.02, help="Minimum improvement margin for order growth")
+    parser.add_argument("--factor-mode", choices=_FACTOR_MODES, default="basic", help="ARC factor extraction mode")
+    parser.add_argument(
+        "--factor-groups",
+        type=_parse_factor_groups,
+        default=None,
+        help="Comma-separated ARC factor groups; hierarchical mode uses all groups by default",
+    )
     parser.add_argument("--json-out", default="arc_ontology_diag.json", help="Path for the diagnostic JSON report")
     return parser
 
@@ -188,7 +274,15 @@ def main(argv: list[str] | None = None) -> None:
 
     parser = build_arg_parser()
     args = parser.parse_args(argv)
-    report = run_lab(args.data, limit=args.limit, max_order=args.max_order, lambda_=args.lambda_, margin=args.margin)
+    report = run_lab(
+        args.data,
+        limit=args.limit,
+        max_order=args.max_order,
+        lambda_=args.lambda_,
+        margin=args.margin,
+        factor_mode=args.factor_mode,
+        factor_groups=args.factor_groups,
+    )
     write_report(report, args.json_out)
 
 

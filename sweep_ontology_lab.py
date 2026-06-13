@@ -12,7 +12,8 @@ _SRC = _REPO_ROOT / "src"
 if _SRC.exists():
     sys.path.insert(0, str(_SRC))
 
-from arc_ontology_lab import run_lab
+from arc_ontology_lab import _FACTOR_MODES, _parse_factor_groups, run_lab
+from ontologic_core.arc_factors import normalize_factor_groups
 from ontologic_core.report_analysis import analyze_report
 from ontologic_core.sweep_analysis import build_sweep_report, compact_run
 
@@ -36,16 +37,35 @@ def run_sweep(
     lambdas: list[float],
     margins: list[float],
     max_order: int,
+    factor_mode: str = "basic",
+    factor_groups: list[str] | tuple[str, ...] | None = None,
 ) -> dict:
     """Run the ontology microscope over each lambda/margin pair."""
 
+    active_groups = normalize_factor_groups(factor_mode, factor_groups)
     runs = []
     for lambda_value in lambdas:
         for margin in margins:
-            report = run_lab(data, limit=limit, max_order=max_order, lambda_=lambda_value, margin=margin)
+            report = run_lab(
+                data,
+                limit=limit,
+                max_order=max_order,
+                lambda_=lambda_value,
+                margin=margin,
+                factor_mode=factor_mode,
+                factor_groups=active_groups,
+            )
             analysis = analyze_report(report)
-            runs.append(compact_run(lambda_value, margin, analysis))
-    return build_sweep_report(runs)
+            runs.append(
+                compact_run(
+                    lambda_value,
+                    margin,
+                    analysis,
+                    factor_mode=factor_mode,
+                    factor_groups=active_groups,
+                )
+            )
+    return build_sweep_report(runs, factor_mode=factor_mode, factor_groups=active_groups)
 
 
 def write_report(report: dict, json_out: str | Path) -> None:
@@ -65,6 +85,13 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--lambdas", type=_parse_float_list, required=True, help="Comma-separated lambda values")
     parser.add_argument("--margins", type=_parse_float_list, required=True, help="Comma-separated margin values")
     parser.add_argument("--max-order", type=int, default=3, help="Maximum interaction order for structure growth")
+    parser.add_argument("--factor-mode", choices=_FACTOR_MODES, default="basic", help="ARC factor extraction mode")
+    parser.add_argument(
+        "--factor-groups",
+        type=_parse_factor_groups,
+        default=None,
+        help="Comma-separated ARC factor groups; hierarchical mode uses all groups by default",
+    )
     parser.add_argument("--json-out", default="arc_ontology_sweep.json", help="Path for the sweep JSON report")
     return parser
 
@@ -73,7 +100,15 @@ def main(argv: list[str] | None = None) -> None:
     parser = build_arg_parser()
     args = parser.parse_args(argv)
     limit = args.limit if args.limit > 0 else None
-    report = run_sweep(args.data, limit=limit, lambdas=args.lambdas, margins=args.margins, max_order=args.max_order)
+    report = run_sweep(
+        args.data,
+        limit=limit,
+        lambdas=args.lambdas,
+        margins=args.margins,
+        max_order=args.max_order,
+        factor_mode=args.factor_mode,
+        factor_groups=args.factor_groups,
+    )
     write_report(report, args.json_out)
 
 

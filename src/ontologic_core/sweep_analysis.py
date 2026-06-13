@@ -62,11 +62,17 @@ def summarize_sweep(runs: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def compact_run(lambda_value: float, margin: float, analysis: dict[str, Any]) -> dict[str, Any]:
+def compact_run(
+    lambda_value: float,
+    margin: float,
+    analysis: dict[str, Any],
+    factor_mode: str | None = None,
+    factor_groups: list[str] | tuple[str, ...] | None = None,
+) -> dict[str, Any]:
     """Keep the sweep fields needed to compare one microscope setting."""
 
     summary = dict(analysis.get("summary") or {})
-    return {
+    run = {
         "lambda": float(lambda_value),
         "margin": float(margin),
         "regime": summary.get("regime"),
@@ -76,15 +82,32 @@ def compact_run(lambda_value: float, margin: float, analysis: dict[str, Any]) ->
         "mean_final_surprise": _finite_or_none(summary.get("mean_final_surprise")),
         "mean_relative_improvement": _finite_or_none(summary.get("mean_relative_improvement")),
     }
+    if factor_mode is not None:
+        run["factor_mode"] = factor_mode
+    if factor_groups is not None:
+        run["factor_groups"] = list(factor_groups)
+    return run
 
 
-def build_sweep_report(runs: list[dict[str, Any]]) -> dict[str, Any]:
+def build_sweep_report(
+    runs: list[dict[str, Any]],
+    factor_mode: str | None = None,
+    factor_groups: list[str] | tuple[str, ...] | None = None,
+) -> dict[str, Any]:
     """Return the complete sweep JSON object."""
 
-    return {
+    report = {
         "summary": summarize_sweep(runs),
         "runs": runs,
     }
+    metadata = {}
+    if factor_mode is not None:
+        metadata["factor_mode"] = factor_mode
+    if factor_groups is not None:
+        metadata["factor_groups"] = list(factor_groups)
+    if metadata:
+        report["metadata"] = metadata
+    return report
 
 
 def _dominant_regime(regime_counts: dict[str, int]) -> str | None:
