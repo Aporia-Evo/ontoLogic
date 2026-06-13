@@ -39,6 +39,9 @@ def run_sweep(
     max_order: int,
     factor_mode: str = "basic",
     factor_groups: list[str] | tuple[str, ...] | None = None,
+    induced_candidates: int = 256,
+    induced_survivors: int = 32,
+    induced_seed: int = 0,
 ) -> dict:
     """Run the ontology microscope over each lambda/margin pair."""
 
@@ -54,18 +57,36 @@ def run_sweep(
                 margin=margin,
                 factor_mode=factor_mode,
                 factor_groups=active_groups,
+                induced_candidates=induced_candidates,
+                induced_survivors=induced_survivors,
+                induced_seed=induced_seed,
             )
             analysis = analyze_report(report)
-            runs.append(
-                compact_run(
-                    lambda_value,
-                    margin,
-                    analysis,
-                    factor_mode=factor_mode,
-                    factor_groups=active_groups,
-                )
+            run = compact_run(
+                lambda_value,
+                margin,
+                analysis,
+                factor_mode=factor_mode,
+                factor_groups=active_groups,
             )
-    return build_sweep_report(runs, factor_mode=factor_mode, factor_groups=active_groups)
+            if factor_mode == "induced":
+                meta = report.get("metadata", {})
+                run.update({
+                    "induced_candidates": meta.get("induced_candidates"),
+                    "induced_survivors": meta.get("induced_survivors"),
+                    "induced_seed": meta.get("induced_seed"),
+                    "selected_factor_count": meta.get("selected_factor_count"),
+                    "compression_gain": meta.get("mean_compression_gain"),
+                })
+            runs.append(run)
+    report = build_sweep_report(runs, factor_mode=factor_mode, factor_groups=active_groups)
+    if factor_mode == "induced":
+        report["metadata"].update({
+            "induced_candidates": induced_candidates,
+            "induced_survivors": induced_survivors,
+            "induced_seed": induced_seed,
+        })
+    return report
 
 
 def write_report(report: dict, json_out: str | Path) -> None:
@@ -86,6 +107,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--margins", type=_parse_float_list, required=True, help="Comma-separated margin values")
     parser.add_argument("--max-order", type=int, default=3, help="Maximum interaction order for structure growth")
     parser.add_argument("--factor-mode", choices=_FACTOR_MODES, default="basic", help="ARC factor extraction mode")
+    parser.add_argument("--induced-candidates", type=int, default=256, help="Number of anonymous candidate factors")
+    parser.add_argument("--induced-survivors", type=int, default=32, help="Maximum anonymous induced factors to keep")
+    parser.add_argument("--induced-seed", type=int, default=0, help="Seed for induced factor candidates")
     parser.add_argument(
         "--factor-groups",
         type=_parse_factor_groups,
@@ -108,6 +132,9 @@ def main(argv: list[str] | None = None) -> None:
         max_order=args.max_order,
         factor_mode=args.factor_mode,
         factor_groups=args.factor_groups,
+        induced_candidates=args.induced_candidates,
+        induced_survivors=args.induced_survivors,
+        induced_seed=args.induced_seed,
     )
     write_report(report, args.json_out)
 
