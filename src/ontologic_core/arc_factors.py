@@ -12,6 +12,22 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from ontologic_core.arc_hierarchy import SceneAnalysis, analyze_scene, component_at_or_nearest
+
+BASIC_FACTOR_GROUP = "basic"
+HIERARCHICAL_FACTOR_GROUPS = (
+    "scene_stats",
+    "component_geometry",
+    "component_rank",
+    "component_color",
+    "component_bbox_relation",
+    "component_centroid_relation",
+    "global_geometry",
+    "local_density",
+    "hole_or_enclosure",
+)
+ALL_FACTOR_GROUPS = (BASIC_FACTOR_GROUP, *HIERARCHICAL_FACTOR_GROUPS)
+
 
 @dataclass(frozen=True)
 class PairExperience:
@@ -192,13 +208,188 @@ def _symmetry_factors(
     )
 
 
-def extract_pair_experience(input_grid, output_grid) -> PairExperience:
+
+
+def normalize_factor_groups(mode: str, factor_groups: list[str] | tuple[str, ...] | None = None) -> tuple[str, ...]:
+    """Return canonical, deterministic factor groups for an extraction request."""
+
+    if mode not in {"basic", "hierarchical"}:
+        raise ValueError(f"unknown ARC factor mode: {mode}")
+    if factor_groups is None:
+        return (BASIC_FACTOR_GROUP,) if mode == "basic" else ALL_FACTOR_GROUPS
+
+    unknown = sorted(set(factor_groups) - set(ALL_FACTOR_GROUPS))
+    if unknown:
+        raise ValueError(f"unknown ARC factor group(s): {unknown}")
+    selected = tuple(group for group in ALL_FACTOR_GROUPS if group in set(factor_groups))
+    if not selected:
+        raise ValueError("at least one ARC factor group is required")
+    if mode == "basic" and selected != (BASIC_FACTOR_GROUP,):
+        raise ValueError("non-basic factor groups require mode='hierarchical'")
+    return selected
+
+
+def factor_group_widths(mode: str = "hierarchical", factor_groups: list[str] | tuple[str, ...] | None = None) -> dict[str, int]:
+    """Return deterministic feature widths for the active factor groups."""
+
+    active = normalize_factor_groups(mode, factor_groups)
+    widths = {
+        BASIC_FACTOR_GROUP: 50,
+        "scene_stats": 6,
+        "component_geometry": 4,
+        "component_rank": 3,
+        "component_color": 2,
+        "component_bbox_relation": 4,
+        "component_centroid_relation": 5,
+        "global_geometry": 3,
+        "local_density": 7,
+        "hole_or_enclosure": 1,
+    }
+    return {group: widths[group] for group in active}
+
+
+def total_factor_width(mode: str = "hierarchical", factor_groups: list[str] | tuple[str, ...] | None = None) -> int:
+    """Return the deterministic total feature width for an extraction request."""
+
+    return sum(factor_group_widths(mode, factor_groups).values())
+
+
+def _basic_factors(
+    input_arr: np.ndarray,
+    output_shape: tuple[int, int],
+    r: int,
+    c: int,
+    mapped_r: int,
+    mapped_c: int,
+    background: int,
+    component_lookup: dict[tuple[int, int], tuple[float, ...]],
+    shape_factors: tuple[float, ...],
+    same_shape: bool,
+) -> list[float]:
+    out_h, out_w = output_shape
+    sampled_color = int(input_arr[mapped_r, mapped_c])
+    centered_r = _centered_index(r, out_h)
+    centered_c = _centered_index(c, out_w)
+    color_one_hot = [float(sampled_color == color) for color in range(10)]
+    return [
+        _norm_index(r, out_h),
+        _norm_index(c, out_w),
+        centered_r,
+        centered_c,
+        float(np.hypot(centered_r, centered_c) / np.sqrt(2.0)),
+        float(same_shape),
+        _norm_index(mapped_r, input_arr.shape[0]),
+        _norm_index(mapped_c, input_arr.shape[1]),
+        _safe_div(sampled_color, 9.0),
+        *color_one_hot,
+        float(sampled_color == background),
+        *_neighborhood_factors(input_arr, mapped_r, mapped_c, background),
+        *_symmetry_factors(input_arr, r, c, output_shape, sampled_color),
+        *component_lookup[(mapped_r, mapped_c)],
+        *shape_factors,
+    ]
+
+
+def _hierarchical_factor_groups(
+    scene: SceneAnalysis,
+    input_arr: np.ndarray,
+    mapped_r: int,
+    mapped_c: int,
+    background: int,
+) -> dict[str, tuple[float, ...]]:
+    """Return M18 hierarchy factors partitioned into named groups."""
+
+    stats = scene.stats
+    component = component_at_or_nearest(scene, mapped_r, mapped_c)
+    global_center_r = (stats.height - 1) / 2.0
+    global_center_c = (stats.width - 1) / 2.0
+    scene_diag = max(float(np.hypot(stats.height - 1, stats.width - 1)), 1.0)
+    groups = {
+        "scene_stats": (
+            _safe_div(stats.background_color, 9.0),
+            _safe_div(stats.non_background_count, stats.height * stats.width),
+            _safe_div(stats.component_count, stats.height * stats.width),
+            _safe_div(stats.unique_color_count, 10.0),
+            float(stats.foreground_density),
+            _safe_div(max(stats.color_counts), stats.height * stats.width),
+        ),
+        "global_geometry": (
+            _centered_index(mapped_r, stats.height),
+            _centered_index(mapped_c, stats.width),
+            _safe_div(float(np.hypot(mapped_r - global_center_r, mapped_c - global_center_c)), scene_diag),
+        ),
+        "local_density": _neighborhood_factors(input_arr, mapped_r, mapped_c, background),
+    }
+
+    if component is None:
+        groups.update(
+            {
+                "component_geometry": (0.0, 0.0, 0.0, 0.0),
+                "component_rank": (0.0, 0.0, 0.0),
+                "component_color": (0.0, 0.0),
+                "component_bbox_relation": (0.0, 0.0, 0.0, 0.0),
+                "component_centroid_relation": (0.0, 0.0, 0.0, 0.0, 0.0),
+                "hole_or_enclosure": (0.0,),
+            }
+        )
+        return groups
+
+    min_r, min_c, max_r, max_c = component.bbox
+    inside_bbox = min_r <= mapped_r <= max_r and min_c <= mapped_c <= max_c
+    bbox_rel_r = _safe_div(mapped_r - min_r, component.bbox_height - 1)
+    bbox_rel_c = _safe_div(mapped_c - min_c, component.bbox_width - 1)
+    dr_to_bbox = 0.0 if min_r <= mapped_r <= max_r else float(min(abs(mapped_r - min_r), abs(mapped_r - max_r)))
+    dc_to_bbox = 0.0 if min_c <= mapped_c <= max_c else float(min(abs(mapped_c - min_c), abs(mapped_c - max_c)))
+    centroid_dr = float(mapped_r) - component.centroid_r
+    centroid_dc = float(mapped_c) - component.centroid_c
+    groups.update(
+        {
+            "component_geometry": (
+                component.normalized_area,
+                component.normalized_bbox_size,
+                _safe_div(component.bbox_height, stats.height),
+                _safe_div(component.bbox_width, stats.width),
+            ),
+            "component_rank": (
+                float(component.touches_border),
+                float(component.is_largest),
+                float(component.is_smallest),
+            ),
+            "component_color": (1.0, _safe_div(component.color, 9.0)),
+            "component_bbox_relation": (
+                bbox_rel_r,
+                bbox_rel_c,
+                float(inside_bbox),
+                _safe_div(float(np.hypot(dr_to_bbox, dc_to_bbox)), scene_diag),
+            ),
+            "component_centroid_relation": (
+                component.relative_centroid[0],
+                component.relative_centroid[1],
+                float(abs(centroid_dr) <= 0.5),
+                float(abs(centroid_dc) <= 0.5),
+                _safe_div(float(np.hypot(centroid_dr, centroid_dc)), scene_diag),
+            ),
+            "hole_or_enclosure": (_safe_div(component.simple_hole_count, stats.height * stats.width),),
+        }
+    )
+    return groups
+
+
+def extract_pair_experience(
+    input_grid,
+    output_grid,
+    mode: str = "basic",
+    factor_groups: list[str] | tuple[str, ...] | None = None,
+) -> PairExperience:
     """Extract generic factors from one train pair.
 
     The output grid supplies only the target colour for each output coordinate.
     All factors are derived from the input grid, the two canvas shapes, and the
-    output coordinate being represented.
+    output coordinate being represented. ``mode="hierarchical"`` appends
+    generic scene/component measurements derived only from the input grid.
     """
+
+    active_groups = normalize_factor_groups(mode, factor_groups)
 
     input_arr = as_grid(input_grid)
     output_arr = as_grid(output_grid)
@@ -206,6 +397,8 @@ def extract_pair_experience(input_grid, output_grid) -> PairExperience:
     out_h, out_w = output_arr.shape
     background = _background_color(input_arr)
     component_lookup = _component_factors(input_arr, background)
+    needs_hierarchy = any(group != BASIC_FACTOR_GROUP for group in active_groups)
+    scene = analyze_scene(input_arr) if needs_hierarchy else None
     same_shape = input_arr.shape == output_arr.shape
     rows: list[list[float]] = []
     targets: list[int] = []
@@ -226,33 +419,35 @@ def extract_pair_experience(input_grid, output_grid) -> PairExperience:
             mapped_r, mapped_c = _map_output_to_input(
                 r, c, input_arr.shape, output_arr.shape
             )
-            sampled_color = int(input_arr[mapped_r, mapped_c])
-            centered_r = _centered_index(r, out_h)
-            centered_c = _centered_index(c, out_w)
-            color_one_hot = [float(sampled_color == color) for color in range(10)]
-
-            row = [
-                _norm_index(r, out_h),
-                _norm_index(c, out_w),
-                centered_r,
-                centered_c,
-                float(np.hypot(centered_r, centered_c) / np.sqrt(2.0)),
-                float(same_shape),
-                _norm_index(mapped_r, in_h),
-                _norm_index(mapped_c, in_w),
-                _safe_div(sampled_color, 9.0),
-                *color_one_hot,
-                float(sampled_color == background),
-                *_neighborhood_factors(input_arr, mapped_r, mapped_c, background),
-                *_symmetry_factors(input_arr, r, c, output_arr.shape, sampled_color),
-                *component_lookup[(mapped_r, mapped_c)],
-                *shape_factors,
-            ]
+            row: list[float] = []
+            if BASIC_FACTOR_GROUP in active_groups:
+                row.extend(
+                    _basic_factors(
+                        input_arr,
+                        output_arr.shape,
+                        r,
+                        c,
+                        mapped_r,
+                        mapped_c,
+                        background,
+                        component_lookup,
+                        shape_factors,
+                        same_shape,
+                    )
+                )
+            if scene is not None:
+                hierarchy_groups = _hierarchical_factor_groups(scene, input_arr, mapped_r, mapped_c, background)
+                for group in HIERARCHICAL_FACTOR_GROUPS:
+                    if group in active_groups:
+                        row.extend(hierarchy_groups[group])
             rows.append(row)
             targets.append(int(output_arr[r, c]))
 
     features = np.asarray(rows, dtype=np.float64)
     target_arr = np.asarray(targets, dtype=np.int64)
+    expected_width = total_factor_width(mode, active_groups)
+    if features.shape[1] != expected_width:
+        raise ValueError(f"factor width {features.shape[1]} did not match expected {expected_width}")
     if not np.isfinite(features).all():
         raise ValueError("non-finite factor extracted")
     return PairExperience(
@@ -260,13 +455,24 @@ def extract_pair_experience(input_grid, output_grid) -> PairExperience:
     )
 
 
-def extract_task_experience(task: dict) -> list[PairExperience]:
+def extract_task_experience(
+    task: dict,
+    mode: str = "basic",
+    factor_groups: list[str] | tuple[str, ...] | None = None,
+) -> list[PairExperience]:
     """Extract experience from all train pairs in an ARC-style task."""
 
     pairs: list[PairExperience] = []
     for pair in task.get("train", []):
         if "input" in pair and "output" in pair:
-            pairs.append(extract_pair_experience(pair["input"], pair["output"]))
+            pairs.append(
+                extract_pair_experience(
+                    pair["input"],
+                    pair["output"],
+                    mode=mode,
+                    factor_groups=factor_groups,
+                )
+            )
     if not pairs:
         raise ValueError("task has no train pairs with input and output")
     return pairs

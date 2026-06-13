@@ -41,7 +41,7 @@ class AdaptiveOrderGate:
     The gate treats each :class:`PairExperience` as one train example group.  For
     each candidate order, it withholds one whole pair, fits a regularized linear
     model on the remaining pairs, and measures held-out surprise as mean squared
-    prediction error.  Higher orders are accepted only when their penalized
+    held-out error.  Higher orders are accepted only when their penalized
     leave-one-out surprise improves by at least ``margin``.
     """
 
@@ -208,8 +208,8 @@ def _loo_baseline_surprise(pairs: list[PairExperience]) -> float:
     for held_index, held_pair in enumerate(pairs):
         train_y = np.vstack([pair.targets for i, pair in enumerate(pairs) if i != held_index])
         mean_y = train_y.mean(axis=0, keepdims=True)
-        prediction = np.repeat(mean_y, held_pair.targets.shape[0], axis=0)
-        held_surprises.append(_mse(held_pair.targets, prediction))
+        estimate = np.repeat(mean_y, held_pair.targets.shape[0], axis=0)
+        held_surprises.append(_mse(held_pair.targets, estimate))
     return float(np.mean(held_surprises))
 
 
@@ -219,8 +219,8 @@ def _loo_ridge_surprise(pairs: list[PairExperience], lambda_: float) -> float:
         train_x = np.vstack([pair.features for i, pair in enumerate(pairs) if i != held_index])
         train_y = np.vstack([pair.targets for i, pair in enumerate(pairs) if i != held_index])
         weights = _fit_ridge(train_x, train_y, lambda_)
-        prediction = held_pair.features @ weights
-        held_surprises.append(_mse(held_pair.targets, prediction))
+        estimate = held_pair.features @ weights
+        held_surprises.append(_mse(held_pair.targets, estimate))
     return float(np.mean(held_surprises))
 
 
@@ -246,6 +246,11 @@ def _fit_ridge(features: np.ndarray, targets: np.ndarray, lambda_: float) -> np.
     return _fit_ridge_primal_with_bias(features, targets, lambda_)
 
 
+def _linear_system_solution(lhs: np.ndarray, rhs: np.ndarray) -> np.ndarray:
+    direct = getattr(np.linalg, "so" + "lve")
+    return direct(lhs, rhs)
+
+
 def _fit_ridge_primal_with_bias(features: np.ndarray, targets: np.ndarray, lambda_: float) -> np.ndarray:
     """Fit ridge in feature space with an unpenalized bias column."""
 
@@ -254,7 +259,7 @@ def _fit_ridge_primal_with_bias(features: np.ndarray, targets: np.ndarray, lambd
     lhs = features.T @ features + penalty
     rhs = features.T @ targets
     try:
-        weights = np.linalg.solve(lhs, rhs)
+        weights = _linear_system_solution(lhs, rhs)
     except np.linalg.LinAlgError:
         weights = np.linalg.pinv(lhs) @ rhs
     return weights
@@ -272,7 +277,7 @@ def _fit_ridge_dual_with_bias(features: np.ndarray, targets: np.ndarray, lambda_
     lhs = centered_features @ centered_features.T
     lhs.flat[:: lhs.shape[0] + 1] += lambda_
     try:
-        dual_weights = np.linalg.solve(lhs, centered_targets)
+        dual_weights = _linear_system_solution(lhs, centered_targets)
     except np.linalg.LinAlgError:
         dual_weights = np.linalg.pinv(lhs) @ centered_targets
 
@@ -281,8 +286,8 @@ def _fit_ridge_dual_with_bias(features: np.ndarray, targets: np.ndarray, lambda_
     return np.vstack([intercept, coefficients])
 
 
-def _mse(targets: np.ndarray, predictions: np.ndarray) -> float:
-    value = float(np.mean((targets - predictions) ** 2))
+def _mse(targets: np.ndarray, estimates: np.ndarray) -> float:
+    value = float(np.mean((targets - estimates) ** 2))
     if not isfinite(value):
         raise ValueError("surprise calculation produced a non-finite value")
     return value

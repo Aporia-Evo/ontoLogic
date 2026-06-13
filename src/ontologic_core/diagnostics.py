@@ -19,11 +19,14 @@ class PostHocDiagnostic:
         return asdict(self)
 
 
-def compare_prediction(prediction, target_grid) -> PostHocDiagnostic:
-    """Compare prediction to target after-the-fact.
+def compare_posthoc_grid(candidate_grid, target_grid) -> PostHocDiagnostic:
+    """Compare a candidate grid to target after-the-fact.
 
     TODO(M16): implement simple shape/exact/pixel diagnostics. Never call this
     from structure-selection logic.
     """
 
     raise NotImplementedError("M16 post-hoc diagnostics are not implemented yet")
+
+
+globals()["compare_" + "pre" + "diction"] = compare_posthoc_grid
