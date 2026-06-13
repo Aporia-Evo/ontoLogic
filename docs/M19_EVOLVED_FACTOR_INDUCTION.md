@@ -10,6 +10,23 @@ Plotting is optional and keeps `matplotlib` out of the core runtime dependencies
 pip install -e ".[dev,plot]"
 ```
 
+
+## Evolve induced factor settings
+
+The evolution command is backed by `evolve_factor_induction.py` and writes the JSON consumed by the plotting command above:
+
+```bash
+python evolve_factor_induction.py \
+  --data /tmp/arcagi2/data/training \
+  --limit 50 \
+  --generations 8 \
+  --population 16 \
+  --max-order 2 \
+  --json-out arc_factor_induction_evolution_50_o2.json
+```
+
+Optional controls include `--seed`, `--elite-count`, `--slice-mode`, `--lambdas`, and `--margins`. The fitness calculation uses ontology diagnostics from induced-factor lab runs.
+
 ## Generate diagnostic plots
 
 ```bash
