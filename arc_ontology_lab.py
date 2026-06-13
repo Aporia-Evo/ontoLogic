@@ -27,7 +27,7 @@ from ontologic_core.arc_factors import (
     total_factor_width,
 )
 
-_FACTOR_MODES = ("basic", "hierarchical")
+_FACTOR_MODES = ("basic", "hierarchical", "induced")
 _FACTOR_GROUPS = ALL_FACTOR_GROUPS
 
 
@@ -78,16 +78,23 @@ def diagnose_task(
     margin: float,
     factor_mode: str = "basic",
     factor_groups: list[str] | tuple[str, ...] | None = None,
+    induced_candidates: int = 256,
+    induced_survivors: int = 32,
+    induced_seed: int = 0,
 ) -> dict[str, Any]:
     """Extract train-pair experience and run train-only structure growth."""
 
     active_groups = _validate_factor_request(factor_mode, factor_groups)
-    pairs = _extract_task_experience_with_mode(task, factor_mode, active_groups)
+    pairs = _extract_task_experience_with_mode(task, factor_mode, active_groups, induced_candidates, induced_survivors, induced_seed)
     gate = AdaptiveOrderGate(max_order=max_order, lambda_=lambda_, margin=margin)
     diagnosis = gate.grow_structure(pairs)
     detail = _diagnosis_to_json(task_name, diagnosis)
     detail["feature_width"] = int(pairs[0].features.shape[1])
     detail["factor_groups"] = list(active_groups)
+    if factor_mode == "induced":
+        diag = pairs[0].diagnostics or {}
+        detail["selected_factor_count"] = int(diag.get("selected_factor_count", pairs[0].features.shape[1]))
+        detail["mean_compression_gain"] = _finite_or_none(float(diag.get("compression_gain", 0.0)))
     return detail
 
 
@@ -180,9 +187,19 @@ def _extract_task_experience_with_mode(
     task: dict[str, Any],
     factor_mode: str,
     factor_groups: tuple[str, ...],
+    induced_candidates: int = 256,
+    induced_survivors: int = 32,
+    induced_seed: int = 0,
 ):
     try:
-        return extract_task_experience(task, mode=factor_mode, factor_groups=factor_groups)
+        return extract_task_experience(
+            task,
+            mode=factor_mode,
+            factor_groups=factor_groups,
+            induced_candidates=induced_candidates,
+            induced_survivors=induced_survivors,
+            induced_seed=induced_seed,
+        )
     except TypeError as exc:
         if factor_mode == "basic" and factor_groups == ("basic",) and "mode" in str(exc):
             return extract_task_experience(task)
@@ -198,6 +215,9 @@ def run_lab(
     margin: float = 0.02,
     factor_mode: str = "basic",
     factor_groups: list[str] | tuple[str, ...] | None = None,
+    induced_candidates: int = 256,
+    induced_survivors: int = 32,
+    induced_seed: int = 0,
 ) -> dict[str, Any]:
     """Run ARC ontology microscope diagnostics over a directory of JSON tasks."""
 
@@ -222,18 +242,32 @@ def run_lab(
                     margin=margin,
                     factor_mode=factor_mode,
                     factor_groups=active_groups,
+                    induced_candidates=induced_candidates,
+                    induced_survivors=induced_survivors,
+                    induced_seed=induced_seed,
                 )
             )
         except Exception as exc:  # keep one malformed task from aborting the lab run
             details.append(_error_detail(task_name, exc))
 
+    metadata = {
+        "factor_mode": factor_mode,
+        "factor_groups": list(active_groups),
+        "factor_group_widths": factor_group_widths(factor_mode, active_groups),
+        "feature_width": details[0].get("feature_width") if details else total_factor_width(factor_mode, active_groups),
+    }
+    if factor_mode == "induced":
+        gains = [float(d["mean_compression_gain"]) for d in details if isinstance(d.get("mean_compression_gain"), int | float)]
+        counts = [float(d["selected_factor_count"]) for d in details if isinstance(d.get("selected_factor_count"), int | float)]
+        metadata.update({
+            "induced_candidates": induced_candidates,
+            "induced_survivors": induced_survivors,
+            "induced_seed": induced_seed,
+            "selected_factor_count": _mean(counts),
+            "mean_compression_gain": _mean(gains),
+        })
     return {
-        "metadata": {
-            "factor_mode": factor_mode,
-            "factor_groups": list(active_groups),
-            "factor_group_widths": factor_group_widths(factor_mode, active_groups),
-            "feature_width": total_factor_width(factor_mode, active_groups),
-        },
+        "metadata": metadata,
         "summary": _summary(details, max_order),
         "tasks_detail": details,
     }
@@ -259,6 +293,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--lambda", dest="lambda_", type=float, default=1.0, help="Complexity pressure used by the gate")
     parser.add_argument("--margin", type=float, default=0.02, help="Minimum improvement margin for order growth")
     parser.add_argument("--factor-mode", choices=_FACTOR_MODES, default="basic", help="ARC factor extraction mode")
+    parser.add_argument("--induced-candidates", type=int, default=256, help="Number of anonymous candidate factors")
+    parser.add_argument("--induced-survivors", type=int, default=32, help="Maximum anonymous induced factors to keep")
+    parser.add_argument("--induced-seed", type=int, default=0, help="Seed for induced factor candidates")
     parser.add_argument(
         "--factor-groups",
         type=_parse_factor_groups,
@@ -282,6 +319,9 @@ def main(argv: list[str] | None = None) -> None:
         margin=args.margin,
         factor_mode=args.factor_mode,
         factor_groups=args.factor_groups,
+        induced_candidates=args.induced_candidates,
+        induced_survivors=args.induced_survivors,
+        induced_seed=args.induced_seed,
     )
     write_report(report, args.json_out)
 

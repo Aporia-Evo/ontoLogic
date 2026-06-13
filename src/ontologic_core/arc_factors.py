@@ -13,6 +13,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from ontologic_core.arc_hierarchy import SceneAnalysis, analyze_scene, component_at_or_nearest
+from ontologic_core.factor_induction import FactorInducer, extract_raw_observations
 
 BASIC_FACTOR_GROUP = "basic"
 HIERARCHICAL_FACTOR_GROUPS = (
@@ -26,6 +27,7 @@ HIERARCHICAL_FACTOR_GROUPS = (
     "local_density",
     "hole_or_enclosure",
 )
+INDUCED_FACTOR_GROUP = "induced"
 ALL_FACTOR_GROUPS = (BASIC_FACTOR_GROUP, *HIERARCHICAL_FACTOR_GROUPS)
 
 
@@ -36,6 +38,7 @@ class PairExperience:
     features: np.ndarray
     targets: np.ndarray
     output_shape: tuple[int, int]
+    diagnostics: dict | None = None
 
 
 def as_grid(value) -> np.ndarray:
@@ -213,8 +216,12 @@ def _symmetry_factors(
 def normalize_factor_groups(mode: str, factor_groups: list[str] | tuple[str, ...] | None = None) -> tuple[str, ...]:
     """Return canonical, deterministic factor groups for an extraction request."""
 
-    if mode not in {"basic", "hierarchical"}:
+    if mode not in {"basic", "hierarchical", "induced"}:
         raise ValueError(f"unknown ARC factor mode: {mode}")
+    if mode == "induced":
+        if factor_groups not in (None, (INDUCED_FACTOR_GROUP,), [INDUCED_FACTOR_GROUP]):
+            raise ValueError("induced mode does not use engineered factor groups")
+        return (INDUCED_FACTOR_GROUP,)
     if factor_groups is None:
         return (BASIC_FACTOR_GROUP,) if mode == "basic" else ALL_FACTOR_GROUPS
 
@@ -233,6 +240,8 @@ def factor_group_widths(mode: str = "hierarchical", factor_groups: list[str] | t
     """Return deterministic feature widths for the active factor groups."""
 
     active = normalize_factor_groups(mode, factor_groups)
+    if mode == "induced":
+        return {INDUCED_FACTOR_GROUP: 0}
     widths = {
         BASIC_FACTOR_GROUP: 50,
         "scene_stats": 6,
@@ -459,8 +468,19 @@ def extract_task_experience(
     task: dict,
     mode: str = "basic",
     factor_groups: list[str] | tuple[str, ...] | None = None,
+    induced_candidates: int = 256,
+    induced_survivors: int = 32,
+    induced_seed: int = 0,
 ) -> list[PairExperience]:
     """Extract experience from all train pairs in an ARC-style task."""
+
+    if mode == "induced":
+        return extract_induced_task_experience(
+            task,
+            n_candidates=induced_candidates,
+            n_survivors=induced_survivors,
+            seed=induced_seed,
+        )
 
     pairs: list[PairExperience] = []
     for pair in task.get("train", []):
@@ -475,4 +495,44 @@ def extract_task_experience(
             )
     if not pairs:
         raise ValueError("task has no train pairs with input and output")
+    return pairs
+
+
+def extract_induced_task_experience(
+    task: dict,
+    *,
+    n_candidates: int = 256,
+    n_survivors: int = 32,
+    seed: int = 0,
+) -> list[PairExperience]:
+    """Extract train-pair experience using anonymous induced factors only."""
+
+    raw = extract_raw_observations(task)
+    targets: list[int] = []
+    groups: list[int] = []
+    output_shapes: list[tuple[int, int]] = []
+    for pair_index, pair in enumerate(task.get("train", [])):
+        if "input" not in pair or "output" not in pair:
+            continue
+        output_arr = as_grid(pair["output"])
+        output_shapes.append(tuple(output_arr.shape))
+        flat = output_arr.reshape(-1)
+        targets.extend(int(value) for value in flat)
+        groups.extend([pair_index] * int(flat.size))
+    if not targets:
+        raise ValueError("task has no train pairs with input and output")
+    inducer = FactorInducer(n_candidates=n_candidates, n_survivors=n_survivors, seed=seed)
+    induced = inducer.induce(raw, np.asarray(targets, dtype=np.int64), np.asarray(groups, dtype=np.int64))
+    pairs: list[PairExperience] = []
+    start = 0
+    for pair_index, dims in enumerate(output_shapes):
+        count = int(np.count_nonzero(np.asarray(groups) == pair_index))
+        end = start + count
+        pairs.append(PairExperience(
+            features=induced.features[start:end],
+            targets=np.asarray(targets[start:end], dtype=np.int64),
+            output_shape=dims,
+            diagnostics={**induced.diagnostics, "compression_gain": induced.compression_gain},
+        ))
+        start = end
     return pairs
