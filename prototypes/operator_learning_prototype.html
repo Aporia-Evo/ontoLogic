@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Operator-Lernen: kleiner Realitätscheck</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f2ed;
+      --paper: #fffdf8;
+      --ink: #22211f;
+      --muted: #6c6962;
+      --line: #d9d4c9;
+      --accent: #285f55;
+      --accent-soft: #e1eee9;
+      --bad: #8b3a32;
+      --bad-soft: #f5e7e4;
+      --good: #276447;
+      --good-soft: #e5f1e9;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 16px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 36px auto 64px;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { font-size: clamp(28px, 4vw, 44px); line-height: 1.08; margin-bottom: 12px; }
+    h2 { font-size: 20px; margin-bottom: 14px; }
+    h3 { font-size: 15px; margin-bottom: 8px; }
+
+    .intro {
+      max-width: 800px;
+      color: var(--muted);
+      font-size: 18px;
+      margin-bottom: 24px;
+    }
+
+    .notice {
+      padding: 10px 14px;
+      border: 1px solid var(--line);
+      background: #f8f5ee;
+      border-radius: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 22px;
+    }
+
+    .tabs, .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tabs { margin-bottom: 16px; }
+    .actions { margin-bottom: 22px; }
+
+    button {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      color: var(--ink);
+      border-radius: 9px;
+      padding: 9px 13px;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:hover { border-color: var(--accent); }
+    button.primary { background: var(--accent); border-color: var(--accent); color: white; }
+    button.tab.active { background: var(--accent-soft); border-color: var(--accent); color: #173e37; }
+
+    .panel {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .scenario-copy {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .guide {
+      border-left: 3px solid var(--accent);
+      padding-left: 14px;
+    }
+
+    .guide ol { margin: 8px 0 0; padding-left: 22px; }
+    .guide li { margin: 6px 0; }
+    .guide button { padding: 4px 8px; font-size: 14px; }
+
+    .state-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .state-card {
+      background: #faf8f2;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px;
+      min-height: 118px;
+    }
+
+    .value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .muted { color: var(--muted); }
+    .small { font-size: 14px; }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background: #eeeae1;
+      border-radius: 5px;
+      padding: 1px 5px;
+    }
+
+    .task-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+    }
+
+    .task {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #faf8f2;
+    }
+
+    .task strong { display: block; margin-bottom: 2px; }
+
+    .message {
+      border-radius: 10px;
+      padding: 11px 14px;
+      margin-bottom: 16px;
+      background: var(--accent-soft);
+      color: #173e37;
+    }
+
+    .message.bad { background: var(--bad-soft); color: var(--bad); }
+
+    .table-wrap { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; font-size: 14px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 9px 8px; text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; }
+    td.number { font-variant-numeric: tabular-nums; text-align: right; }
+    .good { color: var(--good); font-weight: 700; }
+    .bad-text { color: var(--bad); font-weight: 700; }
+
+    .verdict {
+      padding: 14px;
+      border-radius: 10px;
+      background: var(--good-soft);
+      color: var(--good);
+      font-weight: 650;
+    }
+
+    .verdict.caution { background: #f4edda; color: #725719; }
+    .verdict.bad { background: var(--bad-soft); color: var(--bad); }
+
+    @media (max-width: 760px) {
+      .scenario-copy, .state-grid, .task-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Operator-Lernen: kleiner Realitätscheck</h1>
+  <p class="intro">
+    Diese Demo prüft eine einzige Frage: Senkt ein aus gelösten Aufgaben abgeleiteter Teilausdruck den Suchaufwand bei vorher unbekannten Aufgaben?
+  </p>
+  <div class="notice">PROTOTYP. Alle Aufgaben, Suchgrenzen und Kontrollen sind im Browser fest eingebaut. Es werden keine Daten gespeichert.</div>
+
+  <div class="tabs" id="scenarioTabs"></div>
+
+  <section class="panel scenario-copy">
+    <div>
+      <h2 id="scenarioTitle"></h2>
+      <p id="scenarioDescription" class="muted"></p>
+      <div class="task-list" id="scenarioTasks"></div>
+    </div>
+    <div class="guide">
+      <h3>Geführter Ablauf</h3>
+      <ol>
+        <li><button data-action="train">Trainingsaufgaben lösen</button></li>
+        <li><button data-action="mine">Wiederkehrenden Ausdruck ableiten</button></li>
+        <li><button data-action="compare">Unbekannte Aufgaben vergleichen</button></li>
+      </ol>
+    </div>
+  </section>
+
+  <div class="actions" aria-label="Freies Ausprobieren">
+    <button data-action="train">1. Training suchen</button>
+    <button data-action="mine">2. Operator ableiten</button>
+    <button data-action="compare">3. Vergleich starten</button>
+    <button class="primary" data-action="all">Alles ausführen</button>
+    <button data-action="reset">Zurücksetzen</button>
+  </div>
+
+  <div id="message" class="message">Bereit. Wähle einen Ablauf oder starte alle Schritte.</div>
+
+  <section class="panel">
+    <h2>Aktueller Zustand</h2>
+    <div class="state-grid">
+      <div class="state-card">
+        <h3>Phase</h3>
+        <div class="value" id="phaseValue">Start</div>
+        <div class="small muted" id="phaseDetail"></div>
+      </div>
+      <div class="state-card">
+        <h3>Abgeleiteter Operator</h3>
+        <div class="value" id="operatorValue">keiner</div>
+        <div class="small muted" id="operatorDetail">Er entsteht nur aus den Trainingslösungen.</div>
+      </div>
+      <div class="state-card">
+        <h3>Suchbudget</h3>
+        <div class="value">7 Knoten</div>
+        <div class="small muted">Gleiche Grenze für Basis, gelerntes Makro und Placebo.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Gefundene Trainingslösungen</h2>
+    <div id="trainingResults" class="muted">Noch nicht ausgeführt.</div>
+  </section>
+
+  <section class="panel">
+    <h2>Vergleich auf unbekannten Aufgaben</h2>
+    <p class="small muted">
+      Suchknoten zählen erzeugte Kandidaten bis einschließlich der kleinsten Lösungsebene. Basisoperationen rechnen Makroaufrufe vollständig aus. Das Placebo hat dieselbe innere Größe wie der gelernte Operator.
+    </p>
+    <div id="comparisonResults" class="muted">Noch nicht ausgeführt.</div>
+  </section>
+
+  <section class="panel">
+    <h2>Befund</h2>
+    <div id="verdict" class="verdict caution">Noch kein Befund.</div>
+  </section>
+</main>
+
+<script>
+const OperatorExperiment = (() => {
+  const INPUTS = [-3, -2, -1, 0, 1, 2, 3];
+  const CONSTANTS = [-2, -1, 0, 1, 2, 3];
+  const MAX_COST = 7;
+  const LIMIT = 1_000_000;
+
+  const V = () => ({ type: "var", cost: 1 });
+  const C = value => ({ type: "const", value, cost: 1 });
+  const B = (op, left, right) => {
+    if ((op === "add" || op === "mul") && format(left) > format(right)) {
+      [left, right] = [right, left];
+    }
+    return { type: "binary", op, left, right, cost: 1 + left.cost + right.cost };
+  };
+  const Call = (name, arg) => ({ type: "call", name, arg, cost: 1 + arg.cost });
+
+  const OPS = {
+    add: { symbol: "+", fn: (a, b) => a + b, commutative: true },
+    sub: { symbol: "−", fn: (a, b) => a - b, commutative: false },
+    mul: { symbol: "×", fn: (a, b) => a * b, commutative: true }
+  };
+
+  function format(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return String(ast.value);
+    if (ast.type === "call") return `${ast.name}(${format(ast.arg)})`;
+    return `(${format(ast.left)} ${OPS[ast.op].symbol} ${format(ast.right)})`;
+  }
+
+  function key(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return `c:${ast.value}`;
+    if (ast.type === "call") return `call:${ast.name}(${key(ast.arg)})`;
+    return `${ast.op}(${key(ast.left)},${key(ast.right)})`;
+  }
+
+  function evalAst(ast, x, macros) {
+    if (ast.type === "var") return x;
+    if (ast.type === "const") return ast.value;
+    if (ast.type === "call") {
+      const macro = macros[ast.name];
+      if (!macro) return NaN;
+      const argument = evalAst(ast.arg, x, macros);
+      return evalAst(macro.definition, argument, {});
+    }
+    const left = evalAst(ast.left, x, macros);
+    const right = evalAst(ast.right, x, macros);
+    const value = OPS[ast.op].fn(left, right);
+    return Number.isFinite(value) && Math.abs(value) <= LIMIT ? value : NaN;
+  }
+
+  function primitiveCount(ast, macros) {
+    if (ast.type === "var" || ast.type === "const") return 0;
+    if (ast.type === "binary") {
+      return 1 + primitiveCount(ast.left, macros) + primitiveCount(ast.right, macros);
+    }
+    const macro = macros[ast.name];
+    return primitiveCount(ast.arg, macros) + primitiveCount(macro.definition, {});
+  }
+
+  function signature(ast, macros) {
+    const values = INPUTS.map(x => evalAst(ast, x, macros));
+    if (values.some(Number.isNaN)) return null;
+    return values.join(",");
+  }
+
+  function enumerate(macros = {}) {
+    const byCost = Array.from({ length: MAX_COST + 1 }, () => []);
+    const seen = new Map();
+    const attemptsByCost = Array(MAX_COST + 1).fill(0);
+    const primitiveWorkByCost = Array(MAX_COST + 1).fill(0);
+
+    function acceptBatch(cost, batch) {
+      batch.sort((a, b) => key(a).localeCompare(key(b)));
+      for (const ast of batch) {
+        const sig = signature(ast, macros);
+        if (sig === null) continue;
+        attemptsByCost[cost] += 1;
+        primitiveWorkByCost[cost] += primitiveCount(ast, macros) * INPUTS.length;
+        if (seen.has(sig)) continue;
+        seen.set(sig, ast);
+        byCost[cost].push(ast);
+      }
+    }
+
+    acceptBatch(1, [V(), ...CONSTANTS.map(C)]);
+
+    for (let cost = 2; cost <= MAX_COST; cost += 1) {
+      const batch = [];
+
+      for (const name of Object.keys(macros).sort()) {
+        for (const arg of byCost[cost - 1]) batch.push(Call(name, arg));
+      }
+
+      for (let leftCost = 1; leftCost < cost; leftCost += 1) {
+        const rightCost = cost - 1 - leftCost;
+        if (rightCost < 1) continue;
+        for (const [op, spec] of Object.entries(OPS)) {
+          for (const left of byCost[leftCost]) {
+            for (const right of byCost[rightCost]) {
+              if (spec.commutative && key(left) > key(right)) continue;
+              batch.push(B(op, left, right));
+            }
+          }
+        }
+      }
+
+      acceptBatch(cost, batch);
+    }
+
+    return { byCost, seen, attemptsByCost, primitiveWorkByCost };
+  }
+
+  function searchStats(enumeration, target) {
+    const sig = signature(target, {});
+    const solution = enumeration.seen.get(sig);
+    if (!solution) {
+      return { found: false, solution: null, cost: null, attempts: sum(enumeration.attemptsByCost), primitiveWork: sum(enumeration.primitiveWorkByCost) };
+    }
+    const cost = solution.cost;
+    return {
+      found: true,
+      solution,
+      cost,
+      attempts: sum(enumeration.attemptsByCost.slice(0, cost + 1)),
+      primitiveWork: sum(enumeration.primitiveWorkByCost.slice(0, cost + 1))
+    };
+  }
+
+  function sum(values) { return values.reduce((total, value) => total + value, 0); }
+
+  function containsVariable(ast) {
+    if (ast.type === "var") return true;
+    if (ast.type === "const") return false;
+    if (ast.type === "call") return containsVariable(ast.arg);
+    return containsVariable(ast.left) || containsVariable(ast.right);
+  }
+
+  function collectSubtrees(ast, found) {
+    found.push(ast);
+    if (ast.type === "binary") {
+      collectSubtrees(ast.left, found);
+      collectSubtrees(ast.right, found);
+    } else if (ast.type === "call") {
+      collectSubtrees(ast.arg, found);
+    }
+  }
+
+  function deriveMacro(trainingSolutions) {
+    const candidates = new Map();
+    let scannedNodes = 0;
+
+    trainingSolutions.forEach(({ stats }, taskIndex) => {
+      if (!stats.found) return;
+      const subtrees = [];
+      collectSubtrees(stats.solution, subtrees);
+      scannedNodes += subtrees.length;
+      const seenInTask = new Set();
+      for (const subtree of subtrees) {
+        if (subtree.cost < 3 || !containsVariable(subtree)) continue;
+        const id = key(subtree);
+        if (seenInTask.has(id)) continue;
+        seenInTask.add(id);
+        const item = candidates.get(id) || { definition: subtree, tasks: new Set() };
+        item.tasks.add(taskIndex);
+        candidates.set(id, item);
+      }
+    });
+
+    const ranked = [...candidates.values()]
+      .filter(item => item.tasks.size >= 2)
+      .map(item => ({
+        ...item,
+        savings: item.tasks.size * (item.definition.cost - 2) - item.definition.cost
+      }))
+      .sort((a, b) => b.savings - a.savings || b.tasks.size - a.tasks.size || a.definition.cost - b.definition.cost || key(a.definition).localeCompare(key(b.definition)));
+
+    if (!ranked.length) return { macro: null, scannedNodes };
+    const best = ranked[0];
+    const name = key(best.definition) === "mul(x,x)" ? "quad" : "op1";
+    return {
+      macro: {
+        name,
+        definition: best.definition,
+        taskCount: best.tasks.size,
+        definitionCost: best.definition.cost,
+        savingsScore: best.savings
+      },
+      scannedNodes
+    };
+  }
+
+  const x = V();
+  const square = () => B("mul", V(), V());
+  const sharedTraining = [
+    { name: "T1", expression: square() },
+    { name: "T2", expression: B("add", square(), C(1)) },
+    { name: "T3", expression: B("sub", square(), C(1)) },
+    { name: "T4", expression: B("mul", square(), square()) }
+  ];
+  const relatedTests = [
+    { name: "R1", group: "verwandt", expression: B("add", square(), C(2)) },
+    { name: "R2", group: "verwandt", expression: B("sub", square(), C(2)) },
+    { name: "R3", group: "verwandt", expression: B("add", B("mul", C(2), square()), C(1)) }
+  ];
+  const controlTests = [
+    { name: "K1", group: "Kontrolle", expression: B("add", V(), C(2)) },
+    { name: "K2", group: "Kontrolle", expression: B("sub", V(), C(2)) },
+    { name: "K3", group: "Kontrolle", expression: B("add", B("mul", C(2), V()), C(1)) }
+  ];
+
+  const scenarios = {
+    shared: {
+      title: "Wiederkehrende Struktur mit Kontrollen",
+      description: "Vier Trainingsaufgaben teilen eine quadratische Teilstruktur. Drei neue Aufgaben verwenden sie in anderer Einbettung. Drei lineare Aufgaben prüfen, ob die größere Bibliothek unnötig schadet.",
+      training: sharedTraining,
+      tests: [...relatedTests, ...controlTests]
+    },
+    noPattern: {
+      title: "Keine stabile Wiederholung",
+      description: "Die Trainingsaufgaben teilen keinen mehrschrittigen Lösungsbaustein. Das System sollte deshalb seine Bibliothek unverändert lassen.",
+      training: [
+        { name: "T1", expression: B("add", V(), C(1)) },
+        { name: "T2", expression: B("sub", V(), C(1)) },
+        { name: "T3", expression: B("mul", V(), C(2)) },
+        { name: "T4", expression: square() }
+      ],
+      tests: controlTests
+    },
+    misleading: {
+      title: "Gelernte Struktur ohne späteren Nutzen",
+      description: "Das Training enthält dieselbe quadratische Wiederholung wie im ersten Ablauf. Die neuen Aufgaben sind jedoch linear. Hier darf der zusätzliche Operator keinen künstlichen Erfolg erzeugen.",
+      training: sharedTraining,
+      tests: controlTests
+    }
+  };
+
+  function initialState(scenarioId = "shared") {
+    return {
+      scenarioId,
+      phase: "start",
+      message: "Bereit. Wähle einen Ablauf oder starte alle Schritte.",
+      training: null,
+      derived: null,
+      comparison: null
+    };
+  }
+
+  function train(state) {
+    const scenario = scenarios[state.scenarioId];
+    const enumeration = enumerate({});
+    const solutions = scenario.training.map(task => ({ task, stats: searchStats(enumeration, task.expression) }));
+    return {
+      ...state,
+      phase: "trained",
+      message: "Die Trainingsaufgaben wurden ausschließlich mit den Basisoperationen gelöst.",
+      training: { enumeration, solutions },
+      derived: null,
+      comparison: null
+    };
+  }
+
+  function mine(state) {
+    if (!state.training) return { ...state, message: "Führe zuerst die Trainingssuche aus." };
+    const derived = deriveMacro(state.training.solutions);
+    return {
+      ...state,
+      phase: "mined",
+      message: derived.macro
+        ? `Der Ausdruck ${format(derived.macro.definition)} kam in ${derived.macro.taskCount} getrennten Lösungen vor.`
+        : "Kein mehrschrittiger Ausdruck kam in mindestens zwei Trainingslösungen vor.",
+      derived,
+      comparison: null
+    };
+  }
+
+  function compare(state) {
+    if (!state.training) return { ...state, message: "Führe zuerst die Trainingssuche aus." };
+    if (!state.derived) return { ...state, message: "Leite zuerst einen Ausdruck aus den Trainingslösungen ab." };
+
+    const learnedMacros = state.derived.macro
+      ? { [state.derived.macro.name]: state.derived.macro }
+      : {};
+    const placebo = {
+      doppelt: { name: "doppelt", definition: B("add", V(), V()), definitionCost: 3 }
+    };
+    const arms = {
+      basis: enumerate({}),
+      gelernt: enumerate(learnedMacros),
+      placebo: enumerate(placebo)
+    };
+    const scenario = scenarios[state.scenarioId];
+    const rows = scenario.tests.map(task => ({
+      task,
+      basis: searchStats(arms.basis, task.expression),
+      gelernt: searchStats(arms.gelernt, task.expression),
+      placebo: searchStats(arms.placebo, task.expression)
+    }));
+
+    const totals = rows.reduce((acc, row) => {
+      for (const arm of ["basis", "gelernt", "placebo"]) {
+        acc[arm].attempts += row[arm].attempts;
+        acc[arm].primitiveWork += row[arm].primitiveWork;
+        acc[arm].solved += Number(row[arm].found);
+      }
+      return acc;
+    }, {
+      basis: { attempts: 0, primitiveWork: 0, solved: 0 },
+      gelernt: { attempts: 0, primitiveWork: 0, solved: 0 },
+      placebo: { attempts: 0, primitiveWork: 0, solved: 0 }
+    });
+
+    return {
+      ...state,
+      phase: "compared",
+      message: "Der Vergleich verwendet dieselben Aufgaben, Suchgrenzen und Basisoperationen für alle drei Arme.",
+      comparison: { rows, totals }
+    };
+  }
+
+  function reducer(state, action) {
+    if (action.type === "scenario") return initialState(action.id);
+    if (action.type === "reset") return initialState(state.scenarioId);
+    if (action.type === "train") return train(state);
+    if (action.type === "mine") return mine(state);
+    if (action.type === "compare") return compare(state);
+    if (action.type === "all") return compare(mine(train(initialState(state.scenarioId))));
+    return state;
+  }
+
+  return { scenarios, initialState, reducer, format };
+})();
+
+let state = OperatorExperiment.initialState();
+
+function dispatch(action) {
+  state = OperatorExperiment.reducer(state, action);
+  render();
+}
+
+function number(value) {
+  return value == null ? "offen" : new Intl.NumberFormat("de-DE").format(value);
+}
+
+function render() {
+  const scenario = OperatorExperiment.scenarios[state.scenarioId];
+  document.getElementById("scenarioTitle").textContent = scenario.title;
+  document.getElementById("scenarioDescription").textContent = scenario.description;
+
+  document.getElementById("scenarioTabs").innerHTML = Object.entries(OperatorExperiment.scenarios)
+    .map(([id, item]) => `<button class="tab ${id === state.scenarioId ? "active" : ""}" data-scenario="${id}">${escapeHtml(item.title)}</button>`)
+    .join("");
+
+  document.getElementById("scenarioTasks").innerHTML = [
+    ...scenario.training.map(task => taskCard(task, "Training")),
+    ...scenario.tests.map(task => taskCard(task, task.group || "Neu"))
+  ].join("");
+
+  const phaseNames = { start: "Start", trained: "Training", mined: "Ableitung", compared: "Vergleich" };
+  document.getElementById("phaseValue").textContent = phaseNames[state.phase];
+  document.getElementById("phaseDetail").textContent = `${scenario.training.length} Trainingsaufgaben, ${scenario.tests.length} unbekannte Aufgaben`;
+
+  const macro = state.derived?.macro;
+  document.getElementById("operatorValue").textContent = macro ? `${macro.name}(x)` : "keiner";
+  document.getElementById("operatorDetail").textContent = macro
+    ? `${macro.name}(x) = ${OperatorExperiment.format(macro.definition)}; Fund in ${macro.taskCount} Aufgaben`
+    : state.derived ? "Keine ausreichende Wiederholung gefunden." : "Er entsteht nur aus den Trainingslösungen.";
+
+  const message = document.getElementById("message");
+  message.textContent = state.message;
+  message.className = `message ${state.message.startsWith("Führe") || state.message.startsWith("Leite") ? "bad" : ""}`;
+
+  renderTraining();
+  renderComparison();
+  bindDynamicButtons();
+}
+
+function taskCard(task, label) {
+  return `<div class="task"><strong>${escapeHtml(task.name)} · ${escapeHtml(label)}</strong><code>f(x) = ${escapeHtml(OperatorExperiment.format(task.expression))}</code></div>`;
+}
+
+function renderTraining() {
+  const target = document.getElementById("trainingResults");
+  if (!state.training) {
+    target.className = "muted";
+    target.textContent = "Noch nicht ausgeführt.";
+    return;
+  }
+
+  target.className = "table-wrap";
+  target.innerHTML = `<table>
+    <thead><tr><th>Aufgabe</th><th>Gefundener Ausdruck</th><th>Kostenstufe</th><th class="number">Suchknoten</th><th class="number">Basisoperationen</th></tr></thead>
+    <tbody>${state.training.solutions.map(({ task, stats }) => `<tr>
+      <td>${escapeHtml(task.name)}</td>
+      <td><code>${stats.found ? escapeHtml(OperatorExperiment.format(stats.solution)) : "ungelöst"}</code></td>
+      <td class="number">${number(stats.cost)}</td>
+      <td class="number">${number(stats.attempts)}</td>
+      <td class="number">${number(stats.primitiveWork)}</td>
+    </tr>`).join("")}</tbody>
+  </table>`;
+}
+
+function renderComparison() {
+  const target = document.getElementById("comparisonResults");
+  const verdict = document.getElementById("verdict");
+  if (!state.comparison) {
+    target.className = "muted";
+    target.textContent = "Noch nicht ausgeführt.";
+    verdict.className = "verdict caution";
+    verdict.textContent = state.derived?.macro
+      ? "Ein wiederkehrender Ausdruck wurde gefunden. Sein Nutzen ist noch offen."
+      : state.derived ? "Es entstand kein neuer Operator." : "Noch kein Befund.";
+    return;
+  }
+
+  const { rows, totals } = state.comparison;
+  target.className = "table-wrap";
+  target.innerHTML = `<table>
+    <thead><tr>
+      <th>Aufgabe</th><th>Gruppe</th>
+      <th class="number">Basis<br>Stufe / Knoten / Arbeit</th>
+      <th class="number">Gelernt<br>Stufe / Knoten / Arbeit</th>
+      <th class="number">Placebo<br>Stufe / Knoten / Arbeit</th>
+      <th>Änderung</th>
+    </tr></thead>
+    <tbody>${rows.map(row => {
+      const delta = row.basis.attempts - row.gelernt.attempts;
+      return `<tr>
+        <td>${escapeHtml(row.task.name)}<br><code>${escapeHtml(OperatorExperiment.format(row.task.expression))}</code></td>
+        <td>${escapeHtml(row.task.group || "Neu")}</td>
+        <td class="number">${statsCell(row.basis)}</td>
+        <td class="number">${statsCell(row.gelernt)}</td>
+        <td class="number">${statsCell(row.placebo)}</td>
+        <td class="${delta > 0 ? "good" : delta < 0 ? "bad-text" : ""}">${delta > 0 ? `${number(delta)} weniger Knoten` : delta < 0 ? `${number(-delta)} mehr Knoten` : "gleich"}</td>
+      </tr>`;
+    }).join("")}
+    <tr>
+      <th colspan="2">Summe</th>
+      <th class="number">${number(totals.basis.attempts)} / ${number(totals.basis.primitiveWork)}</th>
+      <th class="number">${number(totals.gelernt.attempts)} / ${number(totals.gelernt.primitiveWork)}</th>
+      <th class="number">${number(totals.placebo.attempts)} / ${number(totals.placebo.primitiveWork)}</th>
+      <th></th>
+    </tr></tbody>
+  </table>`;
+
+  const related = rows.filter(row => row.task.group === "verwandt");
+  const controls = rows.filter(row => row.task.group === "Kontrolle");
+  const relatedGain = related.reduce((sum, row) => sum + row.basis.attempts - row.gelernt.attempts, 0);
+  const controlPenalty = controls.reduce((sum, row) => sum + row.gelernt.attempts - row.basis.attempts, 0);
+  const beatsPlacebo = totals.gelernt.attempts < totals.placebo.attempts;
+
+  if (related.length && relatedGain > 0 && beatsPlacebo) {
+    verdict.className = "verdict";
+    verdict.textContent = `Begrenztes positives Signal: ${number(relatedGain)} Suchknoten weniger bei verwandten Aufgaben. Auf den Kontrollen entstehen ${number(Math.max(0, controlPenalty))} zusätzliche Knoten. Das zeigt Wiederverwendung innerhalb dieser Aufgabenfamilie.`;
+  } else if (!state.derived?.macro) {
+    verdict.className = "verdict caution";
+    verdict.textContent = "Sauberes Nullergebnis: Ohne wiederkehrenden mehrschrittigen Ausdruck bleibt die Bibliothek unverändert.";
+  } else {
+    verdict.className = "verdict bad";
+    verdict.textContent = `Kein Transfergewinn: Der zusätzliche Operator spart auf diesen Aufgaben keine Suchknoten. Der Mehraufwand auf Kontrollen beträgt ${number(Math.max(0, controlPenalty))} Knoten.`;
+  }
+}
+
+function statsCell(stats) {
+  if (!stats.found) return `offen / ${number(stats.attempts)} / ${number(stats.primitiveWork)}`;
+  return `${number(stats.cost)} / ${number(stats.attempts)} / ${number(stats.primitiveWork)}`;
+}
+
+function bindDynamicButtons() {
+  document.querySelectorAll("[data-scenario]").forEach(button => {
+    button.onclick = () => dispatch({ type: "scenario", id: button.dataset.scenario });
+  });
+  document.querySelectorAll("[data-action]").forEach(button => {
+    button.onclick = () => dispatch({ type: button.dataset.action });
+  });
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+render();
+</script>
+</body>
+</html>
