@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Vorab festgelegter Lauf: doppelt</title>
+  <title>Koeffizientenregel für doppelt</title>
   <style>
     :root {
       color-scheme: light;
@@ -69,27 +69,34 @@
 </head>
 <body>
 <main>
-  <h1>Vorab festgelegter Lauf: <code>doppelt(x) = x + x</code></h1>
+  <h1>Eine Rechenregel vor <code>doppelt(x) = x + x</code></h1>
   <p class="intro">
-    Diese Demo prüft, ob ein aus der ersten Familie abgeleiteter Verdopplungsoperator die Suche auf neuen Argumentformen verbilligt.
+    Diese Demo spielt den fehlgeschlagenen Lauf erneut ab. Aus drei Zielwerten bestimmt sie die Koeffizienten des quadratischen Zielausdrucks. Sind alle gerade und passen zu allen sieben Werten, kommt <code>doppelt</code> in die Suche.
   </p>
   <div class="notice">
-    PROTOKOLL D1. Ein Bibliotheksplatz. Auswahl nach der Zahl unterschiedlicher früherer Lernbeispiele, bei Gleichstand gewinnt der frühere Fund. Jede Familie wird vor ihren Lernbeispielen bewertet.
+    DIAGNOSE D2. Gleiche Aufgaben und Reihenfolge wie D1. Die neue Regel verwendet nur die gegebenen Zielwerte. Pro geprüfter Aufgabe werden 44 Rechenschritte zur Arbeit addiert.
   </div>
 
   <section class="panel">
     <h2>Erfolgsschwelle</h2>
     <div class="protocol">
-      <div><strong>Vollständigkeit</strong><br><span class="small muted">Alle drei Arme lösen alle 20 Aufgaben.</span></div>
-      <div><strong>Gesamtkosten</strong><br><span class="small muted">Die lernende Suche benötigt weniger Grundoperationen als die Basis.</span></div>
-      <div><strong>Kontrolle</strong><br><span class="small muted">Sie schlägt einen gleich großen Operator mit vertauschter Grundoperation.</span></div>
+      <div><strong>Vollständigkeit</strong><br><span class="small muted">Alle vier Arme lösen alle 20 Aufgaben.</span></div>
+      <div><strong>Gesamtkosten</strong><br><span class="small muted">Die Koeffizientenregel benötigt weniger Grundoperationen als die Basis.</span></div>
+      <div><strong>Nutzen der Regel</strong><br><span class="small muted">Sie ist günstiger als der ständig aktive Operator.</span></div>
     </div>
   </section>
 
   <section class="panel">
-    <h2>Aufgezeichneter Lauf</h2>
+    <h2>Ausgangspunkt D1</h2>
     <p class="small muted">
-      Alle 20 Aufgaben wurden in jedem Arm gelöst. Auf zwölf neuen Anwendungen spart <code>doppelt</code> 413.364 Grundoperationen. Auf acht Fremdstrukturen entstehen 524.874 zusätzliche. Insgesamt sind es 111.510 mehr als bei der Basis. Die Schwelle wurde verfehlt.
+      Alle 20 Aufgaben wurden gelöst. Auf zwölf passenden Anwendungen spart <code>doppelt</code> 413.364 Grundoperationen. Auf acht anderen Aufgaben entstehen 524.874 zusätzliche. Insgesamt sind es 111.510 mehr als bei der Basis.
+    </p>
+  </section>
+
+  <section class="panel">
+    <h2>Aufgezeichneter Replay D2</h2>
+    <p class="small muted">
+      Alle 20 Aufgaben wurden gelöst. Die Regel gab zwölf von 18 geprüften Aufgaben frei. Einschließlich 792 Rechenschritten für die Prüfungen sinkt die Arbeit von 1.595.244 auf 1.182.672. Das sind 412.572 weniger, also 25,9 Prozent. Dieser Lauf zeigt die Reparatur im quadratischen Aufgabenraum auf denselben Daten.
     </p>
   </section>
 
@@ -119,15 +126,15 @@
     <div class="state-grid">
       <div class="state-card"><h3>Abgeschlossen</h3><div class="value" id="progressValue">0 / 10</div><div class="small muted" id="progressDetail"></div></div>
       <div class="state-card"><h3>Aktiver Operator</h3><div class="value" id="operatorValue">keiner</div><div class="small muted" id="operatorDetail">Er kann erst nach Familie 1 entstehen.</div></div>
-      <div class="state-card"><h3>Sucharbeit</h3><div class="value" id="workValue">gleich</div><div class="small muted">Vollständig ausgerechnete Grundoperationen.</div></div>
-      <div class="state-card"><h3>Gelöste Aufgaben</h3><div class="value" id="solvedValue">0 / 20</div><div class="small muted">Gezählt im lernenden Arm.</div></div>
+      <div class="state-card"><h3>Sucharbeit mit Regel</h3><div class="value" id="workValue">gleich</div><div class="small muted">Verglichen mit der Basis.</div></div>
+      <div class="state-card"><h3>Freigaben</h3><div class="value" id="solvedValue">0 / 0</div><div class="small muted">Treffer der Koeffizientenregel.</div></div>
     </div>
   </section>
 
   <section class="panel"><h2>Zuletzt bearbeitete Familie</h2><div id="latest" class="muted">Noch keine Familie ausgeführt.</div></section>
   <section class="panel">
     <h2>Verlauf</h2>
-    <p class="small muted">Arbeit zählt alle Grundoperationen über sieben Eingabewerte. Der Kontrolloperator hat dieselbe innere Größe wie <code>doppelt</code>.</p>
+    <p class="small muted">Arbeit zählt alle Grundoperationen über sieben Eingabewerte und 44 Rechenschritte pro Regelprüfung.</p>
     <div id="history" class="muted">Noch keine Familie ausgeführt.</div>
   </section>
   <section class="panel"><h2>Befund</h2><div id="verdict" class="verdict caution">Noch kein Befund.</div></section>
@@ -140,6 +147,7 @@ const DoubleOperatorExperiment = (() => {
   const MAX_COST = 7;
   const LIBRARY_LIMIT = 1;
   const VALUE_LIMIT = 1_000_000;
+  const RULE_WORK_PER_TASK = 44;
 
   const V = () => ({ type: "var", cost: 1 });
   const C = value => ({ type: "const", value, cost: 1 });
@@ -359,7 +367,40 @@ const DoubleOperatorExperiment = (() => {
       rows,
       attempts: sum(rows.map(row => row.stats.attempts)),
       work: sum(rows.map(row => row.stats.work)),
-      solved: sum(rows.map(row => Number(row.stats.found)))
+      solved: sum(rows.map(row => Number(row.stats.found))),
+      checks: 0,
+      enabled: 0
+    };
+  }
+
+  function allowsDouble(item) {
+    const values = INPUTS.map(input => evalAst(item.expression, input, {}));
+    const y0 = values[INPUTS.indexOf(0)];
+    const y1 = values[INPUTS.indexOf(1)];
+    const y2 = values[INPUTS.indexOf(2)];
+    const a = (y2 - 2 * y1 + y0) / 2;
+    const b = y1 - y0 - a;
+    const c = y0;
+    if (![a, b, c].every(Number.isInteger)) return false;
+    if (!values.every((value, index) => value === a * INPUTS[index] ** 2 + b * INPUTS[index] + c)) return false;
+    return [a, b, c].every(value => value % 2 === 0);
+  }
+
+  function measureExact(tasks, records) {
+    const macros = macrosFrom(records);
+    const learnedEnumeration = records.length ? enumerate(macros) : BASE;
+    const rows = tasks.map(item => {
+      const enabled = records.length ? allowsDouble(item) : false;
+      return { task: item, enabled, stats: searchStats(enabled ? learnedEnumeration : BASE, item.expression) };
+    });
+    const checks = records.length ? tasks.length : 0;
+    return {
+      rows,
+      attempts: sum(rows.map(row => row.stats.attempts)),
+      work: sum(rows.map(row => row.stats.work)) + checks * RULE_WORK_PER_TASK,
+      solved: sum(rows.map(row => Number(row.stats.found))),
+      checks,
+      enabled: sum(rows.map(row => Number(row.enabled)))
     };
   }
 
@@ -371,23 +412,29 @@ const DoubleOperatorExperiment = (() => {
     return registry.map(item => item.id === existing.id ? { ...item, evidenceKeys: [...new Set([...item.evidenceKeys, ...evidence])] } : item);
   }
 
-  function emptyArm() { return { attempts: 0, work: 0, solved: 0 }; }
+  function emptyArm() { return { attempts: 0, work: 0, solved: 0, checks: 0, enabled: 0 }; }
   function emptyTotals() {
     return {
-      overall: { basis: emptyArm(), gelernt: emptyArm(), kontrolle: emptyArm() },
-      transfer: { basis: emptyArm(), gelernt: emptyArm(), kontrolle: emptyArm() },
-      control: { basis: emptyArm(), gelernt: emptyArm(), kontrolle: emptyArm() },
+      overall: { basis: emptyArm(), gelernt: emptyArm(), exakt: emptyArm(), kontrolle: emptyArm() },
+      transfer: { basis: emptyArm(), gelernt: emptyArm(), exakt: emptyArm(), kontrolle: emptyArm() },
+      control: { basis: emptyArm(), gelernt: emptyArm(), exakt: emptyArm(), kontrolle: emptyArm() },
       scannedNodes: 0
     };
   }
 
   function addArm(left, right) {
-    return { attempts: left.attempts + right.attempts, work: left.work + right.work, solved: left.solved + right.solved };
+    return {
+      attempts: left.attempts + right.attempts,
+      work: left.work + right.work,
+      solved: left.solved + right.solved,
+      checks: left.checks + right.checks,
+      enabled: left.enabled + right.enabled
+    };
   }
 
-  function addTotals(totals, kind, basis, gelernt, kontrolle, scannedNodes) {
+  function addTotals(totals, kind, basis, gelernt, exakt, kontrolle, scannedNodes) {
     const next = JSON.parse(JSON.stringify(totals));
-    for (const [name, measured] of Object.entries({ basis, gelernt, kontrolle })) {
+    for (const [name, measured] of Object.entries({ basis, gelernt, exakt, kontrolle })) {
       next.overall[name] = addArm(next.overall[name], measured);
       next[kind][name] = addArm(next[kind][name], measured);
     }
@@ -405,6 +452,7 @@ const DoubleOperatorExperiment = (() => {
     const activeBefore = selectLibrary(state.registry);
     const basis = measure(current.challenges, {});
     const gelernt = measure(current.challenges, macrosFrom(activeBefore));
+    const exakt = measureExact(current.challenges, activeBefore);
     const kontrolle = measure(current.challenges, controlMacros(activeBefore));
     const learningSolutions = current.learning.map(solveWithBase);
     const derived = deriveMacro(learningSolutions);
@@ -417,6 +465,7 @@ const DoubleOperatorExperiment = (() => {
       derived,
       basis,
       gelernt,
+      exakt,
       kontrolle
     };
     return {
@@ -425,10 +474,10 @@ const DoubleOperatorExperiment = (() => {
       registry,
       active,
       history: [...state.history, row],
-      totals: addTotals(state.totals, current.kind, basis, gelernt, kontrolle, derived.scannedNodes),
+      totals: addTotals(state.totals, current.kind, basis, gelernt, exakt, kontrolle, derived.scannedNodes),
       message: derived.macro
         ? `${current.id} abgeschlossen. Danach wurde ${derived.macro.name}(x) = ${format(derived.macro.definition)} abgeleitet.`
-        : `${current.id} abgeschlossen. Die aktive Bibliothek bleibt unverändert.`
+        : `${current.id} abgeschlossen. Die Regel gab ${exakt.enabled} von 2 Aufgaben frei.`
     };
   }
 
@@ -455,12 +504,12 @@ const DoubleOperatorExperiment = (() => {
     },
     transfer: {
       title: "Erste neue Argumentformen",
-      description: "Nach Familie 1 bleibt genau ein Operator aktiv. Die nächsten Familien mischen passende und fremde Strukturen.",
+      description: "Nach Familie 1 bleibt genau ein Operator aktiv. Die Koeffizientenregel entscheidet für jede folgende Aufgabe.",
       steps: [{ label: "Neu starten", type: "reset" }, { label: "Familien 1 bis 3", type: "three" }, { label: "Familien 4 bis 6", type: "three" }]
     },
     full: {
       title: "Gesamtlauf",
-      description: "Der vollständige Lauf entscheidet nach der oben festgeschriebenen Schwelle.",
+      description: "Der vollständige Replay vergleicht Basis, ständig aktiven Operator und Koeffizientenregel.",
       steps: [{ label: "Neu starten", type: "reset" }, { label: "Alle zehn Familien", type: "all" }]
     }
   };
@@ -502,14 +551,14 @@ function renderGuide() {
 function renderState() {
   const next = DoubleOperatorExperiment.FAMILIES[state.index];
   const basis = state.totals.overall.basis;
-  const gelernt = state.totals.overall.gelernt;
-  const delta = basis.work - gelernt.work;
+  const exakt = state.totals.overall.exakt;
+  const delta = basis.work - exakt.work;
   document.getElementById("progressValue").textContent = `${state.index} / 10`;
   document.getElementById("progressDetail").textContent = next ? `Nächste Familie: ${next.title}` : "Gesamtlauf abgeschlossen";
   document.getElementById("operatorValue").textContent = state.active.length ? "doppelt(x)" : "keiner";
   document.getElementById("operatorDetail").textContent = state.active.length ? `Aus ${state.active[0].evidenceKeys.length} unterschiedlichen Lernbeispielen.` : "Er kann erst nach Familie 1 entstehen.";
   document.getElementById("workValue").textContent = delta > 0 ? `${number(delta)} weniger` : delta < 0 ? `${number(-delta)} mehr` : "gleich";
-  document.getElementById("solvedValue").textContent = `${gelernt.solved} / 20`;
+  document.getElementById("solvedValue").textContent = `${exakt.enabled} / ${exakt.checks}`;
   document.getElementById("message").textContent = state.message;
 }
 
@@ -522,7 +571,7 @@ function renderLatest() {
   target.innerHTML = `<p><strong>${escapeHtml(row.family.id)} · ${escapeHtml(row.family.title)}</strong></p>
     <p class="small">Typ: ${row.family.kind === "transfer" ? "neue Anwendung" : "Fremdstruktur"}. Bibliothek davor: ${row.activeBefore.length ? '<span class="chip">doppelt(x)</span>' : '<span class="muted">leer</span>'}. Danach gelernt: ${learned ? `<code>${escapeHtml(learned.name)}(x) = ${escapeHtml(DoubleOperatorExperiment.format(learned.definition))}</code>` : "nichts Neues"}.</p>
     <div class="table-wrap"><table><thead><tr><th>Arm</th><th class="number">Gelöst</th><th class="number">Suchknoten</th><th class="number">Arbeit</th></tr></thead><tbody>
-      ${measureRow("Basis", row.basis)}${measureRow("doppelt", row.gelernt)}${measureRow("Kontrolloperator", row.kontrolle)}
+      ${measureRow("Basis", row.basis)}${measureRow("doppelt, ständig aktiv", row.gelernt)}${measureRow(`Koeffizientenregel, ${row.exakt.enabled} von ${row.exakt.checks} freigegeben`, row.exakt)}${measureRow("Kontrolloperator", row.kontrolle)}
     </tbody></table></div>`;
 }
 
@@ -532,12 +581,12 @@ function renderHistory() {
   const target = document.getElementById("history");
   if (!state.history.length) { target.className = "muted"; target.textContent = "Noch keine Familie ausgeführt."; return; }
   target.className = "table-wrap";
-  target.innerHTML = `<table><thead><tr><th>Familie</th><th>Typ</th><th>Bibliothek davor</th><th class="number">Basis<br>Knoten / Arbeit</th><th class="number">doppelt<br>Knoten / Arbeit</th><th class="number">Kontrolle<br>Knoten / Arbeit</th><th>Änderung</th></tr></thead>
+  target.innerHTML = `<table><thead><tr><th>Familie</th><th>Typ</th><th>Bibliothek davor</th><th class="number">Basis<br>Knoten / Arbeit</th><th class="number">doppelt<br>Knoten / Arbeit</th><th class="number">Regel<br>Knoten / Arbeit</th><th class="number">Kontrolle<br>Knoten / Arbeit</th><th>Änderung</th></tr></thead>
     <tbody>${state.history.map((row, index) => {
-      const delta = row.basis.work - row.gelernt.work;
-      return `<tr class="${index === state.history.length - 1 ? "latest" : ""}"><td>${escapeHtml(row.family.id)}<br><span class="small muted">${escapeHtml(row.family.title)}</span></td><td>${row.family.kind === "transfer" ? "Anwendung" : "Fremd"}</td><td>${row.activeBefore.length ? "doppelt" : "leer"}</td><td class="number">${number(row.basis.attempts)} / ${number(row.basis.work)}</td><td class="number">${number(row.gelernt.attempts)} / ${number(row.gelernt.work)}</td><td class="number">${number(row.kontrolle.attempts)} / ${number(row.kontrolle.work)}</td><td class="${delta > 0 ? "good" : delta < 0 ? "bad" : ""}">${delta > 0 ? `${number(delta)} weniger` : delta < 0 ? `${number(-delta)} mehr` : "gleich"}</td></tr>`;
+      const delta = row.basis.work - row.exakt.work;
+      return `<tr class="${index === state.history.length - 1 ? "latest" : ""}"><td>${escapeHtml(row.family.id)}<br><span class="small muted">${escapeHtml(row.family.title)}</span></td><td>${row.family.kind === "transfer" ? "Anwendung" : "Fremd"}</td><td>${row.activeBefore.length ? "doppelt" : "leer"}</td><td class="number">${number(row.basis.attempts)} / ${number(row.basis.work)}</td><td class="number">${number(row.gelernt.attempts)} / ${number(row.gelernt.work)}</td><td class="number">${number(row.exakt.attempts)} / ${number(row.exakt.work)}<br><span class="small muted">${row.exakt.enabled}/${row.exakt.checks} frei</span></td><td class="number">${number(row.kontrolle.attempts)} / ${number(row.kontrolle.work)}</td><td class="${delta > 0 ? "good" : delta < 0 ? "bad" : ""}">${delta > 0 ? `${number(delta)} weniger` : delta < 0 ? `${number(-delta)} mehr` : "gleich"}</td></tr>`;
     }).join("")}
-    <tr><th colspan="3">Summe</th><th class="number">${number(state.totals.overall.basis.attempts)} / ${number(state.totals.overall.basis.work)}</th><th class="number">${number(state.totals.overall.gelernt.attempts)} / ${number(state.totals.overall.gelernt.work)}</th><th class="number">${number(state.totals.overall.kontrolle.attempts)} / ${number(state.totals.overall.kontrolle.work)}</th><th></th></tr></tbody></table>`;
+    <tr><th colspan="3">Summe</th><th class="number">${number(state.totals.overall.basis.attempts)} / ${number(state.totals.overall.basis.work)}</th><th class="number">${number(state.totals.overall.gelernt.attempts)} / ${number(state.totals.overall.gelernt.work)}</th><th class="number">${number(state.totals.overall.exakt.attempts)} / ${number(state.totals.overall.exakt.work)}<br><span class="small muted">${state.totals.overall.exakt.enabled}/${state.totals.overall.exakt.checks} frei</span></th><th class="number">${number(state.totals.overall.kontrolle.attempts)} / ${number(state.totals.overall.kontrolle.work)}</th><th></th></tr></tbody></table>`;
 }
 
 function renderVerdict() {
@@ -548,21 +597,21 @@ function renderVerdict() {
     target.textContent = `${state.index} Familien sind ausgewertet. Die Entscheidung fällt erst nach allen zehn.`;
     return;
   }
-  const { basis, gelernt, kontrolle } = state.totals.overall;
-  const solved = basis.solved === 20 && gelernt.solved === 20 && kontrolle.solved === 20;
-  const success = solved && gelernt.work < basis.work && gelernt.work < kontrolle.work;
-  const transferSaved = state.totals.transfer.basis.work - state.totals.transfer.gelernt.work;
-  const controlCost = state.totals.control.gelernt.work - state.totals.control.basis.work;
+  const { basis, gelernt, exakt, kontrolle } = state.totals.overall;
+  const solved = [basis, gelernt, exakt, kontrolle].every(arm => arm.solved === 20);
+  const success = solved && exakt.work < basis.work && exakt.work < gelernt.work;
+  const transferSaved = state.totals.transfer.basis.work - state.totals.transfer.exakt.work;
+  const controlCost = state.totals.control.exakt.work - state.totals.control.basis.work;
   if (success) {
-    const saved = basis.work - gelernt.work;
+    const saved = basis.work - exakt.work;
     target.className = "verdict";
-    target.textContent = `Schwelle erreicht: Alle 20 Aufgaben wurden gelöst. doppelt spart insgesamt ${number(saved)} Grundoperationen, also ${percent(saved, basis.work)}. Auf neuen Anwendungen spart es ${number(transferSaved)}, auf Fremdstrukturen kostet es ${number(Math.max(0, controlCost))} zusätzlich.`;
+    target.textContent = `Replay-Schwelle erreicht: Alle 20 Aufgaben wurden gelöst. Die Regel gab ${exakt.enabled} von ${exakt.checks} geprüften Aufgaben frei und spart ${number(saved)} Grundoperationen, also ${percent(saved, basis.work)}. Davon entstehen ${number(transferSaved)} auf passenden Anwendungen und ${number(Math.max(0, controlCost))} als Zusatzkosten auf den anderen Aufgaben.`;
   } else {
     target.className = "verdict bad";
     const reasons = [];
     if (!solved) reasons.push("mindestens ein Arm löst nicht alle Aufgaben");
-    if (gelernt.work >= basis.work) reasons.push(`doppelt benötigt ${number(gelernt.work - basis.work)} Grundoperationen mehr als die Basis`);
-    if (gelernt.work >= kontrolle.work) reasons.push("der Kontrolloperator ist mindestens ebenso günstig");
+    if (exakt.work >= basis.work) reasons.push(`die Regel benötigt ${number(exakt.work - basis.work)} Grundoperationen mehr als die Basis`);
+    if (exakt.work >= gelernt.work) reasons.push("die Regel ist nicht günstiger als der ständig aktive Operator");
     target.textContent = `Schwelle verfehlt: ${reasons.join("; ")}.`;
   }
 }
