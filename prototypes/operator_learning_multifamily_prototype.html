@@ -1,0 +1,962 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Operator-Lernen über 20 Aufgabenfamilien</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f3f1eb;
+      --paper: #fffdf8;
+      --ink: #22211f;
+      --muted: #6c6962;
+      --line: #d9d4c9;
+      --accent: #285f55;
+      --accent-soft: #e1eee9;
+      --good: #276447;
+      --good-soft: #e5f1e9;
+      --bad: #8b3a32;
+      --bad-soft: #f5e7e4;
+      --warn: #725719;
+      --warn-soft: #f4edda;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 16px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 34px auto 64px;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { font-size: clamp(28px, 4vw, 44px); line-height: 1.08; margin-bottom: 12px; }
+    h2 { font-size: 20px; margin-bottom: 14px; }
+    h3 { font-size: 15px; margin-bottom: 8px; }
+
+    .intro {
+      max-width: 860px;
+      color: var(--muted);
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+
+    .notice, .message {
+      padding: 11px 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      margin-bottom: 18px;
+    }
+
+    .notice { background: #f8f5ee; color: var(--muted); font-size: 14px; }
+    .message { background: var(--accent-soft); color: #173e37; }
+
+    .tabs, .actions, .guide-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tabs { margin-bottom: 14px; }
+    .actions { margin-bottom: 18px; }
+    .guide-actions { margin-top: 12px; }
+
+    button {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      color: var(--ink);
+      border-radius: 9px;
+      padding: 9px 13px;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:hover { border-color: var(--accent); }
+    button.primary { background: var(--accent); border-color: var(--accent); color: white; }
+    button.tab.active { background: var(--accent-soft); border-color: var(--accent); color: #173e37; }
+    button:disabled { cursor: default; opacity: 0.45; }
+
+    .panel {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .guide {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .guide-copy {
+      border-left: 3px solid var(--accent);
+      padding-left: 14px;
+    }
+
+    .state-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .state-card {
+      background: #faf8f2;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px;
+      min-height: 118px;
+    }
+
+    .value {
+      font-size: 23px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .muted { color: var(--muted); }
+    .small { font-size: 14px; }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background: #eeeae1;
+      border-radius: 5px;
+      padding: 1px 5px;
+    }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #eeeae1;
+      font-size: 13px;
+    }
+
+    .table-wrap { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; font-size: 14px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 9px 8px; text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; }
+    td.number, th.number { font-variant-numeric: tabular-nums; text-align: right; }
+    tr.latest { background: var(--accent-soft); }
+
+    .good { color: var(--good); font-weight: 700; }
+    .bad { color: var(--bad); font-weight: 700; }
+
+    .verdict {
+      padding: 14px;
+      border-radius: 10px;
+      background: var(--good-soft);
+      color: var(--good);
+      font-weight: 650;
+    }
+
+    .verdict.caution { background: var(--warn-soft); color: var(--warn); }
+    .verdict.bad { background: var(--bad-soft); color: var(--bad); }
+
+    @media (max-width: 820px) {
+      .guide, .state-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Operator-Lernen über 20 Aufgabenfamilien</h1>
+  <p class="intro">
+    Diese Demo prüft eine Frage: Senkt eine auf zwei Plätze begrenzte Bibliothek den Suchaufwand in späteren Familien, wenn sie nur aus bereits abgeschlossenen Familien lernen darf?
+  </p>
+  <div class="notice">
+    PROTOTYP. Die Reihenfolge ist fest. Jede Familie wird zuerst bewertet und liefert erst danach Lernbeispiele. Makroaufrufe werden vollständig auf Grundoperationen zurückgerechnet.
+  </div>
+
+  <div class="tabs" id="guideTabs"></div>
+
+  <section class="panel guide">
+    <div>
+      <h2 id="guideTitle"></h2>
+      <p id="guideDescription" class="muted"></p>
+    </div>
+    <div class="guide-copy">
+      <h3>Geführter Ablauf</h3>
+      <div class="guide-actions" id="guideActions"></div>
+    </div>
+  </section>
+
+  <div class="actions" aria-label="Freies Ausprobieren">
+    <button data-action="next">Nächste Familie</button>
+    <button data-action="five">Fünf Familien</button>
+    <button class="primary" data-action="all">Alle 20 ausführen</button>
+    <button data-action="reset">Zurücksetzen</button>
+  </div>
+
+  <div id="message" class="message">Bereit. Die erste Familie startet mit leerer Bibliothek.</div>
+
+  <section class="panel">
+    <h2>Aktueller Zustand</h2>
+    <div class="state-grid">
+      <div class="state-card">
+        <h3>Abgeschlossen</h3>
+        <div class="value" id="progressValue">0 / 20</div>
+        <div class="small muted" id="progressDetail">Nächste Familie: Quadrat, erster Kontakt</div>
+      </div>
+      <div class="state-card">
+        <h3>Aktive Bibliothek</h3>
+        <div class="value" id="libraryValue">leer</div>
+        <div class="small muted">Höchstens zwei Operatoren, gewählt aus früheren Beispielen.</div>
+      </div>
+      <div class="state-card">
+        <h3>Gefundene Kandidaten</h3>
+        <div class="value" id="candidateValue">0</div>
+        <div class="small muted" id="candidateDetail">Noch keine Lernbeispiele verarbeitet.</div>
+      </div>
+      <div class="state-card">
+        <h3>Sucharbeit bisher</h3>
+        <div class="value" id="workValue">gleich</div>
+        <div class="small muted" id="workDetail">Basis und lernende Suche starten identisch.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Zuletzt bearbeitete Familie</h2>
+    <div id="latestResult" class="muted">Noch keine Familie ausgeführt.</div>
+  </section>
+
+  <section class="panel">
+    <h2>Bibliothek</h2>
+    <div id="libraryTable" class="muted">Noch keine Kandidaten gefunden.</div>
+  </section>
+
+  <section class="panel">
+    <h2>Verlauf</h2>
+    <p class="small muted">
+      Arbeit zählt sämtliche ausgeführten Grundoperationen über sieben Eingabewerte. Der Kontrollarm erhält gleich viele Operatoren mit gleicher innerer Größe, aber vertauschten Grundoperationen.
+    </p>
+    <div id="historyTable" class="muted">Noch keine Familie ausgeführt.</div>
+  </section>
+
+  <section class="panel">
+    <h2>Befund</h2>
+    <div id="verdict" class="verdict caution">Noch kein Befund.</div>
+  </section>
+</main>
+
+<script>
+const MultiFamilyExperiment = (() => {
+  const INPUTS = [-3, -2, -1, 0, 1, 2, 3];
+  const CONSTANTS = [-2, -1, 0, 1, 2, 3];
+  const MAX_COST = 7;
+  const LIBRARY_LIMIT = 2;
+  const VALUE_LIMIT = 1_000_000;
+
+  const V = () => ({ type: "var", cost: 1 });
+  const C = value => ({ type: "const", value, cost: 1 });
+  const B = (op, left, right) => {
+    if ((op === "add" || op === "mul") && format(left) > format(right)) {
+      [left, right] = [right, left];
+    }
+    return { type: "binary", op, left, right, cost: 1 + left.cost + right.cost };
+  };
+  const Call = (name, arg) => ({ type: "call", name, arg, cost: 1 + arg.cost });
+
+  const OPS = {
+    add: { symbol: "+", fn: (a, b) => a + b, commutative: true },
+    sub: { symbol: "−", fn: (a, b) => a - b, commutative: false },
+    mul: { symbol: "×", fn: (a, b) => a * b, commutative: true }
+  };
+
+  function format(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return String(ast.value);
+    if (ast.type === "call") return `${ast.name}(${format(ast.arg)})`;
+    return `(${format(ast.left)} ${OPS[ast.op].symbol} ${format(ast.right)})`;
+  }
+
+  function key(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return `c:${ast.value}`;
+    if (ast.type === "call") return `call:${ast.name}(${key(ast.arg)})`;
+    return `${ast.op}(${key(ast.left)},${key(ast.right)})`;
+  }
+
+  function evalAst(ast, x, macros) {
+    if (ast.type === "var") return x;
+    if (ast.type === "const") return ast.value;
+    if (ast.type === "call") {
+      const macro = macros[ast.name];
+      if (!macro) return NaN;
+      const argument = evalAst(ast.arg, x, macros);
+      return evalAst(macro.definition, argument, {});
+    }
+    const left = evalAst(ast.left, x, macros);
+    const right = evalAst(ast.right, x, macros);
+    const value = OPS[ast.op].fn(left, right);
+    return Number.isFinite(value) && Math.abs(value) <= VALUE_LIMIT ? value : NaN;
+  }
+
+  function primitiveCount(ast, macros) {
+    if (ast.type === "var" || ast.type === "const") return 0;
+    if (ast.type === "binary") {
+      return 1 + primitiveCount(ast.left, macros) + primitiveCount(ast.right, macros);
+    }
+    const macro = macros[ast.name];
+    return primitiveCount(ast.arg, macros) + primitiveCount(macro.definition, {});
+  }
+
+  function signature(ast, macros = {}) {
+    const values = INPUTS.map(x => evalAst(ast, x, macros));
+    if (values.some(Number.isNaN)) return null;
+    return values.join(",");
+  }
+
+  function enumerate(macros = {}) {
+    const byCost = Array.from({ length: MAX_COST + 1 }, () => []);
+    const seen = new Map();
+    const attemptsByCost = Array(MAX_COST + 1).fill(0);
+    const primitiveWorkByCost = Array(MAX_COST + 1).fill(0);
+
+    function acceptBatch(cost, batch) {
+      batch.sort((a, b) => key(a).localeCompare(key(b)));
+      for (const ast of batch) {
+        const sig = signature(ast, macros);
+        if (sig === null) continue;
+        attemptsByCost[cost] += 1;
+        primitiveWorkByCost[cost] += primitiveCount(ast, macros) * INPUTS.length;
+        if (seen.has(sig)) continue;
+        seen.set(sig, ast);
+        byCost[cost].push(ast);
+      }
+    }
+
+    acceptBatch(1, [V(), ...CONSTANTS.map(C)]);
+
+    for (let cost = 2; cost <= MAX_COST; cost += 1) {
+      const batch = [];
+
+      for (const name of Object.keys(macros).sort()) {
+        for (const arg of byCost[cost - 1]) batch.push(Call(name, arg));
+      }
+
+      for (let leftCost = 1; leftCost < cost; leftCost += 1) {
+        const rightCost = cost - 1 - leftCost;
+        if (rightCost < 1) continue;
+        for (const [op, spec] of Object.entries(OPS)) {
+          for (const left of byCost[leftCost]) {
+            for (const right of byCost[rightCost]) {
+              if (spec.commutative && key(left) > key(right)) continue;
+              batch.push(B(op, left, right));
+            }
+          }
+        }
+      }
+
+      acceptBatch(cost, batch);
+    }
+
+    return { byCost, seen, attemptsByCost, primitiveWorkByCost };
+  }
+
+  function sum(values) { return values.reduce((total, value) => total + value, 0); }
+
+  function searchStats(enumeration, target) {
+    const solution = enumeration.seen.get(signature(target, {}));
+    if (!solution) {
+      return {
+        found: false,
+        solution: null,
+        cost: null,
+        attempts: sum(enumeration.attemptsByCost),
+        primitiveWork: sum(enumeration.primitiveWorkByCost)
+      };
+    }
+    return {
+      found: true,
+      solution,
+      cost: solution.cost,
+      attempts: sum(enumeration.attemptsByCost.slice(0, solution.cost + 1)),
+      primitiveWork: sum(enumeration.primitiveWorkByCost.slice(0, solution.cost + 1))
+    };
+  }
+
+  function containsVariable(ast) {
+    if (ast.type === "var") return true;
+    if (ast.type === "const") return false;
+    if (ast.type === "call") return containsVariable(ast.arg);
+    return containsVariable(ast.left) || containsVariable(ast.right);
+  }
+
+  function collectSubtrees(ast, found) {
+    found.push(ast);
+    if (ast.type === "binary") {
+      collectSubtrees(ast.left, found);
+      collectSubtrees(ast.right, found);
+    } else if (ast.type === "call") {
+      collectSubtrees(ast.arg, found);
+    }
+  }
+
+  function operatorName(definition) {
+    const sig = signature(definition, {});
+    const known = new Map([
+      [signature(B("mul", V(), V()), {}), "quad"],
+      [signature(B("add", V(), V()), {}), "doppelt"],
+      [signature(B("add", C(1), V()), {}), "plus_eins"],
+      [signature(B("add", C(-1), V()), {}), "minus_eins"],
+      [signature(B("mul", B("mul", V(), V()), V()), {}), "kubik"]
+    ]);
+    if (known.has(sig)) return known.get(sig);
+    let hash = 0;
+    for (const char of key(definition)) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+    return `op_${hash.toString(36).slice(0, 5)}`;
+  }
+
+  function deriveMacro(trainingSolutions) {
+    const candidates = new Map();
+    let scannedNodes = 0;
+
+    trainingSolutions.forEach(({ stats }, taskIndex) => {
+      if (!stats.found) return;
+      const subtrees = [];
+      collectSubtrees(stats.solution, subtrees);
+      scannedNodes += subtrees.length;
+      const seenInTask = new Set();
+      for (const subtree of subtrees) {
+        if (subtree.cost < 3 || !containsVariable(subtree)) continue;
+        const id = key(subtree);
+        if (seenInTask.has(id)) continue;
+        seenInTask.add(id);
+        const item = candidates.get(id) || { definition: subtree, taskIndices: new Set() };
+        item.taskIndices.add(taskIndex);
+        candidates.set(id, item);
+      }
+    });
+
+    const ranked = [...candidates.values()]
+      .filter(item => item.taskIndices.size >= 2)
+      .map(item => ({
+        ...item,
+        reuseScore: item.taskIndices.size * (item.definition.cost - 2)
+      }))
+      .sort((a, b) => b.reuseScore - a.reuseScore || b.taskIndices.size - a.taskIndices.size || a.definition.cost - b.definition.cost || key(a.definition).localeCompare(key(b.definition)));
+
+    if (!ranked.length) return { macro: null, scannedNodes };
+    const best = ranked[0];
+    return {
+      macro: {
+        id: key(best.definition),
+        name: operatorName(best.definition),
+        definition: best.definition,
+        taskIndices: [...best.taskIndices],
+        definitionCost: best.definition.cost,
+        reuseScore: best.reuseScore
+      },
+      scannedNodes
+    };
+  }
+
+  const x = () => V();
+  const add = (a, b) => B("add", a, b);
+  const sub = (a, b) => B("sub", a, b);
+  const mul = (a, b) => B("mul", a, b);
+  const q = () => mul(x(), x());
+  const d = () => add(x(), x());
+  const p1 = () => add(C(1), x());
+  const m1 = () => add(C(-1), x());
+  const cube = () => mul(q(), x());
+  const plus = (ast, value) => add(ast, C(value));
+  const twice = ast => add(ast, ast);
+  const task = (name, expression) => ({ name, expression });
+  const family = (id, title, motif, learning, challenges) => ({ id, title, motif, learning, challenges });
+
+  const FAMILIES = [
+    family("F01", "Quadrat, erster Kontakt", "quad",
+      [task("L1", q()), task("L2", add(q(), x())), task("L3", cube())],
+      [task("A", plus(q(), 2)), task("B", plus(q(), -2))]),
+    family("F02", "Verdopplung, erster Kontakt", "doppelt",
+      [task("L1", d()), task("L2", mul(d(), x())), task("L3", mul(d(), q()))],
+      [task("A", plus(d(), 2)), task("B", plus(d(), -2))]),
+    family("F03", "Verschiebung nach oben", "plus_eins",
+      [task("L1", p1()), task("L2", mul(p1(), q())), task("L3", plus(x(), 2))],
+      [task("A", mul(p1(), x())), task("B", mul(p1(), p1()))]),
+    family("F04", "Kubik, erster Kontakt", "kubik",
+      [task("L1", cube()), task("L2", plus(cube(), 1)), task("L3", plus(cube(), -1))],
+      [task("A", plus(cube(), 2)), task("B", plus(cube(), -2))]),
+    family("F05", "Quadrat mit stärkerer Gewichtung", "quad",
+      [task("L1", plus(q(), 1)), task("L2", plus(q(), -1)), task("L3", sub(q(), x()))],
+      [task("A", plus(mul(C(3), q()), 1)), task("B", plus(mul(C(3), q()), -1))]),
+    family("F06", "Lineare Zwischenfamilie", "none",
+      [task("L1", plus(x(), 1)), task("L2", plus(x(), -1)), task("L3", mul(C(3), x()))],
+      [task("A", plus(x(), 2)), task("B", plus(x(), -2))]),
+    family("F07", "Verschiebung nach unten", "minus_eins",
+      [task("L1", m1()), task("L2", mul(m1(), q())), task("L3", plus(x(), -2))],
+      [task("A", mul(m1(), x())), task("B", mul(m1(), m1()))]),
+    family("F08", "Verdopplung in Produkten", "doppelt",
+      [task("L1", d()), task("L2", mul(d(), x())), task("L3", mul(d(), q()))],
+      [task("A", mul(d(), d())), task("B", plus(d(), 3))]),
+    family("F09", "Verschiebung in Produkten", "plus_eins",
+      [task("L1", p1()), task("L2", mul(p1(), q())), task("L3", plus(x(), 2))],
+      [task("A", mul(p1(), d())), task("B", mul(p1(), plus(x(), 2)))]),
+    family("F10", "Kubik mit anderer Einbettung", "kubik",
+      [task("L1", plus(cube(), 2)), task("L2", plus(cube(), -2)), task("L3", cube())],
+      [task("A", plus(cube(), 3)), task("B", twice(cube()))]),
+    family("F11", "Quadrat mit linearem Anteil", "quad",
+      [task("L1", plus(q(), 2)), task("L2", plus(q(), -2)), task("L3", add(q(), x()))],
+      [task("A", add(q(), mul(C(3), x()))), task("B", sub(q(), mul(C(3), x())))]),
+    family("F12", "Zweite lineare Zwischenfamilie", "none",
+      [task("L1", plus(x(), 2)), task("L2", plus(x(), -2)), task("L3", plus(d(), 1))],
+      [task("A", plus(mul(C(3), x()), 1)), task("B", plus(mul(C(3), x()), -1))]),
+    family("F13", "Verschiebung nach unten in Produkten", "minus_eins",
+      [task("L1", m1()), task("L2", mul(m1(), q())), task("L3", plus(x(), -2))],
+      [task("A", mul(m1(), d())), task("B", mul(m1(), plus(x(), -2)))]),
+    family("F14", "Verdopplung mit quadratischem Anteil", "doppelt",
+      [task("L1", d()), task("L2", mul(d(), x())), task("L3", mul(d(), q()))],
+      [task("A", plus(mul(d(), x()), 1)), task("B", plus(mul(d(), x()), -1))]),
+    family("F15", "Verschiebung mit größeren Konstanten", "plus_eins",
+      [task("L1", p1()), task("L2", mul(p1(), q())), task("L3", plus(x(), 2))],
+      [task("A", mul(C(3), p1())), task("B", mul(p1(), plus(x(), 3)))]),
+    family("F16", "Kubik mit quadratischem Anteil", "kubik",
+      [task("L1", plus(cube(), 3)), task("L2", sub(cube(), C(3))), task("L3", cube())],
+      [task("A", add(cube(), q())), task("B", sub(cube(), q()))]),
+    family("F17", "Quadrat in gemischten Aufgaben", "quad",
+      [task("L1", plus(q(), 3)), task("L2", sub(q(), C(3))), task("L3", cube())],
+      [task("A", mul(q(), q())), task("B", add(q(), d()))]),
+    family("F18", "Verschiebung nach unten, später Abruf", "minus_eins",
+      [task("L1", m1()), task("L2", mul(m1(), q())), task("L3", plus(x(), -2))],
+      [task("A", mul(C(3), m1())), task("B", mul(m1(), sub(x(), C(3))))]),
+    family("F19", "Dritte lineare Zwischenfamilie", "none",
+      [task("L1", plus(x(), 3)), task("L2", sub(x(), C(3))), task("L3", d())],
+      [task("A", plus(d(), 1)), task("B", plus(d(), -1))]),
+    family("F20", "Gemischter Abschluss", "none",
+      [task("L1", plus(x(), 1)), task("L2", mul(C(3), x())), task("L3", plus(q(), -1))],
+      [task("A", add(cube(), d())), task("B", add(cube(), x()))])
+  ];
+
+  const BASE_ENUMERATION = enumerate({});
+
+  function macrosFrom(records) {
+    return Object.fromEntries(records.map(record => [record.name, record]));
+  }
+
+  function mutateRoot(definition) {
+    if (definition.type !== "binary") return definition;
+    const replacement = definition.op === "mul" ? "add" : "mul";
+    return B(replacement, definition.left, definition.right);
+  }
+
+  function controlMacros(records) {
+    return Object.fromEntries(records.map((record, index) => {
+      const definition = mutateRoot(record.definition);
+      return [`kontrolle_${index + 1}`, { name: `kontrolle_${index + 1}`, definition }];
+    }));
+  }
+
+  function selectLibrary(registry) {
+    return [...registry]
+      .sort((a, b) => {
+        const aScore = a.evidenceKeys.length * (a.definitionCost - 2);
+        const bScore = b.evidenceKeys.length * (b.definitionCost - 2);
+        return bScore - aScore || b.evidenceKeys.length - a.evidenceKeys.length || b.sightings - a.sightings || a.firstSeen - b.firstSeen;
+      })
+      .slice(0, LIBRARY_LIMIT);
+  }
+
+  function measure(tasks, macros) {
+    const enumeration = Object.keys(macros).length ? enumerate(macros) : BASE_ENUMERATION;
+    const rows = tasks.map(item => ({ task: item, stats: searchStats(enumeration, item.expression) }));
+    return {
+      rows,
+      attempts: sum(rows.map(row => row.stats.attempts)),
+      primitiveWork: sum(rows.map(row => row.stats.primitiveWork)),
+      solved: sum(rows.map(row => Number(row.stats.found)))
+    };
+  }
+
+  function updateRegistry(registry, derived, learningTasks, familyNumber) {
+    if (!derived.macro) return registry.map(item => ({ ...item, evidenceKeys: [...item.evidenceKeys] }));
+    const existing = registry.find(item => item.id === derived.macro.id);
+    const evidence = derived.macro.taskIndices
+      .map(index => signature(learningTasks[index].expression, {}))
+      .filter(Boolean);
+
+    if (!existing) {
+      return [...registry, {
+        ...derived.macro,
+        firstSeen: familyNumber,
+        sightings: 1,
+        evidenceKeys: [...new Set(evidence)]
+      }];
+    }
+
+    return registry.map(item => item.id === existing.id ? {
+      ...item,
+      sightings: item.sightings + 1,
+      evidenceKeys: [...new Set([...item.evidenceKeys, ...evidence])]
+    } : { ...item, evidenceKeys: [...item.evidenceKeys] });
+  }
+
+  function zeroTotals() {
+    return {
+      basis: { attempts: 0, primitiveWork: 0, solved: 0 },
+      gelernt: { attempts: 0, primitiveWork: 0, solved: 0 },
+      kontrolle: { attempts: 0, primitiveWork: 0, solved: 0 },
+      scannedNodes: 0
+    };
+  }
+
+  function addMeasure(target, measured) {
+    return {
+      attempts: target.attempts + measured.attempts,
+      primitiveWork: target.primitiveWork + measured.primitiveWork,
+      solved: target.solved + measured.solved
+    };
+  }
+
+  function initialState(guideId = "early") {
+    return {
+      guideId,
+      index: 0,
+      registry: [],
+      activeLibrary: [],
+      history: [],
+      totals: zeroTotals(),
+      message: "Bereit. Die erste Familie startet mit leerer Bibliothek."
+    };
+  }
+
+  function step(state) {
+    if (state.index >= FAMILIES.length) return { ...state, message: "Alle 20 Familien sind abgeschlossen." };
+
+    const familyItem = FAMILIES[state.index];
+    const active = selectLibrary(state.registry);
+    const basis = measure(familyItem.challenges, {});
+    const gelernt = measure(familyItem.challenges, macrosFrom(active));
+    const kontrolle = measure(familyItem.challenges, controlMacros(active));
+
+    const learningSolutions = familyItem.learning.map(item => ({
+      task: item,
+      stats: searchStats(BASE_ENUMERATION, item.expression)
+    }));
+    const derived = deriveMacro(learningSolutions);
+    const registry = updateRegistry(state.registry, derived, familyItem.learning, state.index + 1);
+    const activeAfter = selectLibrary(registry);
+    const expectedId = familyItem.motif === "none"
+      ? null
+      : registry.find(item => item.name === familyItem.motif)?.id || null;
+    const matchingOperatorWasActive = expectedId ? active.some(item => item.id === expectedId) : false;
+
+    const row = {
+      number: state.index + 1,
+      family: familyItem,
+      activeBefore: active.map(item => item.name),
+      activeAfter: activeAfter.map(item => item.name),
+      matchingOperatorWasActive,
+      basis,
+      gelernt,
+      kontrolle,
+      derived,
+      learningSolutions
+    };
+
+    const totals = {
+      basis: addMeasure(state.totals.basis, basis),
+      gelernt: addMeasure(state.totals.gelernt, gelernt),
+      kontrolle: addMeasure(state.totals.kontrolle, kontrolle),
+      scannedNodes: state.totals.scannedNodes + derived.scannedNodes
+    };
+
+    return {
+      ...state,
+      index: state.index + 1,
+      registry,
+      activeLibrary: activeAfter,
+      history: [...state.history, row],
+      totals,
+      message: derived.macro
+        ? `${familyItem.id} abgeschlossen. Aus den Lernbeispielen kam ${derived.macro.name}(x) = ${format(derived.macro.definition)}.`
+        : `${familyItem.id} abgeschlossen. Die Lernbeispiele lieferten keinen wiederkehrenden mehrschrittigen Ausdruck.`
+    };
+  }
+
+  function run(state, count) {
+    let next = state;
+    for (let index = 0; index < count && next.index < FAMILIES.length; index += 1) next = step(next);
+    return next;
+  }
+
+  function reducer(state, action) {
+    if (action.type === "guide") return initialState(action.id);
+    if (action.type === "reset") return initialState(state.guideId);
+    if (action.type === "next") return step(state);
+    if (action.type === "five") return run(state, 5);
+    if (action.type === "all") return run(state, FAMILIES.length - state.index);
+    return state;
+  }
+
+  function firstPositiveFamily(history) {
+    let cumulative = 0;
+    for (const row of history) {
+      cumulative += row.basis.primitiveWork - row.gelernt.primitiveWork;
+      if (cumulative > 0) return row.number;
+    }
+    return null;
+  }
+
+  const guides = {
+    early: {
+      title: "Die ersten vier Familien",
+      description: "Beobachte, dass jede neue Struktur ihre eigene Familie zunächst ohne passenden Eintrag lösen muss.",
+      steps: [
+        { label: "Neu starten", type: "reset" },
+        { label: "Familie 1", type: "next" },
+        { label: "Familie 2", type: "next" },
+        { label: "Familie 3", type: "next" },
+        { label: "Familie 4", type: "next" }
+      ]
+    },
+    pressure: {
+      title: "Druck auf zwei Bibliotheksplätze",
+      description: "Nach zwölf Familien konkurrieren mehrere gefundene Operatoren um zwei Plätze. Die Auswahl nutzt nur unterschiedliche frühere Lernbeispiele.",
+      steps: [
+        { label: "Neu starten", type: "reset" },
+        { label: "Familien 1 bis 5", type: "five" },
+        { label: "Familien 6 bis 10", type: "five" },
+        { label: "Familie 11", type: "next" },
+        { label: "Familie 12", type: "next" }
+      ]
+    },
+    full: {
+      title: "Gesamtlauf",
+      description: "Der vollständige Lauf zeigt Nutzen, Fehlbelegung und Kosten über alle 20 Familien.",
+      steps: [
+        { label: "Neu starten", type: "reset" },
+        { label: "Alle 20 Familien", type: "all" }
+      ]
+    }
+  };
+
+  return {
+    FAMILIES,
+    guides,
+    initialState,
+    reducer,
+    format,
+    selectLibrary,
+    firstPositiveFamily
+  };
+})();
+
+let state = MultiFamilyExperiment.initialState();
+
+function dispatch(action) {
+  state = MultiFamilyExperiment.reducer(state, action);
+  render();
+}
+
+function number(value) {
+  return value == null ? "offen" : new Intl.NumberFormat("de-DE").format(value);
+}
+
+function percent(part, total) {
+  if (!total) return "0 %";
+  return `${new Intl.NumberFormat("de-DE", { maximumFractionDigits: 1 }).format(part / total * 100)} %`;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function render() {
+  renderGuide();
+  renderState();
+  renderLatest();
+  renderLibrary();
+  renderHistory();
+  renderVerdict();
+  bindButtons();
+}
+
+function renderGuide() {
+  const guides = MultiFamilyExperiment.guides;
+  const guide = guides[state.guideId];
+  document.getElementById("guideTabs").innerHTML = Object.entries(guides)
+    .map(([id, item]) => `<button class="tab ${id === state.guideId ? "active" : ""}" data-guide="${id}">${escapeHtml(item.title)}</button>`)
+    .join("");
+  document.getElementById("guideTitle").textContent = guide.title;
+  document.getElementById("guideDescription").textContent = guide.description;
+  document.getElementById("guideActions").innerHTML = guide.steps
+    .map(step => `<button data-action="${step.type}">${escapeHtml(step.label)}</button>`)
+    .join("");
+}
+
+function renderState() {
+  const next = MultiFamilyExperiment.FAMILIES[state.index];
+  const delta = state.totals.basis.primitiveWork - state.totals.gelernt.primitiveWork;
+  document.getElementById("progressValue").textContent = `${state.index} / 20`;
+  document.getElementById("progressDetail").textContent = next ? `Nächste Familie: ${next.title}` : "Gesamtlauf abgeschlossen";
+  document.getElementById("libraryValue").textContent = state.activeLibrary.length
+    ? state.activeLibrary.map(item => `${item.name}(x)`).join(", ")
+    : "leer";
+  document.getElementById("candidateValue").textContent = number(state.registry.length);
+  document.getElementById("candidateDetail").textContent = state.registry.length
+    ? `${state.totals.scannedNodes} Lösungsknoten wurden beim Ableiten gelesen.`
+    : "Noch keine Lernbeispiele verarbeitet.";
+  document.getElementById("workValue").textContent = delta > 0 ? `${number(delta)} weniger` : delta < 0 ? `${number(-delta)} mehr` : "gleich";
+  document.getElementById("workDetail").textContent = "Vollständig ausgerechnete Grundoperationen auf neuen Aufgaben.";
+  document.getElementById("message").textContent = state.message;
+}
+
+function renderLatest() {
+  const target = document.getElementById("latestResult");
+  const row = state.history.at(-1);
+  if (!row) {
+    target.className = "muted";
+    target.textContent = "Noch keine Familie ausgeführt.";
+    return;
+  }
+  const learned = row.derived.macro;
+  target.className = "";
+  target.innerHTML = `
+    <p><strong>${escapeHtml(row.family.id)} · ${escapeHtml(row.family.title)}</strong></p>
+    <p class="small">Bibliothek vor der Bewertung: ${chips(row.activeBefore)}. Danach abgeleitet: ${learned ? `<code>${escapeHtml(learned.name)}(x) = ${escapeHtml(MultiFamilyExperiment.format(learned.definition))}</code>` : "kein Kandidat"}.</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Arm</th><th class="number">Gelöst</th><th class="number">Suchknoten</th><th class="number">Arbeit</th></tr></thead>
+      <tbody>
+        ${measureRow("Basis", row.basis)}
+        ${measureRow("Lernende Bibliothek", row.gelernt)}
+        ${measureRow("Größengleiche Kontrolle", row.kontrolle)}
+      </tbody>
+    </table></div>`;
+}
+
+function measureRow(label, measured) {
+  return `<tr><td>${escapeHtml(label)}</td><td class="number">${measured.solved} / 2</td><td class="number">${number(measured.attempts)}</td><td class="number">${number(measured.primitiveWork)}</td></tr>`;
+}
+
+function chips(names) {
+  if (!names.length) return '<span class="muted">leer</span>';
+  return `<span class="chips">${names.map(name => `<span class="chip">${escapeHtml(name)}(x)</span>`).join("")}</span>`;
+}
+
+function renderLibrary() {
+  const target = document.getElementById("libraryTable");
+  if (!state.registry.length) {
+    target.className = "muted";
+    target.textContent = "Noch keine Kandidaten gefunden.";
+    return;
+  }
+  const activeIds = new Set(state.activeLibrary.map(item => item.id));
+  const ranked = MultiFamilyExperiment.selectLibrary(state.registry);
+  const rankIds = new Map(ranked.map((item, index) => [item.id, index + 1]));
+  target.className = "table-wrap";
+  target.innerHTML = `<table>
+    <thead><tr><th>Operator</th><th>Definition</th><th class="number">Unterschiedliche Beispiele</th><th class="number">Funde</th><th>Status</th></tr></thead>
+    <tbody>${state.registry.map(item => `<tr>
+      <td><code>${escapeHtml(item.name)}(x)</code></td>
+      <td><code>${escapeHtml(MultiFamilyExperiment.format(item.definition))}</code></td>
+      <td class="number">${item.evidenceKeys.length}</td>
+      <td class="number">${item.sightings}</td>
+      <td>${activeIds.has(item.id) ? `aktiv, Rang ${rankIds.get(item.id)}` : "wartet"}</td>
+    </tr>`).join("")}</tbody>
+  </table>`;
+}
+
+function renderHistory() {
+  const target = document.getElementById("historyTable");
+  if (!state.history.length) {
+    target.className = "muted";
+    target.textContent = "Noch keine Familie ausgeführt.";
+    return;
+  }
+  target.className = "table-wrap";
+  target.innerHTML = `<table>
+    <thead><tr>
+      <th>Familie</th><th>Bibliothek davor</th><th>Danach gelernt</th>
+      <th class="number">Basis<br>Knoten / Arbeit</th>
+      <th class="number">Gelernt<br>Knoten / Arbeit</th>
+      <th class="number">Kontrolle<br>Knoten / Arbeit</th>
+      <th>Änderung der Arbeit</th>
+    </tr></thead>
+    <tbody>${state.history.map((row, index) => {
+      const delta = row.basis.primitiveWork - row.gelernt.primitiveWork;
+      const learned = row.derived.macro?.name || "keiner";
+      return `<tr class="${index === state.history.length - 1 ? "latest" : ""}">
+        <td>${escapeHtml(row.family.id)}<br><span class="small muted">${escapeHtml(row.family.title)}</span></td>
+        <td>${row.activeBefore.length ? row.activeBefore.map(name => escapeHtml(name)).join(", ") : "leer"}</td>
+        <td>${escapeHtml(learned)}</td>
+        <td class="number">${number(row.basis.attempts)} / ${number(row.basis.primitiveWork)}</td>
+        <td class="number">${number(row.gelernt.attempts)} / ${number(row.gelernt.primitiveWork)}</td>
+        <td class="number">${number(row.kontrolle.attempts)} / ${number(row.kontrolle.primitiveWork)}</td>
+        <td class="${delta > 0 ? "good" : delta < 0 ? "bad" : ""}">${delta > 0 ? `${number(delta)} weniger` : delta < 0 ? `${number(-delta)} mehr` : "gleich"}</td>
+      </tr>`;
+    }).join("")}
+    <tr>
+      <th colspan="3">Summe</th>
+      <th class="number">${number(state.totals.basis.attempts)} / ${number(state.totals.basis.primitiveWork)}</th>
+      <th class="number">${number(state.totals.gelernt.attempts)} / ${number(state.totals.gelernt.primitiveWork)}</th>
+      <th class="number">${number(state.totals.kontrolle.attempts)} / ${number(state.totals.kontrolle.primitiveWork)}</th>
+      <th></th>
+    </tr></tbody>
+  </table>`;
+}
+
+function renderVerdict() {
+  const target = document.getElementById("verdict");
+  if (!state.history.length) {
+    target.className = "verdict caution";
+    target.textContent = "Noch kein Befund.";
+    return;
+  }
+
+  const saved = state.totals.basis.primitiveWork - state.totals.gelernt.primitiveWork;
+  const controlSaved = state.totals.basis.primitiveWork - state.totals.kontrolle.primitiveWork;
+  const solvedEqual = state.totals.gelernt.solved === state.totals.basis.solved;
+  const breakEven = MultiFamilyExperiment.firstPositiveFamily(state.history);
+  const processedTasks = state.history.length * 2;
+
+  if (state.index < 20) {
+    target.className = "verdict caution";
+    target.textContent = `${state.index} Familien sind ausgewertet. Die lernende Suche liegt bisher bei ${number(state.totals.gelernt.primitiveWork)} Grundoperationen, die Basis bei ${number(state.totals.basis.primitiveWork)}.`;
+    return;
+  }
+
+  if (saved > 0 && solvedEqual && state.totals.gelernt.primitiveWork < state.totals.kontrolle.primitiveWork) {
+    target.className = "verdict";
+    target.textContent = `Begrenztes positives Signal: ${processedTasks} neue Aufgaben wurden vollständig gelöst. Die frühere Bibliothek spart ${number(saved)} Grundoperationen, also ${percent(saved, state.totals.basis.primitiveWork)}. Die größengleiche Kontrolle spart ${number(Math.max(0, controlSaved))}. Die kumulierte Sucharbeit liegt erstmals nach Familie ${breakEven} unter der Basis.`;
+  } else if (saved > 0 && solvedEqual) {
+    target.className = "verdict caution";
+    target.textContent = `Die Bibliothek spart ${number(saved)} Grundoperationen, schlägt die größengleiche Kontrolle aber nicht. Der Gewinn lässt sich damit noch nicht der gelernten Auswahl zuschreiben.`;
+  } else {
+    target.className = "verdict bad";
+    target.textContent = `Die begrenzte Bibliothek senkt die gesamte Sucharbeit in dieser Reihenfolge nicht. Basis: ${number(state.totals.basis.primitiveWork)}, gelernt: ${number(state.totals.gelernt.primitiveWork)}.`;
+  }
+}
+
+function bindButtons() {
+  document.querySelectorAll("[data-guide]").forEach(button => {
+    button.onclick = () => dispatch({ type: "guide", id: button.dataset.guide });
+  });
+  document.querySelectorAll("[data-action]").forEach(button => {
+    button.onclick = () => dispatch({ type: button.dataset.action });
+    if (button.dataset.action !== "reset") button.disabled = state.index >= 20;
+  });
+}
+
+render();
+</script>
+</body>
+</html>
