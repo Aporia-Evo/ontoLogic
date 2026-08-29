@@ -379,7 +379,7 @@ const DoubleOperatorExperiment = (() => {
   }
 
   function addTotals(totals, kind, basis, gelernt, kontrolle, scannedNodes) {
-    const next = structuredClone(totals);
+    const next = JSON.parse(JSON.stringify(totals));
     for (const [name, measured] of Object.entries({ basis, gelernt, kontrolle })) {
       next.overall[name] = addArm(next.overall[name], measured);
       next[kind][name] = addArm(next[kind][name], measured);
