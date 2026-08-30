@@ -54,7 +54,7 @@
 
   <section class="panel">
     <h2>Aufgezeichneter Lauf</h2>
-    <p id="recordedText" class="small muted">Das Protokoll wurde im Commit <a href="https://github.com/Aporia-Evo/ontoLogic/commit/dcaeb639ecfd6c953b4b2ad9791bd3084328b099">dcaeb63</a> vor der Seed-Ziehung festgehalten. Die Seed-Liste steht jetzt fest. Der offizielle Lauf ist noch offen.</p>
+    <p id="recordedText" class="small muted">Das Protokoll wurde im Commit <a href="https://github.com/Aporia-Evo/ontoLogic/commit/dcaeb639ecfd6c953b4b2ad9791bd3084328b099">dcaeb63</a> vor der Seed-Ziehung festgehalten. Die 20 Seeds wurden danach im Commit <a href="https://github.com/Aporia-Evo/ontoLogic/commit/c778d3d6edb6cacffeb7d7f556b82ea0e68188c1">c778d3d</a> eingetragen. Im einmaligen Batch bestanden 18 von 20 Läufen, und jeder Arm löste alle 400 Testaufgaben. Die Arbeit der gelernten Regel sank gegenüber der Basis von 33.965.232 auf 24.672.454. Das sind 9.292.778 weniger, also 27,4 Prozent. Die gesamte Lernarbeit beträgt 531.259.273; der gepoolte Break-even liegt bei 1.144 Aufgaben.</p>
   </section>
 
   <div class="tabs" id="guideTabs"></div>
@@ -595,7 +595,45 @@ const D6Experiment = (() => {
 })();
 </script>
 
-<script id="recorded-results" type="application/json">null</script>
+<script id="recorded-results" type="application/json">{
+  "results": [
+    {"seed":4037662911,"hiddenFactor":2,"datasetFingerprint":"9c0ac027","operator":"(x + x)","rule":"alle Koeffizienten durch 2 teilbar","basis":{"work":1769292},"learned":{"work":1227028},"savingPct":0.3064864363824626,"breakEvenTasks":945,"passed":true,"failureReasons":[]},
+    {"seed":2692136209,"hiddenFactor":2,"datasetFingerprint":"de789720","operator":"(x + x)","rule":"alle Koeffizienten durch 2 teilbar","basis":{"work":1769292},"learned":{"work":1221050},"savingPct":0.3098651890134585,"breakEvenTasks":928,"passed":true,"failureReasons":[]},
+    {"seed":333364030,"hiddenFactor":2,"datasetFingerprint":"bc051e0b","operator":"(x + x)","rule":"alle Koeffizienten durch 2 teilbar","basis":{"work":1759884},"learned":{"work":1107734},"savingPct":0.3705641962765728,"breakEvenTasks":728,"passed":true,"failureReasons":[]},
+    {"seed":1465436238,"hiddenFactor":2,"datasetFingerprint":"1322ab86","operator":"(-2 × x)","rule":"alle Koeffizienten durch 2 teilbar","basis":{"work":1856316},"learned":{"work":1309460},"savingPct":0.29459208453733093,"breakEvenTasks":971,"passed":true,"failureReasons":[]},
+    {"seed":1071561522,"hiddenFactor":3,"datasetFingerprint":"a0ab2a4e","operator":"(3 × x)","rule":"Grad höchstens 1","basis":{"work":1769292},"learned":{"work":1764075},"savingPct":0.0029486370819514244,"breakEvenTasks":106474,"passed":false,"failureReasons":["weniger als 10 Prozent Ersparnis"]},
+    {"seed":3822649897,"hiddenFactor":2,"datasetFingerprint":"27675cca","operator":"(x + x)","rule":"alle Koeffizienten durch 2 teilbar","basis":{"work":1682268},"learned":{"work":1117142},"savingPct":0.33593101693665933,"breakEvenTasks":897,"passed":true,"failureReasons":[]},
+    {"seed":2221499287,"hiddenFactor":2,"datasetFingerprint":"e7c72abe","operator":"(-2 × x)","rule":"alle Koeffizienten durch 2 teilbar","basis":{"work":1595244},"learned":{"work":1067512},"savingPct":0.33081585011446524,"breakEvenTasks":1019,"passed":true,"failureReasons":[]},
+    {"seed":1394007515,"hiddenFactor":2,"datasetFingerprint":"3d84986b","operator":"(x + x)","rule":"Grad höchstens 1","basis":{"work":1856316},"learned":{"work":1344033},"savingPct":0.27596756155740726,"breakEvenTasks":935,"passed":true,"failureReasons":[]},
+    {"seed":2596179570,"hiddenFactor":3,"datasetFingerprint":"592d2fdb","operator":"(3 × x)","rule":"alle Koeffizienten durch 3 teilbar","basis":{"work":1769292},"learned":{"work":1251619},"savingPct":0.2925876565315392,"breakEvenTasks":964,"passed":true,"failureReasons":[]},
+    {"seed":2327797602,"hiddenFactor":3,"datasetFingerprint":"d455fff1","operator":"(3 × x)","rule":"alle Koeffizienten durch 3 teilbar","basis":{"work":1682268},"learned":{"work":1245970},"savingPct":0.25935106653636636,"breakEvenTasks":1364,"passed":true,"failureReasons":[]},
+    {"seed":2889944029,"hiddenFactor":3,"datasetFingerprint":"d143f0f9","operator":"(3 × x)","rule":"alle Koeffizienten durch 3 teilbar","basis":{"work":1682268},"learned":{"work":1120439},"savingPct":0.333971162739825,"breakEvenTasks":1127,"passed":true,"failureReasons":[]},
+    {"seed":401291844,"hiddenFactor":3,"datasetFingerprint":"193c959f","operator":"(3 × x)","rule":"alle Koeffizienten durch 3 teilbar","basis":{"work":1508220},"learned":{"work":976652},"savingPct":0.3524472557054011,"breakEvenTasks":1032,"passed":true,"failureReasons":[]},
+    {"seed":3490934050,"hiddenFactor":2,"datasetFingerprint":"739e9b8a","operator":"(-2 × x)","rule":"Grad höchstens 1","basis":{"work":1682268},"learned":{"work":1553914},"savingPct":0.07629818792249511,"breakEvenTasks":3965,"passed":false,"failureReasons":["weniger als 10 Prozent Ersparnis"]},
+    {"seed":2363971770,"hiddenFactor":3,"datasetFingerprint":"cd2a19ff","operator":"(3 × x)","rule":"alle Koeffizienten durch 3 teilbar","basis":{"work":1595244},"learned":{"work":1165883},"savingPct":0.2691506753825747,"breakEvenTasks":1154,"passed":true,"failureReasons":[]},
+    {"seed":2144331083,"hiddenFactor":3,"datasetFingerprint":"84ee3977","operator":"(3 × x)","rule":"alle Koeffizienten durch 3 teilbar","basis":{"work":1856316},"learned":{"work":1308382},"savingPct":0.29517280463024614,"breakEvenTasks":1000,"passed":true,"failureReasons":[]},
+    {"seed":212792244,"hiddenFactor":3,"datasetFingerprint":"15017009","operator":"(3 × x)","rule":"alle Zielwerte durch 3 teilbar","basis":{"work":1769292},"learned":{"work":1207463},"savingPct":0.3175445319370686,"breakEvenTasks":910,"passed":true,"failureReasons":[]},
+    {"seed":2635465861,"hiddenFactor":3,"datasetFingerprint":"a9bebf41","operator":"(3 × x)","rule":"alle Koeffizienten durch 3 teilbar","basis":{"work":1237740},"learned":{"work":855006},"savingPct":0.3092200300547773,"breakEvenTasks":1449,"passed":true,"failureReasons":[]},
+    {"seed":3418515350,"hiddenFactor":3,"datasetFingerprint":"db6dd87d","operator":"(3 × x)","rule":"alle Koeffizienten durch 3 teilbar","basis":{"work":1682268},"learned":{"work":1327324},"savingPct":0.2109913521507869,"breakEvenTasks":1670,"passed":true,"failureReasons":[]},
+    {"seed":380452032,"hiddenFactor":2,"datasetFingerprint":"482d9502","operator":"(x + x)","rule":"alle Koeffizienten durch 2 teilbar","basis":{"work":1856316},"learned":{"work":1308074},"savingPct":0.29533872465679334,"breakEvenTasks":868,"passed":true,"failureReasons":[]},
+    {"seed":1877549521,"hiddenFactor":3,"datasetFingerprint":"17d78898","operator":"(3 × x)","rule":"alle Koeffizienten durch 3 teilbar","basis":{"work":1585836},"learned":{"work":1193694},"savingPct":0.2472777765166133,"breakEvenTasks":1429,"passed":true,"failureReasons":[]}
+  ],
+  "summary": {
+    "runCount":20,"passCount":18,"taskCount":400,
+    "basis":{"attempts":1737120,"work":33965232,"solved":400,"enabled":0,"checks":0},
+    "always":{"attempts":1506998,"work":32507356,"solved":400,"enabled":400,"checks":0},
+    "learned":{"attempts":1272858,"work":24672454,"solved":400,"enabled":201,"checks":400},
+    "saving":9292778,"savingPct":0.2735967768452163,"learningWork":531259273,
+    "newTaskCount":880,"legacyOverlap":0,"minUniqueTaskCount":44,"datasetFingerprintCount":20,
+    "taskDrawCount":880,"distinctTaskCount":356,"repeatTaskDraws":524,
+    "medianLearningWork":26076100,"medianSavingPct":0.29525576464351977,"minSavingPct":0.0029486370819514244,"maxSavingPct":0.3705641962765728,
+    "medianBreakEven":1009.5,"minBreakEven":728,"maxBreakEven":106474,"infiniteBreakEvens":0,"pooledBreakEven":1144,
+    "factors":{"2":9,"3":11},
+    "operators":{"(x + x)":6,"(-2 × x)":3,"(3 × x)":11},
+    "rules":{"alle Koeffizienten durch 2 teilbar":7,"Grad höchstens 1":3,"alle Koeffizienten durch 3 teilbar":9,"alle Zielwerte durch 3 teilbar":1},
+    "passed":true
+  }
+}</script>
 
 <script>
 const recorded = JSON.parse(document.getElementById("recorded-results").textContent);
