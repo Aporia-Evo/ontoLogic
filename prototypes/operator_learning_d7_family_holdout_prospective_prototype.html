@@ -54,7 +54,7 @@
 
   <section class="panel">
     <h2>Aufgezeichneter Lauf</h2>
-    <p id="recordedText" class="small muted">Der offizielle Familien-Holdout steht aus.</p>
+    <p id="recordedText" class="small muted">Das Protokoll wurde im Commit <a href="https://github.com/Aporia-Evo/ontoLogic/commit/e78716f969f814f1d660efcb4216ac09f653050e">e78716f</a> vor der Seed-Ziehung festgehalten. Die 20 Seeds sind jetzt eingetragen. Der offizielle Familien-Holdout steht aus.</p>
   </section>
 
   <div class="tabs" id="guideTabs"></div>
@@ -108,7 +108,7 @@ const D7Experiment = (() => {
   const MAX_COST = 7;
   const VALUE_LIMIT = 1_000_000;
   const RULE_WORK_PER_TASK = 44;
-  const SEEDS = Object.freeze([]);
+  const SEEDS = Object.freeze([2548699305,642732048,15024444,3635357303,4273059384,447024945,3123956311,138118016,525193501,1879385110,1137564486,2466308568,3821032107,68954736,462506230,2978031812,1611579873,1687500433,831749843,804145051]);
 
   const V = () => ({ type:"var",cost:1 });
   const C = value => ({ type:"const",value,cost:1 });
