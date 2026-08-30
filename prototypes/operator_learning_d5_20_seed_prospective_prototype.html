@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>D5: Operatorlernen über 20 Seeds</title>
+<style>
+  :root { color-scheme:dark; --bg:#0d1117; --panel:#161b22; --line:#30363d; --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --good:#3fb950; --bad:#f85149; }
+  * { box-sizing:border-box; }
+  body { max-width:1120px; margin:0 auto; padding:32px 20px 64px; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,sans-serif; }
+  h1,h2,h3,p { margin-top:0; }
+  h1 { margin-bottom:8px; font-size:clamp(28px,5vw,46px); }
+  h2 { font-size:20px; }
+  h3 { font-size:15px; }
+  code { color:#d2a8ff; }
+  button { border:1px solid var(--line); border-radius:8px; padding:10px 14px; background:#21262d; color:var(--text); cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  button.primary { background:#1f6feb; border-color:#1f6feb; }
+  .intro { max-width:820px; color:var(--muted); font-size:18px; }
+  .notice,.message { padding:12px 14px; border:1px solid var(--line); border-radius:8px; background:#0b2740; }
+  .panel { margin-top:18px; padding:20px; border:1px solid var(--line); border-radius:10px; background:var(--panel); }
+  .criteria,.state-grid,.summary-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; }
+  .criteria > div,.state-card,.summary-card { padding:14px; border:1px solid var(--line); border-radius:8px; background:#0d1117; }
+  .value { font-size:21px; font-weight:700; }
+  .small { font-size:14px; }
+  .muted { color:var(--muted); }
+  .tabs,.actions,.steps { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
+  .tabs button.active { border-color:var(--accent); color:var(--accent); }
+  .guide { display:grid; grid-template-columns:2fr 1fr; gap:24px; }
+  .message { margin-top:12px; background:#111820; }
+  .good { color:var(--good); }
+  .bad { color:var(--bad); }
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th,td { padding:9px 8px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+  th.number,td.number { text-align:right; }
+  details { margin-top:14px; }
+  @media (max-width:760px) { .guide { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+  <h1>D5: Hält D4 über 20 Seeds?</h1>
+  <p class="intro">Die Frage ist: Wiederholt sich der D4-Effekt über 20 Seeds, die erst nach dem Protokoll-Commit gezogen werden, wenn pro Seed ein neuer Operator, eine neue Einsatzregel und ein eigener Holdout entstehen?</p>
+  <div class="notice">PROTOKOLL D5. Der Lern- und Testablauf pro Seed entspricht D4: acht Demonstrationen, 16 Kalibrierungsaufgaben und 20 Testaufgaben. Die 20 unterschiedlichen 32-Bit-Seeds werden gemeinsam festgehalten, bevor ein Holdout geöffnet wird. Ein technischer Fehler macht den gesamten Lauf ungültig.</div>
+
+  <section class="panel">
+    <h2>Vorab festgelegte Schwelle</h2>
+    <div class="criteria">
+      <div><strong>Wiederholung</strong><br><span class="small muted">Mindestens 16 von 20 Läufen erfüllen die ursprüngliche D4-Schwelle.</span></div>
+      <div><strong>Vollständigkeit</strong><br><span class="small muted">Basis, ständig aktiver Operator und gelernte Regel lösen jeweils alle 400 zurückgehaltenen Aufgaben.</span></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Aufgezeichneter Lauf</h2>
+    <p id="recordedText" class="small muted">Noch offen. Protokoll, Seed-Liste und Ergebnis werden in dieser Reihenfolge festgehalten.</p>
+  </section>
+
+  <div class="tabs" id="guideTabs"></div>
+  <section class="panel guide">
+    <div><h2 id="guideTitle"></h2><p id="guideDescription" class="muted"></p></div>
+    <div><h3>Geführter Ablauf</h3><div class="steps" id="guideSteps"></div></div>
+  </section>
+
+  <div class="actions">
+    <button data-action="discover">20 Operatoren erzeugen</button>
+    <button data-action="learn">20 Regeln wählen</button>
+    <button data-action="evaluate">20 Holdouts öffnen</button>
+    <button class="primary" data-action="all">Alles ausführen</button>
+    <button data-action="reset">Zurücksetzen</button>
+  </div>
+  <div class="message" id="message">Bereit. Vor dem offiziellen Lauf bleibt die Seed-Liste leer.</div>
+
+  <section class="panel">
+    <h2>Aktueller Zustand</h2>
+    <div class="state-grid">
+      <div class="state-card"><h3>Phase</h3><div class="value" id="phaseValue">bereit</div><div class="small muted">Operatorwahl, Regelwahl, Holdout.</div></div>
+      <div class="state-card"><h3>Bearbeitete Seeds</h3><div class="value" id="seedValue">0 / 20</div><div class="small muted" id="seedDetail">Seed-Liste steht aus.</div></div>
+      <div class="state-card"><h3>Erfolgreiche Läufe</h3><div class="value" id="passValue">offen</div><div class="small muted">Ziel: mindestens 16.</div></div>
+      <div class="state-card"><h3>Gesamtersparnis</h3><div class="value" id="savingValue">offen</div><div class="small muted">Regelprüfungen sind eingerechnet.</div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="summaryPanel" hidden>
+    <h2>Zusammenfassung</h2>
+    <div class="summary-grid" id="summaryGrid"></div>
+    <details><summary>Verteilungen anzeigen</summary><div id="distributionText" class="small muted"></div></details>
+  </section>
+
+  <section class="panel" id="resultsPanel" hidden>
+    <h2>Einzelläufe</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Nr.</th><th>Seed</th><th>Faktor</th><th>Operator</th><th>Regel</th><th class="number">Basis</th><th class="number">Gelernt</th><th class="number">Ersparnis</th><th class="number">Break-even</th><th>Bestanden</th><th>Grund</th></tr></thead>
+      <tbody id="resultRows"></tbody>
+    </table></div>
+  </section>
+
+  <section class="panel">
+    <h2>Urteil</h2>
+    <p id="verdict" class="muted">Der offizielle Mehrfachlauf steht aus.</p>
+  </section>
+
+<script>
+const D5Experiment = (() => {
+  const INPUTS = [-3,-2,-1,0,1,2,3];
+  const CONSTANTS = [-2,-1,0,1,2,3];
+  const MAX_COST = 7;
+  const VALUE_LIMIT = 1_000_000;
+  const RULE_WORK_PER_TASK = 44;
+  const SEEDS = Object.freeze([]);
+
+  const V = () => ({ type:"var",cost:1 });
+  const C = value => ({ type:"const",value,cost:1 });
+  const B = (op,left,right) => {
+    if ((op === "add" || op === "mul") && format(left) > format(right)) [left,right] = [right,left];
+    return { type:"binary",op,left,right,cost:1 + left.cost + right.cost };
+  };
+  const Call = (name,arg) => ({ type:"call",name,arg,cost:1 + arg.cost });
+  const OPS = {
+    add:{ symbol:"+",fn:(a,b) => a + b,commutative:true },
+    sub:{ symbol:"−",fn:(a,b) => a - b,commutative:false },
+    mul:{ symbol:"×",fn:(a,b) => a * b,commutative:true }
+  };
+
+  function format(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return String(ast.value);
+    if (ast.type === "call") return `${ast.name}(${format(ast.arg)})`;
+    return `(${format(ast.left)} ${OPS[ast.op].symbol} ${format(ast.right)})`;
+  }
+
+  function key(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return `c:${ast.value}`;
+    if (ast.type === "call") return `call:${ast.name}(${key(ast.arg)})`;
+    return `${ast.op}(${key(ast.left)},${key(ast.right)})`;
+  }
+
+  function evalAst(ast,input,macros) {
+    if (ast.type === "var") return input;
+    if (ast.type === "const") return ast.value;
+    if (ast.type === "call") return evalAst(macros[ast.name].definition,evalAst(ast.arg,input,macros),{});
+    const value = OPS[ast.op].fn(evalAst(ast.left,input,macros),evalAst(ast.right,input,macros));
+    return Number.isFinite(value) && Math.abs(value) <= VALUE_LIMIT ? value : NaN;
+  }
+
+  function primitiveCount(ast,macros) {
+    if (ast.type === "var" || ast.type === "const") return 0;
+    if (ast.type === "binary") return 1 + primitiveCount(ast.left,macros) + primitiveCount(ast.right,macros);
+    return primitiveCount(ast.arg,macros) + primitiveCount(macros[ast.name].definition,{});
+  }
+
+  function signature(ast,macros = {}) {
+    const values = INPUTS.map(input => evalAst(ast,input,macros));
+    return values.some(Number.isNaN) ? null : values.join(",");
+  }
+
+  function sum(values) { return values.reduce((total,value) => total + value,0); }
+
+  function enumerate(macros = {}) {
+    const byCost = Array.from({ length:MAX_COST + 1 },() => []);
+    const seen = new Map();
+    const attemptsByCost = Array(MAX_COST + 1).fill(0);
+    const workByCost = Array(MAX_COST + 1).fill(0);
+    function accept(cost,batch) {
+      batch.sort((a,b) => key(a).localeCompare(key(b)));
+      for (const ast of batch) {
+        const sig = signature(ast,macros);
+        if (sig === null) continue;
+        attemptsByCost[cost] += 1;
+        workByCost[cost] += primitiveCount(ast,macros) * INPUTS.length;
+        if (seen.has(sig)) continue;
+        seen.set(sig,ast);
+        byCost[cost].push(ast);
+      }
+    }
+    accept(1,[V(),...CONSTANTS.map(C)]);
+    for (let cost = 2; cost <= MAX_COST; cost += 1) {
+      const batch = [];
+      for (const name of Object.keys(macros).sort()) for (const arg of byCost[cost - 1]) batch.push(Call(name,arg));
+      for (let leftCost = 1; leftCost < cost; leftCost += 1) {
+        const rightCost = cost - 1 - leftCost;
+        if (rightCost < 1) continue;
+        for (const [op,spec] of Object.entries(OPS)) for (const left of byCost[leftCost]) for (const right of byCost[rightCost]) {
+          if (spec.commutative && key(left) > key(right)) continue;
+          batch.push(B(op,left,right));
+        }
+      }
+      accept(cost,batch);
+    }
+    return { byCost,seen,attemptsByCost,workByCost };
+  }
+
+  function targetSignature(task) { return task.values.join(","); }
+
+  function searchStats(enumeration,task) {
+    const solution = enumeration.seen.get(targetSignature(task));
+    if (!solution) return { found:false,attempts:sum(enumeration.attemptsByCost),work:sum(enumeration.workByCost) };
+    return { found:true,attempts:sum(enumeration.attemptsByCost.slice(0,solution.cost + 1)),work:sum(enumeration.workByCost.slice(0,solution.cost + 1)) };
+  }
+
+  function measure(tasks,enumeration) {
+    const rows = tasks.map(task => ({ task,stats:searchStats(enumeration,task) }));
+    return { rows,attempts:sum(rows.map(row => row.stats.attempts)),work:sum(rows.map(row => row.stats.work)),solved:sum(rows.map(row => Number(row.stats.found))) };
+  }
+
+  const x = () => V();
+  const add = (a,b) => B("add",a,b);
+  const sub = (a,b) => B("sub",a,b);
+  const mul = (a,b) => B("mul",a,b);
+  const square = () => mul(x(),x());
+  const signedAdd = (ast,value) => value >= 0 ? add(ast,C(value)) : sub(ast,C(-value));
+  const shift = value => signedAdd(x(),value);
+  const squareShift = value => signedAdd(square(),value);
+  const linear = (factor,value) => signedAdd(mul(C(factor),x()),value);
+  const quadraticMix = (sign,value) => signedAdd(sign > 0 ? add(square(),x()) : sub(square(),x()),value);
+  const scale = (factor,ast) => mul(C(factor),ast);
+
+  function random(seed) {
+    let value = seed >>> 0;
+    return () => {
+      value = (value + 0x6D2B79F5) >>> 0;
+      let t = value;
+      t = Math.imul(t ^ t >>> 15,t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7,t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function shuffled(items,rng) {
+    const result = [...items];
+    for (let index = result.length - 1; index > 0; index -= 1) {
+      const other = Math.floor(rng() * (index + 1));
+      [result[index],result[other]] = [result[other],result[index]];
+    }
+    return result;
+  }
+
+  function buildDataset(seed) {
+    const rng = random(seed);
+    const hiddenFactor = rng() < .5 ? 2 : 3;
+    const inners = [
+      x(),
+      ...[-2,-1,1,2,3].map(shift),
+      ...[-2,-1,0,1,2,3].map(squareShift),
+      ...[2,3].flatMap(factor => [-2,-1,0,1,2,3].map(value => linear(factor,value))),
+      quadraticMix(1,0),quadraticMix(-1,0)
+    ];
+    const backgrounds = [
+      ...[-2,-1,1,2,3].map(shift),
+      ...[-2,-1,0,1,2,3].map(squareShift),
+      ...[-2,-1,0,1,2,3].map(value => quadraticMix(1,value)),
+      ...[-2,-1,0,1,2,3].map(value => quadraticMix(-1,value))
+    ];
+    const makeTask = (id,expression) => ({ id,values:INPUTS.map(input => evalAst(expression,input,{})) });
+    const unique = tasks => {
+      const seen = new Set();
+      return tasks.filter(task => {
+        const sig = targetSignature(task);
+        if (seen.has(sig)) return false;
+        seen.add(sig);
+        return true;
+      });
+    };
+    const positives = shuffled(unique(inners.map((inner,index) => makeTask(`P${String(index + 1).padStart(2,"0")}`,scale(hiddenFactor,inner)))),rng);
+    const positiveSignatures = new Set(positives.map(targetSignature));
+    const controls = shuffled(unique(backgrounds.map((expression,index) => makeTask(`B${String(index + 1).padStart(2,"0")}`,expression))).filter(task => !positiveSignatures.has(targetSignature(task))),rng);
+    if (positives.length < 26 || controls.length < 18) throw new Error("Zu wenige eindeutige Aufgaben für D5.");
+    const discovery = positives.slice(0,8);
+    const calibration = shuffled([...positives.slice(8,16),...controls.slice(0,8)],rng);
+    const test = shuffled([...positives.slice(16,26),...controls.slice(8,18)],rng);
+    return { hiddenFactor,discovery,calibration,test };
+  }
+
+  const BASE = enumerate({});
+
+  function containsVariable(ast) {
+    if (ast.type === "var") return true;
+    if (ast.type === "const") return false;
+    if (ast.type === "call") return containsVariable(ast.arg);
+    return containsVariable(ast.left) || containsVariable(ast.right);
+  }
+
+  function operatorCandidates() {
+    const identity = signature(x(),{});
+    return BASE.byCost[3]
+      .filter(ast => containsVariable(ast) && signature(ast,{}) !== identity)
+      .filter(ast => new Set(INPUTS.map(input => evalAst(ast,input,{}))).size > 1)
+      .sort((a,b) => key(a).localeCompare(key(b)));
+  }
+
+  function discoverOperator(data) {
+    const base = measure(data.discovery,BASE);
+    const candidates = operatorCandidates().map(definition => {
+      const macros = { op:{ name:"op",definition } };
+      const enumeration = enumerate(macros);
+      const measured = measure(data.discovery,enumeration);
+      return { definition,enumeration,measured,savings:base.work - measured.work };
+    });
+    candidates.sort((a,b) => b.savings - a.savings || a.definition.cost - b.definition.cost || key(a.definition).localeCompare(key(b.definition)));
+    const best = candidates[0];
+    return {
+      candidateCount:candidates.length,
+      trainingWork:sum(candidates.map(candidate => candidate.measured.work)),
+      base,
+      candidate:best && best.savings > 0 ? { definition:best.definition,enumeration:best.enumeration,savings:best.savings,measured:best.measured } : null
+    };
+  }
+
+  function features(task) {
+    const values = task.values;
+    const y0 = values[INPUTS.indexOf(0)];
+    const y1 = values[INPUTS.indexOf(1)];
+    const y2 = values[INPUTS.indexOf(2)];
+    const a = (y2 - 2 * y1 + y0) / 2;
+    const b = y1 - y0 - a;
+    const c = y0;
+    const quadratic = [a,b,c].every(Number.isInteger) && values.every((value,index) => value === a * INPUTS[index] ** 2 + b * INPUTS[index] + c);
+    const degree = !quadratic ? 3 : a !== 0 ? 2 : b !== 0 ? 1 : 0;
+    return { values,a,b,c,degree,quadratic };
+  }
+
+  const RULES = [
+    { id:"always",label:"immer",cost:0,test:() => true },
+    { id:"never",label:"nie",cost:0,test:() => false },
+    ...[2,3].map(divisor => ({ id:`coeff-${divisor}`,label:`alle Koeffizienten durch ${divisor} teilbar`,cost:RULE_WORK_PER_TASK,test:f => f.quadratic && [f.a,f.b,f.c].every(value => value % divisor === 0) })),
+    ...[2,3].map(divisor => ({ id:`values-${divisor}`,label:`alle Zielwerte durch ${divisor} teilbar`,cost:RULE_WORK_PER_TASK,test:f => f.values.every(value => value % divisor === 0) })),
+    { id:"degree-0",label:"Grad 0",cost:RULE_WORK_PER_TASK,test:f => f.degree === 0 },
+    { id:"degree-1",label:"Grad höchstens 1",cost:RULE_WORK_PER_TASK,test:f => f.degree <= 1 },
+    { id:"degree-2",label:"Grad 2",cost:RULE_WORK_PER_TASK,test:f => f.degree === 2 },
+    { id:"symmetric",label:"symmetrische Zielwerte",cost:RULE_WORK_PER_TASK,test:f => f.quadratic && f.b === 0 },
+    { id:"zero-at-origin",label:"Zielwert bei 0 ist 0",cost:RULE_WORK_PER_TASK,test:f => f.c === 0 }
+  ];
+
+  function evaluateRule(rule,tasks,candidateEnumeration) {
+    const rows = tasks.map(task => {
+      const enabled = rule.test(features(task));
+      const stats = searchStats(enabled ? candidateEnumeration : BASE,task);
+      return { task,enabled,stats };
+    });
+    return {
+      rows,
+      attempts:sum(rows.map(row => row.stats.attempts)),
+      work:sum(rows.map(row => row.stats.work)) + rule.cost * tasks.length,
+      solved:sum(rows.map(row => Number(row.stats.found))),
+      enabled:sum(rows.map(row => Number(row.enabled))),
+      checks:rule.cost ? tasks.length : 0
+    };
+  }
+
+  function learnRule(data,discovery) {
+    if (!discovery.candidate) return { rule:RULES.find(rule => rule.id === "never"),evaluated:[],trainingWork:0 };
+    const base = measure(data.calibration,BASE);
+    const evaluated = RULES.map(rule => {
+      const measured = evaluateRule(rule,data.calibration,discovery.candidate.enumeration);
+      return { rule,measured,savings:base.work - measured.work };
+    }).sort((a,b) => b.savings - a.savings || a.rule.cost - b.rule.cost || a.rule.id.localeCompare(b.rule.id));
+    return { rule:evaluated[0].rule,measured:evaluated[0].measured,base,evaluated,trainingWork:sum(evaluated.map(item => item.measured.work)) };
+  }
+
+  function evaluateTest(data,discovery,learning) {
+    const basis = measure(data.test,BASE);
+    const always = discovery.candidate ? evaluateRule(RULES.find(rule => rule.id === "always"),data.test,discovery.candidate.enumeration) : { ...basis,enabled:0,checks:0 };
+    const learned = discovery.candidate ? evaluateRule(learning.rule,data.test,discovery.candidate.enumeration) : { ...basis,enabled:0,checks:0 };
+    return { basis,always,learned };
+  }
+
+  function compactArm(arm) {
+    return { attempts:arm.attempts,work:arm.work,solved:arm.solved,enabled:arm.enabled || 0,checks:arm.checks || 0 };
+  }
+
+  function compactRun(seed,data,discovery,learning,evaluation) {
+    const saving = evaluation.basis.work - evaluation.learned.work;
+    const savingPct = evaluation.basis.work ? saving / evaluation.basis.work : 0;
+    const learningWork = discovery.trainingWork + learning.trainingWork;
+    const savingPerTask = saving / data.test.length;
+    const ruleIsSpecific = !["always","never"].includes(learning.rule.id);
+    const failureReasons = [];
+    if (!discovery.candidate) failureReasons.push("kein nützlicher Operator");
+    if (!ruleIsSpecific) failureReasons.push("keine spezifische Einsatzregel");
+    if (evaluation.basis.solved !== 20 || evaluation.always.solved !== 20 || evaluation.learned.solved !== 20) failureReasons.push("Aufgabe ungelöst");
+    if (evaluation.learned.work > evaluation.basis.work * 0.9) failureReasons.push("weniger als 10 Prozent Ersparnis");
+    if (evaluation.learned.work >= evaluation.always.work) failureReasons.push("nicht günstiger als ständig aktiv");
+    const passed = failureReasons.length === 0;
+    return {
+      seed,
+      hiddenFactor:data.hiddenFactor,
+      candidateCount:discovery.candidateCount,
+      operator:discovery.candidate ? format(discovery.candidate.definition) : null,
+      ruleId:learning.rule.id,
+      rule:learning.rule.label,
+      demonstrationSavings:discovery.candidate ? discovery.candidate.savings : 0,
+      calibrationSavings:learning.base && learning.measured ? learning.base.work - learning.measured.work : 0,
+      learningWork,
+      basis:compactArm(evaluation.basis),
+      always:compactArm(evaluation.always),
+      learned:compactArm(evaluation.learned),
+      saving,
+      savingPct,
+      breakEvenTasks:savingPerTask > 0 ? Math.ceil(learningWork / savingPerTask) : null,
+      passed,
+      failureReasons
+    };
+  }
+
+  function runSeed(seed) {
+    const data = buildDataset(seed);
+    const discovery = discoverOperator(data);
+    const learning = learnRule(data,discovery);
+    const evaluation = evaluateTest(data,discovery,learning);
+    return compactRun(seed,data,discovery,learning,evaluation);
+  }
+
+  function median(values) {
+    if (!values.length) return null;
+    const sorted = [...values].sort((a,b) => a - b);
+    const middle = Math.floor(sorted.length / 2);
+    return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+  }
+
+  function counts(results,field) {
+    return results.reduce((all,result) => {
+      const value = String(result[field]);
+      all[value] = (all[value] || 0) + 1;
+      return all;
+    },{});
+  }
+
+  function sumArm(results,name) {
+    return results.reduce((total,result) => ({
+      attempts:total.attempts + result[name].attempts,
+      work:total.work + result[name].work,
+      solved:total.solved + result[name].solved,
+      enabled:total.enabled + result[name].enabled,
+      checks:total.checks + result[name].checks
+    }),{ attempts:0,work:0,solved:0,enabled:0,checks:0 });
+  }
+
+  function summarize(results) {
+    const basis = sumArm(results,"basis");
+    const always = sumArm(results,"always");
+    const learned = sumArm(results,"learned");
+    const saving = basis.work - learned.work;
+    const savingPct = basis.work ? saving / basis.work : 0;
+    const passCount = sum(results.map(result => Number(result.passed)));
+    const percentages = results.map(result => result.savingPct);
+    const breakEvens = results.map(result => result.breakEvenTasks).filter(Number.isFinite);
+    const learningWorks = results.map(result => result.learningWork);
+    const learningWork = sum(learningWorks);
+    return {
+      runCount:results.length,
+      passCount,
+      taskCount:results.length * 20,
+      basis,
+      always,
+      learned,
+      saving,
+      savingPct,
+      learningWork,
+      medianLearningWork:median(learningWorks),
+      medianSavingPct:median(percentages),
+      minSavingPct:percentages.length ? Math.min(...percentages) : null,
+      maxSavingPct:percentages.length ? Math.max(...percentages) : null,
+      medianBreakEven:median(breakEvens),
+      minBreakEven:breakEvens.length ? Math.min(...breakEvens) : null,
+      maxBreakEven:breakEvens.length ? Math.max(...breakEvens) : null,
+      infiniteBreakEvens:results.length - breakEvens.length,
+      pooledBreakEven:saving > 0 ? Math.ceil(20 * learningWork / saving) : null,
+      factors:counts(results,"hiddenFactor"),
+      operators:counts(results,"operator"),
+      rules:counts(results,"rule"),
+      passed:results.length === 20 && passCount >= 16 && basis.solved === 400 && always.solved === 400 && learned.solved === 400
+    };
+  }
+
+  function validateSeeds(seeds) {
+    if (seeds.length !== 20) throw new Error("D5 benötigt genau 20 Seeds.");
+    if (new Set(seeds).size !== 20) throw new Error("D5 benötigt 20 unterschiedliche Seeds.");
+    if (!seeds.every(seed => Number.isInteger(seed) && seed >= 0 && seed <= 0xFFFFFFFF)) throw new Error("Jeder Seed muss eine 32-Bit-Ganzzahl sein.");
+  }
+
+  function runAll(seeds = SEEDS) {
+    validateSeeds(seeds);
+    const results = seeds.map(runSeed);
+    return { results,summary:summarize(results) };
+  }
+
+  function initialState(guideId = "full") {
+    return { guideId,phase:"ready",records:[],results:[],summary:null,message:SEEDS.length ? "Bereit. Die 20 Seeds sind festgehalten." : "Bereit. Vor dem offiziellen Lauf bleibt die Seed-Liste leer." };
+  }
+
+  function reducer(state,action) {
+    if (action.type === "guide") return initialState(action.id);
+    if (action.type === "reset") return initialState(state.guideId);
+    if (action.type === "discover") {
+      if (state.records.length) return { ...state,message:"Die 20 Operatoren wurden bereits erzeugt." };
+      if (SEEDS.length !== 20) return { ...state,message:"Die Seed-Liste ist noch nicht festgehalten." };
+      const records = SEEDS.map(seed => {
+        const data = buildDataset(seed);
+        return { seed,data,discovery:discoverOperator(data) };
+      });
+      return { ...state,phase:"discovered",records,message:`${records.length} Operatoren wurden erzeugt.` };
+    }
+    if (action.type === "learn") {
+      if (!state.records.length) return { ...state,message:"Zuerst müssen die Operatoren erzeugt werden." };
+      if (state.records[0].learning) return { ...state,message:"Die Einsatzregeln wurden bereits gewählt." };
+      const records = state.records.map(record => ({ ...record,learning:learnRule(record.data,record.discovery) }));
+      return { ...state,phase:"learned",records,message:`${records.length} Einsatzregeln wurden gewählt.` };
+    }
+    if (action.type === "evaluate") {
+      if (!state.records.length || !state.records[0].learning) return { ...state,message:"Zuerst müssen die Einsatzregeln gewählt werden." };
+      if (state.summary) return { ...state,message:"Die Holdouts wurden bereits ausgewertet." };
+      const results = state.records.map(record => compactRun(record.seed,record.data,record.discovery,record.learning,evaluateTest(record.data,record.discovery,record.learning)));
+      return { ...state,phase:"evaluated",results,summary:summarize(results),message:`${results.length} Holdouts wurden ausgewertet.` };
+    }
+    if (action.type === "all") {
+      let next = state;
+      if (!next.records.length) next = reducer(next,{ type:"discover" });
+      if (next.records.length && !next.records[0].learning) next = reducer(next,{ type:"learn" });
+      if (!next.summary) next = reducer(next,{ type:"evaluate" });
+      return next;
+    }
+    return state;
+  }
+
+  const guides = {
+    full:{ title:"Vollständiger Lauf",description:"Erzeuge für jeden Seed den Operator, wähle die Einsatzregel und öffne danach die 20 Holdouts.",steps:[{label:"Neu starten",type:"reset"},{label:"Operatoren erzeugen",type:"discover"},{label:"Regeln wählen",type:"learn"},{label:"Holdouts öffnen",type:"evaluate"}] },
+    stability:{ title:"Stabilität",description:"Achte auf die Zahl bestandener Einzelläufe und auf die kleinste, mittlere und größte Ersparnis.",steps:[{label:"Neu starten",type:"reset"},{label:"Alles ausführen",type:"all"}] },
+    cost:{ title:"Lernkosten",description:"Vergleiche die einmalige Lernarbeit mit dem Break-even pro Seed.",steps:[{label:"Neu starten",type:"reset"},{label:"Alles ausführen",type:"all"}] }
+  };
+
+  return { SEEDS,guides,initialState,reducer,runSeed,runAll };
+})();
+</script>
+
+<script id="recorded-results" type="application/json">null</script>
+
+<script>
+const recorded = JSON.parse(document.getElementById("recorded-results").textContent);
+let state = recorded ? { guideId:"full",phase:"evaluated",records:[],results:recorded.results,summary:recorded.summary,message:"Der aufgezeichnete Lauf ist geladen." } : D5Experiment.initialState();
+
+function dispatch(action) { state = D5Experiment.reducer(state,action); render(); }
+function number(value) { return new Intl.NumberFormat("de-DE",{ maximumFractionDigits:1 }).format(value); }
+function percent(value) { return `${number(value * 100)} %`; }
+function escapeHtml(value) { return String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;"); }
+function countsText(values) { return Object.entries(values).map(([name,count]) => `${escapeHtml(name)}: ${count}`).join("; "); }
+
+function render() {
+  const phaseLabels = { ready:"bereit",discovered:"Operatoren erzeugt",learned:"Regeln gewählt",evaluated:"Holdouts ausgewertet" };
+  document.getElementById("phaseValue").textContent = phaseLabels[state.phase];
+  const handled = state.summary ? state.summary.runCount : state.records.length;
+  document.getElementById("seedValue").textContent = `${handled} / 20`;
+  document.getElementById("seedDetail").textContent = D5Experiment.SEEDS.length ? "Seed-Liste ist festgehalten." : "Seed-Liste steht aus.";
+  document.getElementById("passValue").textContent = state.summary ? `${state.summary.passCount} / 20` : "offen";
+  document.getElementById("savingValue").textContent = state.summary ? percent(state.summary.savingPct) : "offen";
+  document.getElementById("message").textContent = state.message;
+  renderGuides();
+  renderSummary();
+  document.querySelectorAll("[data-action]").forEach(button => button.onclick = () => dispatch({ type:button.dataset.action }));
+}
+
+function renderGuides() {
+  const tabs = document.getElementById("guideTabs");
+  tabs.innerHTML = Object.entries(D5Experiment.guides).map(([id,guide]) => `<button class="${state.guideId === id ? "active" : ""}" data-guide="${id}">${escapeHtml(guide.title)}</button>`).join("");
+  tabs.querySelectorAll("[data-guide]").forEach(button => button.onclick = () => dispatch({ type:"guide",id:button.dataset.guide }));
+  const guide = D5Experiment.guides[state.guideId];
+  document.getElementById("guideTitle").textContent = guide.title;
+  document.getElementById("guideDescription").textContent = guide.description;
+  document.getElementById("guideSteps").innerHTML = guide.steps.map(step => `<button data-action="${step.type}">${escapeHtml(step.label)}</button>`).join("");
+}
+
+function renderSummary() {
+  const panel = document.getElementById("summaryPanel");
+  const resultsPanel = document.getElementById("resultsPanel");
+  if (!state.summary) {
+    panel.hidden = true;
+    resultsPanel.hidden = true;
+    document.getElementById("verdict").textContent = "Der offizielle Mehrfachlauf steht aus.";
+    return;
+  }
+  const summary = state.summary;
+  panel.hidden = false;
+  resultsPanel.hidden = false;
+  document.getElementById("summaryGrid").innerHTML = [
+    ["Bestandene Läufe",`${summary.passCount} / 20`],
+    ["Gesamte Testarbeit",`${number(summary.basis.work)} → ${number(summary.learned.work)}`],
+    ["Gesamtersparnis",`${number(summary.saving)} (${percent(summary.savingPct)})`],
+    ["Gepoolter Break-even",`${number(summary.pooledBreakEven)} Aufgaben`],
+    ["Median Break-even",`${number(summary.medianBreakEven)} Aufgaben`],
+    ["Gesamte Lernarbeit",number(summary.learningWork)],
+    ["Median Lernarbeit",number(summary.medianLearningWork)],
+    ["Gelöste Aufgaben",`${summary.learned.solved} / ${summary.taskCount}`]
+  ].map(([label,value]) => `<div class="summary-card"><h3>${label}</h3><div class="value">${value}</div></div>`).join("");
+  document.getElementById("distributionText").innerHTML = `<p>Faktoren: ${countsText(summary.factors)}</p><p>Operatoren: ${countsText(summary.operators)}</p><p>Regeln: ${countsText(summary.rules)}</p><p>Ersparnis pro Seed: ${percent(summary.minSavingPct)} bis ${percent(summary.maxSavingPct)}, Median ${percent(summary.medianSavingPct)}.</p><p>Break-even pro Seed: ${number(summary.minBreakEven)} bis ${number(summary.maxBreakEven)} Aufgaben. Unendliche Werte: ${summary.infiniteBreakEvens}.</p>`;
+  document.getElementById("resultRows").innerHTML = state.results.map((result,index) => `<tr><td>${index + 1}</td><td>${result.seed}</td><td>${result.hiddenFactor}</td><td><code>${escapeHtml(result.operator)}</code></td><td>${escapeHtml(result.rule)}</td><td class="number">${number(result.basis.work)}</td><td class="number">${number(result.learned.work)}</td><td class="number">${percent(result.savingPct)}</td><td class="number">${number(result.breakEvenTasks)}</td><td class="${result.passed ? "good" : "bad"}">${result.passed ? "ja" : "nein"}</td><td>${result.passed ? "erfüllt" : escapeHtml(result.failureReasons.join("; "))}</td></tr>`).join("");
+  const verdict = document.getElementById("verdict");
+  verdict.className = summary.passed ? "good" : "bad";
+  verdict.textContent = summary.passed ? "Die vorab festgelegte D5-Schwelle ist erreicht." : "Die vorab festgelegte D5-Schwelle ist verfehlt.";
+}
+
+render();
+</script>
+</body>
+</html>
