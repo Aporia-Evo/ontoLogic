@@ -54,7 +54,7 @@
 
   <section class="panel">
     <h2>Aufgezeichneter Lauf</h2>
-    <p id="recordedText" class="small muted">Das Protokoll wurde im Commit <a href="https://github.com/Aporia-Evo/ontoLogic/commit/e78716f969f814f1d660efcb4216ac09f653050e">e78716f</a> vor der Seed-Ziehung festgehalten. Die 20 Seeds sind jetzt eingetragen. Der offizielle Familien-Holdout steht aus.</p>
+    <p id="recordedText" class="small muted">Das Protokoll wurde im Commit <a href="https://github.com/Aporia-Evo/ontoLogic/commit/e78716f969f814f1d660efcb4216ac09f653050e">e78716f</a> vor der Seed-Ziehung festgehalten. Die 20 Seeds wurden danach im Commit <a href="https://github.com/Aporia-Evo/ontoLogic/commit/0b0cd4aa188ed3764ddf378c7351f309b5b3b280">0b0cd4a</a> eingetragen. Im einmaligen Batch bestanden 17 von 20 Läufen. Jeder Arm löste alle 400 Testaufgaben. Die Arbeit der gelernten Regel sank gegenüber der Basis von 36.778.224 auf 30.867.815. Das sind 5.910.409 weniger, also 16,1 Prozent. Auf den 200 positiven Testaufgaben sank die Arbeit von 18.824.232 auf 10.512.659. Alle 200 wurden aktiviert. Die gesamte Lernarbeit beträgt 456.795.289; der gepoolte Break-even liegt bei 1.546 Aufgaben.</p>
   </section>
 
   <div class="tabs" id="guideTabs"></div>
@@ -709,7 +709,7 @@ const D7Experiment = (() => {
 })();
 </script>
 
-<script id="recorded-results" type="application/json">null</script>
+<script id="recorded-results" type="application/json">{"results":[],"summary":{"runCount":20,"passCount":17,"taskCount":400,"basis":{"attempts":1871744,"work":36778224,"solved":400,"enabled":0,"checks":0},"always":{"attempts":1948778,"work":43016022,"solved":400,"enabled":400,"checks":0},"learned":{"attempts":1542180,"work":30867815,"solved":400,"enabled":224,"checks":360},"saving":5910409,"savingPct":0.1607040350833689,"learningWork":456795289,"newTaskCount":880,"legacyOverlap":0,"minUniqueTaskCount":44,"datasetFingerprintCount":20,"taskDrawCount":880,"distinctTaskCount":332,"repeatTaskDraws":548,"positiveDrawCount":200,"distinctPositiveTaskCount":37,"repeatPositiveDraws":163,"trainingFamilyViolations":0,"testFamilyViolations":0,"positive":{"basis":{"attempts":956592,"work":18824232,"solved":200,"enabled":0,"checks":0},"always":{"attempts":543095,"work":10504739,"solved":200,"enabled":200,"checks":0},"learned":{"attempts":543095,"work":10512659,"solved":200,"enabled":200,"checks":180}},"controls":{"basis":{"attempts":915152,"work":17953992,"solved":200,"enabled":0,"checks":0},"always":{"attempts":1405683,"work":32511283,"solved":200,"enabled":200,"checks":0},"learned":{"attempts":999085,"work":20355156,"solved":200,"enabled":24,"checks":180}},"factorStats":{"2":{"runCount":10,"passCount":9,"basisWork":18128040,"learnedWork":14198255,"saving":3929785,"savingPct":0.21677936500581418},"3":{"runCount":10,"passCount":8,"basisWork":18650184,"learnedWork":16669560,"saving":1980624,"savingPct":0.10619863053361833}},"pools":{"2":{"affinePositive":60,"affineControl":210,"quadraticPositive":19,"quadraticControl":182},"3":{"affinePositive":61,"affineControl":209,"quadraticPositive":19,"quadraticControl":182}},"medianLearningWork":23109493,"medianSavingPct":0.2215438433376961,"minSavingPct":-0.35423887068951876,"maxSavingPct":0.27416440186700336,"medianBreakEven":1127.5,"minBreakEven":769,"maxBreakEven":2259,"infiniteBreakEvens":2,"pooledBreakEven":1546,"factors":{"2":10,"3":10},"operators":{"(x + x)":8,"(3 × x)":10,"(-2 × x)":2},"rules":{"alle Koeffizienten durch 2 teilbar":10,"alle Koeffizienten durch 3 teilbar":8,"immer":2},"passed":true}}</script>
 
 <script>
 const recorded = JSON.parse(document.getElementById("recorded-results").textContent);
@@ -756,7 +756,7 @@ function renderSummary() {
   }
   const summary = state.summary;
   panel.hidden = false;
-  resultsPanel.hidden = false;
+  resultsPanel.hidden = !state.results.length;
   document.getElementById("summaryGrid").innerHTML = [
     ["Bestandene Läufe",`${summary.passCount} / 20`],
     ["Gesamte Testarbeit",`${number(summary.basis.work)} → ${number(summary.learned.work)}`],
