@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>D8: Gleichstands-Gegencheck</title>
+<style>
+  :root { color-scheme:dark; --bg:#0d1117; --panel:#161b22; --line:#30363d; --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --good:#3fb950; --bad:#f85149; }
+  * { box-sizing:border-box; }
+  body { max-width:1120px; margin:0 auto; padding:32px 20px 64px; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,sans-serif; }
+  h1,h2,h3,p { margin-top:0; }
+  h1 { margin-bottom:8px; font-size:clamp(28px,5vw,46px); }
+  h2 { font-size:20px; }
+  h3 { font-size:15px; }
+  code { color:#d2a8ff; }
+  button { border:1px solid var(--line); border-radius:8px; padding:10px 14px; background:#21262d; color:var(--text); cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  button.primary { background:#1f6feb; border-color:#1f6feb; }
+  .intro { max-width:820px; color:var(--muted); font-size:18px; }
+  .notice,.message { padding:12px 14px; border:1px solid var(--line); border-radius:8px; background:#0b2740; }
+  .panel { margin-top:18px; padding:20px; border:1px solid var(--line); border-radius:10px; background:var(--panel); }
+  .criteria,.state-grid,.summary-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; }
+  .criteria > div,.state-card,.summary-card { padding:14px; border:1px solid var(--line); border-radius:8px; background:#0d1117; }
+  .value { font-size:21px; font-weight:700; }
+  .small { font-size:14px; }
+  .muted { color:var(--muted); }
+  .tabs,.actions,.steps { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
+  .tabs button.active { border-color:var(--accent); color:var(--accent); }
+  .guide { display:grid; grid-template-columns:2fr 1fr; gap:24px; }
+  .message { margin-top:12px; background:#111820; }
+  .good { color:var(--good); }
+  .bad { color:var(--bad); }
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th,td { padding:9px 8px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+  th.number,td.number { text-align:right; }
+  details { margin-top:14px; }
+  @media (max-width:760px) { .guide { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+  <h1>D8: Hängt der Transfer am Tie-Break?</h1>
+  <p class="intro">Dieselben 20 Datensätze laufen erneut. Nur bei exakt gleichem Verhalten in der Kalibrierung gewinnt diesmal die Zielwertregel statt der Koeffizientenregel.</p>
+  <div class="notice">PROTOKOLL D8. Seeds, Aufgaben, Suchraum, Operatoren, Regeln, Kosten und Schwelle entsprechen D7. Der ursprüngliche Regelvergleich wird vollständig berechnet. Wenn seine beste Regel <code>coeff-N</code> ist und <code>values-N</code> auf jeder Kalibrierungsaufgabe dieselbe Entscheidung sowie identische Messwerte liefert, wird ausschließlich dieser Gleichstand umgedreht. In D7 waren die passenden Regelpaare bei allen 20 Seeds gleichwertig. Bei 18 Seeds entschied dieser Gleichstand die Auswahl, zwei Seeds wählten <code>always</code>. Robust ist der Transfer nur, wenn diese Integrität vollständig erhalten bleibt und die D7-Schwelle erneut erreicht wird.</div>
+
+  <section class="panel">
+    <h2>Vorab festgelegte Schwelle</h2>
+    <div class="criteria">
+      <div><strong>Einziger Eingriff</strong><br><span class="small muted">Alle 20 Regelpaare sind exakt gleichwertig. 18 Auswahlen wechseln zur Zielwertregel, zwei bleiben bei "immer", weitere Wechsel: 0.</span></div>
+      <div><strong>Gepaarte Daten</strong><br><span class="small muted">Alle 20 Datensatz-Fingerprints, die Basisarbeit, die ständig aktive Arbeit und die Lernarbeit stimmen mit D7 überein.</span></div>
+      <div><strong>Robustheit</strong><br><span class="small muted">Mindestens 16 von 20 Läufen und mindestens 8 von 10 je Faktor bestehen erneut. Alle 400 Aufgaben bleiben gelöst.</span></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Aufgezeichneter Lauf</h2>
+    <p id="recordedText" class="small muted">Die 20 Seeds stammen unverändert aus dem D7-Commit <a href="https://github.com/Aporia-Evo/ontoLogic/commit/0b0cd4aa188ed3764ddf378c7351f309b5b3b280">0b0cd4a</a>. Der offizielle Gegenlauf steht aus.</p>
+  </section>
+
+  <div class="tabs" id="guideTabs"></div>
+  <section class="panel guide">
+    <div><h2 id="guideTitle"></h2><p id="guideDescription" class="muted"></p></div>
+    <div><h3>Geführter Ablauf</h3><div class="steps" id="guideSteps"></div></div>
+  </section>
+
+  <div class="actions">
+    <button data-action="discover">20 Operatoren erzeugen</button>
+    <button data-action="learn">20 Regeln wählen</button>
+    <button data-action="evaluate">20 Holdouts öffnen</button>
+    <button class="primary" data-action="all">Alles ausführen</button>
+    <button data-action="reset">Zurücksetzen</button>
+  </div>
+  <div class="message" id="message">Bereit. Die D7-Seeds sind festgehalten.</div>
+
+  <section class="panel">
+    <h2>Aktueller Zustand</h2>
+    <div class="state-grid">
+      <div class="state-card"><h3>Phase</h3><div class="value" id="phaseValue">bereit</div><div class="small muted">Operatorwahl, Regelwahl, Holdout.</div></div>
+      <div class="state-card"><h3>Bearbeitete Seeds</h3><div class="value" id="seedValue">0 / 20</div><div class="small muted" id="seedDetail">Seed-Liste steht aus.</div></div>
+      <div class="state-card"><h3>Erfolgreiche Läufe</h3><div class="value" id="passValue">offen</div><div class="small muted">Ziel: mindestens 16.</div></div>
+      <div class="state-card"><h3>Gesamtersparnis</h3><div class="value" id="savingValue">offen</div><div class="small muted">Regelprüfungen sind eingerechnet.</div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="summaryPanel" hidden>
+    <h2>Zusammenfassung</h2>
+    <div class="summary-grid" id="summaryGrid"></div>
+    <details><summary>Verteilungen anzeigen</summary><div id="distributionText" class="small muted"></div></details>
+  </section>
+
+  <section class="panel" id="resultsPanel" hidden>
+    <h2>Einzelläufe</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Nr.</th><th>Seed</th><th>Faktor</th><th>Operator</th><th>Originalregel</th><th>Gegenregel</th><th class="number">Basis</th><th class="number">Gelernt</th><th class="number">Ersparnis</th><th class="number">Break-even</th><th>Bestanden</th><th>Grund</th></tr></thead>
+      <tbody id="resultRows"></tbody>
+    </table></div>
+  </section>
+
+  <section class="panel">
+    <h2>Urteil</h2>
+    <p id="verdict" class="muted">Der offizielle Gegenlauf steht aus.</p>
+  </section>
+
+<script>
+const D8Experiment = (() => {
+  const INPUTS = [-3,-2,-1,0,1,2,3];
+  const CONSTANTS = [-2,-1,0,1,2,3];
+  const MAX_COST = 7;
+  const VALUE_LIMIT = 1_000_000;
+  const RULE_WORK_PER_TASK = 44;
+  const SEEDS = Object.freeze([2548699305,642732048,15024444,3635357303,4273059384,447024945,3123956311,138118016,525193501,1879385110,1137564486,2466308568,3821032107,68954736,462506230,2978031812,1611579873,1687500433,831749843,804145051]);
+  const D7_BASELINE = Object.freeze({
+    passCount:17,
+    basisWork:36778224,
+    alwaysWork:43016022,
+    learnedWork:30867815,
+    learningWork:456795289,
+    saving:5910409,
+    savingPct:0.1607040350833689,
+    tieSwitchTarget:18,
+    datasetFingerprints:Object.freeze(["02593760","213e4349","56279199","3c29c4ae","47d6853a","f569b0af","0aa8d8be","a6b22d74","7c382e3d","175b2164","71594df4","eb20cdfc","6d85766d","5ef2c93b","a4c06a1d","8c40bb16","ded409cc","ec336665","09672240","2c15058c"]),
+    taskSequenceFingerprints:Object.freeze(["3527ea14","ef18f7e5","88402dd8","cb8a6c62","72f61eb1","1413a335","45443b9a","cd15779d","a94d03af","8e68ff56","3b2013ac","ebbea69b","f3c89881","0f58b122","dc5815cd","7ed3b728","82090947","f7fbf917","ef5d22d9","544da5f4"])
+  });
+
+  const V = () => ({ type:"var",cost:1 });
+  const C = value => ({ type:"const",value,cost:1 });
+  const B = (op,left,right) => {
+    if ((op === "add" || op === "mul") && format(left) > format(right)) [left,right] = [right,left];
+    return { type:"binary",op,left,right,cost:1 + left.cost + right.cost };
+  };
+  const Call = (name,arg) => ({ type:"call",name,arg,cost:1 + arg.cost });
+  const OPS = {
+    add:{ symbol:"+",fn:(a,b) => a + b,commutative:true },
+    sub:{ symbol:"−",fn:(a,b) => a - b,commutative:false },
+    mul:{ symbol:"×",fn:(a,b) => a * b,commutative:true }
+  };
+
+  function format(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return String(ast.value);
+    if (ast.type === "call") return `${ast.name}(${format(ast.arg)})`;
+    return `(${format(ast.left)} ${OPS[ast.op].symbol} ${format(ast.right)})`;
+  }
+
+  function key(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return `c:${ast.value}`;
+    if (ast.type === "call") return `call:${ast.name}(${key(ast.arg)})`;
+    return `${ast.op}(${key(ast.left)},${key(ast.right)})`;
+  }
+
+  function evalAst(ast,input,macros) {
+    if (ast.type === "var") return input;
+    if (ast.type === "const") return ast.value;
+    if (ast.type === "call") return evalAst(macros[ast.name].definition,evalAst(ast.arg,input,macros),{});
+    const value = OPS[ast.op].fn(evalAst(ast.left,input,macros),evalAst(ast.right,input,macros));
+    return Number.isFinite(value) && Math.abs(value) <= VALUE_LIMIT ? value : NaN;
+  }
+
+  function primitiveCount(ast,macros) {
+    if (ast.type === "var" || ast.type === "const") return 0;
+    if (ast.type === "binary") return 1 + primitiveCount(ast.left,macros) + primitiveCount(ast.right,macros);
+    return primitiveCount(ast.arg,macros) + primitiveCount(macros[ast.name].definition,{});
+  }
+
+  function signature(ast,macros = {}) {
+    const values = INPUTS.map(input => evalAst(ast,input,macros));
+    return values.some(Number.isNaN) ? null : values.join(",");
+  }
+
+  function sum(values) { return values.reduce((total,value) => total + value,0); }
+
+  function enumerate(macros = {}) {
+    const byCost = Array.from({ length:MAX_COST + 1 },() => []);
+    const seen = new Map();
+    const attemptsByCost = Array(MAX_COST + 1).fill(0);
+    const workByCost = Array(MAX_COST + 1).fill(0);
+    function accept(cost,batch) {
+      batch.sort((a,b) => key(a).localeCompare(key(b)));
+      for (const ast of batch) {
+        const sig = signature(ast,macros);
+        if (sig === null) continue;
+        attemptsByCost[cost] += 1;
+        workByCost[cost] += primitiveCount(ast,macros) * INPUTS.length;
+        if (seen.has(sig)) continue;
+        seen.set(sig,ast);
+        byCost[cost].push(ast);
+      }
+    }
+    accept(1,[V(),...CONSTANTS.map(C)]);
+    for (let cost = 2; cost <= MAX_COST; cost += 1) {
+      const batch = [];
+      for (const name of Object.keys(macros).sort()) for (const arg of byCost[cost - 1]) batch.push(Call(name,arg));
+      for (let leftCost = 1; leftCost < cost; leftCost += 1) {
+        const rightCost = cost - 1 - leftCost;
+        if (rightCost < 1) continue;
+        for (const [op,spec] of Object.entries(OPS)) for (const left of byCost[leftCost]) for (const right of byCost[rightCost]) {
+          if (spec.commutative && key(left) > key(right)) continue;
+          batch.push(B(op,left,right));
+        }
+      }
+      accept(cost,batch);
+    }
+    return { byCost,seen,attemptsByCost,workByCost };
+  }
+
+  function targetSignature(task) { return task.values.join(","); }
+
+  function searchStats(enumeration,task) {
+    const solution = enumeration.seen.get(targetSignature(task));
+    if (!solution) return { found:false,attempts:sum(enumeration.attemptsByCost),work:sum(enumeration.workByCost) };
+    return { found:true,attempts:sum(enumeration.attemptsByCost.slice(0,solution.cost + 1)),work:sum(enumeration.workByCost.slice(0,solution.cost + 1)) };
+  }
+
+  function measure(tasks,enumeration) {
+    const rows = tasks.map(task => ({ task,stats:searchStats(enumeration,task) }));
+    return { rows,attempts:sum(rows.map(row => row.stats.attempts)),work:sum(rows.map(row => row.stats.work)),solved:sum(rows.map(row => Number(row.stats.found))) };
+  }
+
+  const x = () => V();
+  const add = (a,b) => B("add",a,b);
+  const sub = (a,b) => B("sub",a,b);
+  const mul = (a,b) => B("mul",a,b);
+  const square = () => mul(x(),x());
+  const signedAdd = (ast,value) => value >= 0 ? add(ast,C(value)) : sub(ast,C(-value));
+  const shift = value => signedAdd(x(),value);
+  const squareShift = value => signedAdd(square(),value);
+  const linear = (factor,value) => signedAdd(mul(C(factor),x()),value);
+  const quadraticMix = (sign,value) => signedAdd(sign > 0 ? add(square(),x()) : sub(square(),x()),value);
+  const scale = (factor,ast) => mul(C(factor),ast);
+
+  function random(seed) {
+    let value = seed >>> 0;
+    return () => {
+      value = (value + 0x6D2B79F5) >>> 0;
+      let t = value;
+      t = Math.imul(t ^ t >>> 15,t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7,t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function shuffled(items,rng) {
+    const result = [...items];
+    for (let index = result.length - 1; index > 0; index -= 1) {
+      const other = Math.floor(rng() * (index + 1));
+      [result[index],result[other]] = [result[other],result[index]];
+    }
+    return result;
+  }
+
+  function legacySignatures() {
+    const oldInners = [
+      x(),
+      ...[-2,-1,1,2,3].map(shift),
+      ...[-2,-1,0,1,2,3].map(squareShift),
+      ...[2,3].flatMap(factor => [-2,-1,0,1,2,3].map(value => linear(factor,value))),
+      quadraticMix(1,0),quadraticMix(-1,0)
+    ];
+    const oldBackgrounds = [
+      ...[-2,-1,1,2,3].map(shift),
+      ...[-2,-1,0,1,2,3].map(squareShift),
+      ...[-2,-1,0,1,2,3].map(value => quadraticMix(1,value)),
+      ...[-2,-1,0,1,2,3].map(value => quadraticMix(-1,value))
+    ];
+    const blocked = new Set(oldBackgrounds.map(expression => signature(expression,{})));
+    for (const factor of [2,3]) for (const inner of oldInners) blocked.add(signature(scale(factor,inner),{}));
+    return blocked;
+  }
+
+  function taskFromSignature(id,sig) {
+    return { id,values:sig.split(",").map(Number) };
+  }
+
+  function fingerprint(text) {
+    let hash = 2166136261;
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash,16777619);
+    }
+    return (hash >>> 0).toString(16).padStart(8,"0");
+  }
+
+  function buildDataset(seed) {
+    const rng = random(seed);
+    const hiddenFactor = rng() < .5 ? 2 : 3;
+    const blocked = legacySignatures();
+    const positiveBySignature = new Map();
+    for (let cost = 1; cost <= 5; cost += 1) {
+      for (const inner of BASE.byCost[cost]) {
+        if (!containsVariable(inner)) continue;
+        const sig = signature(scale(hiddenFactor,inner),{});
+        if (!BASE.seen.has(sig) || blocked.has(sig)) continue;
+        if (!positiveBySignature.has(sig)) positiveBySignature.set(sig,inner);
+      }
+    }
+    const positiveSignatures = new Set(positiveBySignature.keys());
+    const controlSignatures = [...BASE.seen.entries()]
+      .filter(([sig,ast]) => containsVariable(ast) && !blocked.has(sig) && !positiveSignatures.has(sig))
+      .map(([sig]) => sig);
+    const degreeOf = sig => features(taskFromSignature("T00",sig)).degree;
+    const affinePositivePool = shuffled([...positiveSignatures].filter(sig => degreeOf(sig) === 1),rng);
+    const quadraticPositivePool = shuffled([...positiveSignatures].filter(sig => degreeOf(sig) === 2),rng);
+    const affineControlPool = shuffled(controlSignatures.filter(sig => degreeOf(sig) === 1),rng);
+    const quadraticControlPool = shuffled(controlSignatures.filter(sig => degreeOf(sig) === 2),rng);
+    if (affinePositivePool.length < 16 || quadraticPositivePool.length < 10 || affineControlPool.length < 8 || quadraticControlPool.length < 10) {
+      throw new Error("Zu wenige Aufgaben für den D7-Familien-Holdout.");
+    }
+    const discoverySignatures = affinePositivePool.slice(0,8);
+    const calibrationSignatures = shuffled([...affinePositivePool.slice(8,16),...affineControlPool.slice(0,8)],rng);
+    const positiveTestSignatures = quadraticPositivePool.slice(0,10);
+    const controlTestSignatures = quadraticControlPool.slice(0,10);
+    const testSignatures = shuffled([...positiveTestSignatures,...controlTestSignatures],rng);
+    const discovery = discoverySignatures.map((sig,index) => taskFromSignature(`T${String(index + 1).padStart(2,"0")}`,sig));
+    const calibration = calibrationSignatures.map((sig,index) => taskFromSignature(`T${String(index + 9).padStart(2,"0")}`,sig));
+    const test = testSignatures.map((sig,index) => taskFromSignature(`T${String(index + 25).padStart(2,"0")}`,sig));
+    const allTasks = [...discovery,...calibration,...test];
+    const signatures = allTasks.map(targetSignature);
+    const uniqueTaskCount = new Set(signatures).size;
+    const legacyOverlap = signatures.filter(sig => blocked.has(sig)).length;
+    const newTaskCount = signatures.length - legacyOverlap;
+    const trainingFamilyViolations = [...discovery,...calibration].filter(task => features(task).degree !== 1).length;
+    const testFamilyViolations = test.filter(task => features(task).degree !== 2).length;
+    if (uniqueTaskCount !== 44 || legacyOverlap !== 0 || trainingFamilyViolations !== 0 || testFamilyViolations !== 0) {
+      throw new Error("D7-Aufgaben sind nicht sauber getrennt.");
+    }
+    return {
+      hiddenFactor,discovery,calibration,test,
+      affinePositivePoolCount:affinePositivePool.length,
+      quadraticPositivePoolCount:quadraticPositivePool.length,
+      affineControlPoolCount:affineControlPool.length,
+      quadraticControlPoolCount:quadraticControlPool.length,
+      uniqueTaskCount,
+      newTaskCount,
+      legacyOverlap,
+      trainingFamilyViolations,
+      testFamilyViolations,
+      testPositiveSignatures:positiveTestSignatures,
+      taskFingerprints:signatures.map(fingerprint),
+      datasetFingerprint:fingerprint(`D:${[...discoverySignatures].sort().join("|")};C:${[...calibrationSignatures].sort().join("|")};T:${[...testSignatures].sort().join("|")}`)
+    };
+  }
+
+  const BASE = enumerate({});
+
+  function containsVariable(ast) {
+    if (ast.type === "var") return true;
+    if (ast.type === "const") return false;
+    if (ast.type === "call") return containsVariable(ast.arg);
+    return containsVariable(ast.left) || containsVariable(ast.right);
+  }
+
+  function operatorCandidates() {
+    const identity = signature(x(),{});
+    return BASE.byCost[3]
+      .filter(ast => containsVariable(ast) && signature(ast,{}) !== identity)
+      .filter(ast => new Set(INPUTS.map(input => evalAst(ast,input,{}))).size > 1)
+      .sort((a,b) => key(a).localeCompare(key(b)));
+  }
+
+  function discoverOperator(data) {
+    const base = measure(data.discovery,BASE);
+    const candidates = operatorCandidates().map(definition => {
+      const macros = { op:{ name:"op",definition } };
+      const enumeration = enumerate(macros);
+      const measured = measure(data.discovery,enumeration);
+      return { definition,enumeration,measured,savings:base.work - measured.work };
+    });
+    candidates.sort((a,b) => b.savings - a.savings || a.definition.cost - b.definition.cost || key(a.definition).localeCompare(key(b.definition)));
+    const best = candidates[0];
+    return {
+      candidateCount:candidates.length,
+      trainingWork:sum(candidates.map(candidate => candidate.measured.work)),
+      base,
+      candidate:best && best.savings > 0 ? { definition:best.definition,enumeration:best.enumeration,savings:best.savings,measured:best.measured } : null
+    };
+  }
+
+  function features(task) {
+    const values = task.values;
+    const y0 = values[INPUTS.indexOf(0)];
+    const y1 = values[INPUTS.indexOf(1)];
+    const y2 = values[INPUTS.indexOf(2)];
+    const a = (y2 - 2 * y1 + y0) / 2;
+    const b = y1 - y0 - a;
+    const c = y0;
+    const quadratic = [a,b,c].every(Number.isInteger) && values.every((value,index) => value === a * INPUTS[index] ** 2 + b * INPUTS[index] + c);
+    const degree = !quadratic ? 3 : a !== 0 ? 2 : b !== 0 ? 1 : 0;
+    return { values,a,b,c,degree,quadratic };
+  }
+
+  const RULES = [
+    { id:"always",label:"immer",cost:0,test:() => true },
+    { id:"never",label:"nie",cost:0,test:() => false },
+    ...[2,3].map(divisor => ({ id:`coeff-${divisor}`,label:`alle Koeffizienten durch ${divisor} teilbar`,cost:RULE_WORK_PER_TASK,test:f => f.quadratic && [f.a,f.b,f.c].every(value => value % divisor === 0) })),
+    ...[2,3].map(divisor => ({ id:`values-${divisor}`,label:`alle Zielwerte durch ${divisor} teilbar`,cost:RULE_WORK_PER_TASK,test:f => f.values.every(value => value % divisor === 0) })),
+    { id:"degree-0",label:"Grad 0",cost:RULE_WORK_PER_TASK,test:f => f.degree === 0 },
+    { id:"degree-1",label:"Grad höchstens 1",cost:RULE_WORK_PER_TASK,test:f => f.degree <= 1 },
+    { id:"degree-2",label:"Grad 2",cost:RULE_WORK_PER_TASK,test:f => f.degree === 2 },
+    { id:"symmetric",label:"symmetrische Zielwerte",cost:RULE_WORK_PER_TASK,test:f => f.quadratic && f.b === 0 },
+    { id:"zero-at-origin",label:"Zielwert bei 0 ist 0",cost:RULE_WORK_PER_TASK,test:f => f.c === 0 }
+  ];
+
+  function evaluateRule(rule,tasks,candidateEnumeration) {
+    const rows = tasks.map(task => {
+      const enabled = rule.test(features(task));
+      const stats = searchStats(enabled ? candidateEnumeration : BASE,task);
+      return { task,enabled,stats };
+    });
+    return {
+      rows,
+      attempts:sum(rows.map(row => row.stats.attempts)),
+      work:sum(rows.map(row => row.stats.work)) + rule.cost * tasks.length,
+      solved:sum(rows.map(row => Number(row.stats.found))),
+      enabled:sum(rows.map(row => Number(row.enabled))),
+      checks:rule.cost ? tasks.length : 0
+    };
+  }
+
+  function sameCalibrationBehavior(left,right) {
+    return Boolean(left && right)
+      && left.rule.cost === right.rule.cost
+      && left.savings === right.savings
+      && left.measured.attempts === right.measured.attempts
+      && left.measured.work === right.measured.work
+      && left.measured.solved === right.measured.solved
+      && left.measured.enabled === right.measured.enabled
+      && left.measured.rows.every((row,index) => row.enabled === right.measured.rows[index].enabled && row.stats.work === right.measured.rows[index].stats.work && row.stats.attempts === right.measured.rows[index].stats.attempts);
+  }
+
+  function learnRule(data,discovery) {
+    if (!discovery.candidate) {
+      const rule = RULES.find(item => item.id === "never");
+      return { rule,originalRule:rule,tieSwitched:false,evaluated:[],trainingWork:0 };
+    }
+    const base = measure(data.calibration,BASE);
+    const evaluated = RULES.map(rule => {
+      const measured = evaluateRule(rule,data.calibration,discovery.candidate.enumeration);
+      return { rule,measured,savings:base.work - measured.work };
+    }).sort((a,b) => b.savings - a.savings || a.rule.cost - b.rule.cost || a.rule.id.localeCompare(b.rule.id));
+    const original = evaluated[0];
+    const match = original.rule.id.match(/^coeff-([23])$/);
+    const alternative = match ? evaluated.find(item => item.rule.id === `values-${match[1]}`) : null;
+    const exactTie = sameCalibrationBehavior(alternative,original);
+    const selected = exactTie ? alternative : original;
+    return {
+      rule:selected.rule,
+      measured:selected.measured,
+      originalRule:original.rule,
+      tieSwitched:exactTie,
+      base,
+      evaluated,
+      trainingWork:sum(evaluated.map(item => item.measured.work))
+    };
+  }
+
+  function evaluateTest(data,discovery,learning) {
+    const basis = measure(data.test,BASE);
+    const always = discovery.candidate ? evaluateRule(RULES.find(rule => rule.id === "always"),data.test,discovery.candidate.enumeration) : { ...basis,enabled:0,checks:0 };
+    const learned = discovery.candidate ? evaluateRule(learning.rule,data.test,discovery.candidate.enumeration) : { ...basis,enabled:0,checks:0 };
+    return { basis,always,learned };
+  }
+
+  function compactArm(arm) {
+    return { attempts:arm.attempts,work:arm.work,solved:arm.solved,enabled:arm.enabled || 0,checks:arm.checks || 0 };
+  }
+
+  function compactSubset(arm,include,ruleCost = 0) {
+    const rows = arm.rows.filter(row => include(targetSignature(row.task)));
+    return {
+      attempts:sum(rows.map(row => row.stats.attempts)),
+      work:sum(rows.map(row => row.stats.work)) + ruleCost * rows.length,
+      solved:sum(rows.map(row => Number(row.stats.found))),
+      enabled:sum(rows.map(row => Number(row.enabled || false))),
+      checks:ruleCost ? rows.length : 0
+    };
+  }
+
+  function compactRun(seed,data,discovery,learning,evaluation) {
+    const saving = evaluation.basis.work - evaluation.learned.work;
+    const savingPct = evaluation.basis.work ? saving / evaluation.basis.work : 0;
+    const learningWork = discovery.trainingWork + learning.trainingWork;
+    const savingPerTask = saving / data.test.length;
+    const ruleIsSpecific = !["always","never"].includes(learning.rule.id);
+    const positiveSet = new Set(data.testPositiveSignatures);
+    const isPositive = sig => positiveSet.has(sig);
+    const isControl = sig => !positiveSet.has(sig);
+    const testBreakdown = {
+      positive:{
+        basis:compactSubset(evaluation.basis,isPositive),
+        always:compactSubset(evaluation.always,isPositive),
+        learned:compactSubset(evaluation.learned,isPositive,learning.rule.cost)
+      },
+      controls:{
+        basis:compactSubset(evaluation.basis,isControl),
+        always:compactSubset(evaluation.always,isControl),
+        learned:compactSubset(evaluation.learned,isControl,learning.rule.cost)
+      }
+    };
+    const coefficientPair = learning.evaluated.find(item => item.rule.id === `coeff-${data.hiddenFactor}`);
+    const valuePair = learning.evaluated.find(item => item.rule.id === `values-${data.hiddenFactor}`);
+    const calibrationPairTied = sameCalibrationBehavior(coefficientPair,valuePair);
+    const failureReasons = [];
+    if (!discovery.candidate) failureReasons.push("kein nützlicher Operator");
+    if (!ruleIsSpecific) failureReasons.push("keine spezifische Einsatzregel");
+    if (evaluation.basis.solved !== 20 || evaluation.always.solved !== 20 || evaluation.learned.solved !== 20) failureReasons.push("Aufgabe ungelöst");
+    if (evaluation.learned.work > evaluation.basis.work * 0.9) failureReasons.push("weniger als 10 Prozent Ersparnis");
+    if (evaluation.learned.work >= evaluation.always.work) failureReasons.push("nicht günstiger als ständig aktiv");
+    if (testBreakdown.positive.learned.enabled !== 10) failureReasons.push("nicht alle positiven Testaufgaben aktiviert");
+    if (testBreakdown.positive.learned.work >= testBreakdown.positive.basis.work) failureReasons.push("keine Ersparnis auf positiven Testaufgaben");
+    const passed = failureReasons.length === 0;
+    return {
+      seed,
+      hiddenFactor:data.hiddenFactor,
+      affinePositivePoolCount:data.affinePositivePoolCount,
+      quadraticPositivePoolCount:data.quadraticPositivePoolCount,
+      affineControlPoolCount:data.affineControlPoolCount,
+      quadraticControlPoolCount:data.quadraticControlPoolCount,
+      uniqueTaskCount:data.uniqueTaskCount,
+      newTaskCount:data.newTaskCount,
+      legacyOverlap:data.legacyOverlap,
+      trainingFamilyViolations:data.trainingFamilyViolations,
+      testFamilyViolations:data.testFamilyViolations,
+      testPositiveFingerprints:data.testPositiveSignatures.map(fingerprint),
+      taskFingerprints:data.taskFingerprints,
+      taskSequenceFingerprint:fingerprint(data.taskFingerprints.join("|")),
+      datasetFingerprint:data.datasetFingerprint,
+      candidateCount:discovery.candidateCount,
+      operator:discovery.candidate ? format(discovery.candidate.definition) : null,
+      originalRuleId:learning.originalRule.id,
+      originalRule:learning.originalRule.label,
+      tieSwitched:learning.tieSwitched,
+      calibrationPairTied,
+      ruleId:learning.rule.id,
+      rule:learning.rule.label,
+      demonstrationSavings:discovery.candidate ? discovery.candidate.savings : 0,
+      calibrationSavings:learning.base && learning.measured ? learning.base.work - learning.measured.work : 0,
+      learningWork,
+      basis:compactArm(evaluation.basis),
+      always:compactArm(evaluation.always),
+      learned:compactArm(evaluation.learned),
+      testBreakdown,
+      saving,
+      savingPct,
+      breakEvenTasks:savingPerTask > 0 ? Math.ceil(learningWork / savingPerTask) : null,
+      passed,
+      failureReasons
+    };
+  }
+
+  function runSeed(seed) {
+    const data = buildDataset(seed);
+    const discovery = discoverOperator(data);
+    const learning = learnRule(data,discovery);
+    const evaluation = evaluateTest(data,discovery,learning);
+    return compactRun(seed,data,discovery,learning,evaluation);
+  }
+
+  function median(values) {
+    if (!values.length) return null;
+    const sorted = [...values].sort((a,b) => a - b);
+    const middle = Math.floor(sorted.length / 2);
+    return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+  }
+
+  function counts(results,field) {
+    return results.reduce((all,result) => {
+      const value = String(result[field]);
+      all[value] = (all[value] || 0) + 1;
+      return all;
+    },{});
+  }
+
+  function sumArm(results,name) {
+    return results.reduce((total,result) => ({
+      attempts:total.attempts + result[name].attempts,
+      work:total.work + result[name].work,
+      solved:total.solved + result[name].solved,
+      enabled:total.enabled + result[name].enabled,
+      checks:total.checks + result[name].checks
+    }),{ attempts:0,work:0,solved:0,enabled:0,checks:0 });
+  }
+
+  function sumBreakdown(results,group,name) {
+    return results.reduce((total,result) => {
+      const arm = result.testBreakdown[group][name];
+      return {
+        attempts:total.attempts + arm.attempts,
+        work:total.work + arm.work,
+        solved:total.solved + arm.solved,
+        enabled:total.enabled + arm.enabled,
+        checks:total.checks + arm.checks
+      };
+    },{ attempts:0,work:0,solved:0,enabled:0,checks:0 });
+  }
+
+  function summarize(results) {
+    const basis = sumArm(results,"basis");
+    const always = sumArm(results,"always");
+    const learned = sumArm(results,"learned");
+    const saving = basis.work - learned.work;
+    const savingPct = basis.work ? saving / basis.work : 0;
+    const passCount = sum(results.map(result => Number(result.passed)));
+    const percentages = results.map(result => result.savingPct);
+    const breakEvens = results.map(result => result.breakEvenTasks).filter(Number.isFinite);
+    const learningWorks = results.map(result => result.learningWork);
+    const learningWork = sum(learningWorks);
+    const newTaskCount = sum(results.map(result => result.newTaskCount));
+    const legacyOverlap = sum(results.map(result => result.legacyOverlap));
+    const minUniqueTaskCount = results.length ? Math.min(...results.map(result => result.uniqueTaskCount)) : 0;
+    const datasetFingerprintCount = new Set(results.map(result => result.datasetFingerprint)).size;
+    const taskDrawCount = sum(results.map(result => result.taskFingerprints.length));
+    const distinctTaskCount = new Set(results.flatMap(result => result.taskFingerprints)).size;
+    const positiveDrawCount = sum(results.map(result => result.testPositiveFingerprints.length));
+    const distinctPositiveTaskCount = new Set(results.flatMap(result => result.testPositiveFingerprints)).size;
+    const trainingFamilyViolations = sum(results.map(result => result.trainingFamilyViolations));
+    const testFamilyViolations = sum(results.map(result => result.testFamilyViolations));
+    const tieSwitchCount = sum(results.map(result => Number(result.tieSwitched)));
+    const pairTieCount = sum(results.map(result => Number(result.calibrationPairTied)));
+    const unchangedAlwaysCount = sum(results.map(result => Number(result.originalRuleId === "always" && result.ruleId === "always")));
+    const otherRuleChangeCount = sum(results.map(result => Number(result.originalRuleId !== result.ruleId && !result.tieSwitched)));
+    const datasetFingerprintsMatch = results.every((result,index) => result.datasetFingerprint === D7_BASELINE.datasetFingerprints[index]);
+    const taskSequencesMatch = results.every((result,index) => result.taskSequenceFingerprint === D7_BASELINE.taskSequenceFingerprints[index]);
+    const originalRules = counts(results,"originalRuleId");
+    const originalSelectionMatches = originalRules["coeff-2"] === 10 && originalRules["coeff-3"] === 8 && originalRules.always === 2 && Object.values(originalRules).reduce((total,count) => total + count,0) === 20;
+    const operatorCounts = counts(results,"operator");
+    const operatorSelectionMatches = operatorCounts["(x + x)"] === 8 && operatorCounts["(3 × x)"] === 10 && operatorCounts["(-2 × x)"] === 2;
+    const positive = {
+      basis:sumBreakdown(results,"positive","basis"),
+      always:sumBreakdown(results,"positive","always"),
+      learned:sumBreakdown(results,"positive","learned")
+    };
+    const controls = {
+      basis:sumBreakdown(results,"controls","basis"),
+      always:sumBreakdown(results,"controls","always"),
+      learned:sumBreakdown(results,"controls","learned")
+    };
+    const factorStats = Object.fromEntries([2,3].map(factor => {
+      const subset = results.filter(result => result.hiddenFactor === factor);
+      const factorBasis = sum(subset.map(result => result.basis.work));
+      const factorLearned = sum(subset.map(result => result.learned.work));
+      const factorSaving = factorBasis - factorLearned;
+      return [factor,{
+        runCount:subset.length,
+        passCount:sum(subset.map(result => Number(result.passed))),
+        basisWork:factorBasis,
+        learnedWork:factorLearned,
+        saving:factorSaving,
+        savingPct:factorBasis ? factorSaving / factorBasis : 0
+      }];
+    }));
+    const pools = Object.fromEntries([2,3].map(factor => {
+      const sample = results.find(result => result.hiddenFactor === factor);
+      return [factor,sample ? {
+        affinePositive:sample.affinePositivePoolCount,
+        affineControl:sample.affineControlPoolCount,
+        quadraticPositive:sample.quadraticPositivePoolCount,
+        quadraticControl:sample.quadraticControlPoolCount
+      } : null];
+    }));
+    const thresholdPassed = results.length === 20 && passCount >= 16 && factorStats[2].runCount === 10 && factorStats[3].runCount === 10 && factorStats[2].passCount >= 8 && factorStats[3].passCount >= 8 && basis.solved === 400 && always.solved === 400 && learned.solved === 400 && positive.learned.enabled === 200 && positive.learned.work < positive.basis.work && newTaskCount === 880 && legacyOverlap === 0 && minUniqueTaskCount === 44 && datasetFingerprintCount === 20 && trainingFamilyViolations === 0 && testFamilyViolations === 0;
+    const pairedBaselineMatches = datasetFingerprintsMatch && taskSequencesMatch && operatorSelectionMatches && basis.work === D7_BASELINE.basisWork && always.work === D7_BASELINE.alwaysWork && learningWork === D7_BASELINE.learningWork;
+    const protocolIntegrityPassed = pairedBaselineMatches && originalSelectionMatches && pairTieCount === 20 && tieSwitchCount === D7_BASELINE.tieSwitchTarget && unchangedAlwaysCount === 2 && otherRuleChangeCount === 0;
+    const robustnessPassed = thresholdPassed && protocolIntegrityPassed;
+    return {
+      runCount:results.length,
+      passCount,
+      taskCount:results.length * 20,
+      basis,
+      always,
+      learned,
+      saving,
+      savingPct,
+      learningWork,
+      newTaskCount,
+      legacyOverlap,
+      minUniqueTaskCount,
+      datasetFingerprintCount,
+      taskDrawCount,
+      distinctTaskCount,
+      repeatTaskDraws:taskDrawCount - distinctTaskCount,
+      positiveDrawCount,
+      distinctPositiveTaskCount,
+      repeatPositiveDraws:positiveDrawCount - distinctPositiveTaskCount,
+      trainingFamilyViolations,
+      testFamilyViolations,
+      pairTieCount,
+      tieSwitchCount,
+      tieSwitchTarget:D7_BASELINE.tieSwitchTarget,
+      unchangedAlwaysCount,
+      otherRuleChangeCount,
+      datasetFingerprintsMatch,
+      taskSequencesMatch,
+      originalRules,
+      originalSelectionMatches,
+      operatorSelectionMatches,
+      pairedBaselineMatches,
+      protocolIntegrityPassed,
+      comparison:{
+        passCountDelta:passCount - D7_BASELINE.passCount,
+        learnedWorkDelta:learned.work - D7_BASELINE.learnedWork,
+        savingDelta:saving - D7_BASELINE.saving,
+        savingPctDelta:savingPct - D7_BASELINE.savingPct
+      },
+      positive,
+      controls,
+      factorStats,
+      pools,
+      medianLearningWork:median(learningWorks),
+      medianSavingPct:median(percentages),
+      minSavingPct:percentages.length ? Math.min(...percentages) : null,
+      maxSavingPct:percentages.length ? Math.max(...percentages) : null,
+      medianBreakEven:median(breakEvens),
+      minBreakEven:breakEvens.length ? Math.min(...breakEvens) : null,
+      maxBreakEven:breakEvens.length ? Math.max(...breakEvens) : null,
+      infiniteBreakEvens:results.length - breakEvens.length,
+      pooledBreakEven:saving > 0 ? Math.ceil(20 * learningWork / saving) : null,
+      factors:counts(results,"hiddenFactor"),
+      operators:operatorCounts,
+      rules:counts(results,"rule"),
+      passed:thresholdPassed,
+      robustnessPassed
+    };
+  }
+
+  function validateSeeds(seeds) {
+    if (seeds.length !== 20) throw new Error("D8 benötigt genau 20 Seeds.");
+    if (new Set(seeds).size !== 20) throw new Error("D8 benötigt 20 unterschiedliche Seeds.");
+    if (!seeds.every(seed => Number.isInteger(seed) && seed >= 0 && seed <= 0xFFFFFFFF)) throw new Error("Jeder Seed muss eine 32-Bit-Ganzzahl sein.");
+    const factorCounts = seeds.reduce((counts,seed) => {
+      const factor = random(seed)() < .5 ? 2 : 3;
+      counts[factor] += 1;
+      return counts;
+    },{ 2:0,3:0 });
+    if (factorCounts[2] !== 10 || factorCounts[3] !== 10) throw new Error("D8 benötigt genau zehn Seeds je Faktor.");
+  }
+
+  function runAll(seeds = SEEDS) {
+    validateSeeds(seeds);
+    const results = seeds.map(runSeed);
+    return { results,summary:summarize(results) };
+  }
+
+  function initialState(guideId = "full") {
+    return { guideId,phase:"ready",records:[],results:[],summary:null,message:SEEDS.length ? "Bereit. Die 20 Seeds sind festgehalten." : "Bereit. Vor dem offiziellen Lauf bleibt die Seed-Liste leer." };
+  }
+
+  function reducer(state,action) {
+    if (action.type === "guide") return initialState(action.id);
+    if (action.type === "reset") return initialState(state.guideId);
+    if (action.type === "discover") {
+      if (state.records.length) return { ...state,message:"Die 20 Operatoren wurden bereits erzeugt." };
+      if (SEEDS.length !== 20) return { ...state,message:"Die Seed-Liste ist noch nicht festgehalten." };
+      const records = SEEDS.map(seed => {
+        const data = buildDataset(seed);
+        return { seed,data,discovery:discoverOperator(data) };
+      });
+      return { ...state,phase:"discovered",records,message:`${records.length} Operatoren wurden erzeugt.` };
+    }
+    if (action.type === "learn") {
+      if (!state.records.length) return { ...state,message:"Zuerst müssen die Operatoren erzeugt werden." };
+      if (state.records[0].learning) return { ...state,message:"Die Einsatzregeln wurden bereits gewählt." };
+      const records = state.records.map(record => ({ ...record,learning:learnRule(record.data,record.discovery) }));
+      return { ...state,phase:"learned",records,message:`${records.length} Einsatzregeln wurden gewählt.` };
+    }
+    if (action.type === "evaluate") {
+      if (!state.records.length || !state.records[0].learning) return { ...state,message:"Zuerst müssen die Einsatzregeln gewählt werden." };
+      if (state.summary) return { ...state,message:"Die Holdouts wurden bereits ausgewertet." };
+      const results = state.records.map(record => compactRun(record.seed,record.data,record.discovery,record.learning,evaluateTest(record.data,record.discovery,record.learning)));
+      return { ...state,phase:"evaluated",results,summary:summarize(results),message:`${results.length} Holdouts wurden ausgewertet.` };
+    }
+    if (action.type === "all") {
+      let next = state;
+      if (!next.records.length) next = reducer(next,{ type:"discover" });
+      if (next.records.length && !next.records[0].learning) next = reducer(next,{ type:"learn" });
+      if (!next.summary) next = reducer(next,{ type:"evaluate" });
+      return next;
+    }
+    return state;
+  }
+
+  const guides = {
+    full:{ title:"Vollständiger Lauf",description:"Erzeuge für jeden Seed den Operator, wähle die Einsatzregel und öffne danach die 20 Holdouts.",steps:[{label:"Neu starten",type:"reset"},{label:"Operatoren erzeugen",type:"discover"},{label:"Regeln wählen",type:"learn"},{label:"Holdouts öffnen",type:"evaluate"}] },
+    sensitivity:{ title:"Gleichstandsprobe",description:"Prüfe, ob der Familientransfer mit der anderen, im Training gleichwertigen Regel bestehen bleibt.",steps:[{label:"Neu starten",type:"reset"},{label:"Alles ausführen",type:"all"}] },
+    cost:{ title:"Lernkosten",description:"Vergleiche die einmalige Lernarbeit mit dem Break-even pro Seed.",steps:[{label:"Neu starten",type:"reset"},{label:"Alles ausführen",type:"all"}] }
+  };
+
+  return { SEEDS,guides,initialState,reducer,runSeed,runAll };
+})();
+</script>
+
+<script id="recorded-results" type="application/json">null</script>
+
+<script>
+const recorded = JSON.parse(document.getElementById("recorded-results").textContent);
+let state = recorded ? { guideId:"full",phase:"evaluated",records:[],results:recorded.results,summary:recorded.summary,message:"Der aufgezeichnete Lauf ist geladen." } : D8Experiment.initialState();
+
+function dispatch(action) { state = D8Experiment.reducer(state,action); render(); }
+function number(value) { return new Intl.NumberFormat("de-DE",{ maximumFractionDigits:1 }).format(value); }
+function percent(value) { return `${number(value * 100)} %`; }
+function escapeHtml(value) { return String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;"); }
+function countsText(values) { return Object.entries(values).map(([name,count]) => `${escapeHtml(name)}: ${count}`).join("; "); }
+
+function render() {
+  const phaseLabels = { ready:"bereit",discovered:"Operatoren erzeugt",learned:"Regeln gewählt",evaluated:"Holdouts ausgewertet" };
+  document.getElementById("phaseValue").textContent = phaseLabels[state.phase];
+  const handled = state.summary ? state.summary.runCount : state.records.length;
+  document.getElementById("seedValue").textContent = `${handled} / 20`;
+  document.getElementById("seedDetail").textContent = D8Experiment.SEEDS.length ? "Seed-Liste ist festgehalten." : "Seed-Liste steht aus.";
+  document.getElementById("passValue").textContent = state.summary ? `${state.summary.passCount} / 20` : "offen";
+  document.getElementById("savingValue").textContent = state.summary ? percent(state.summary.savingPct) : "offen";
+  document.getElementById("message").textContent = state.message;
+  renderGuides();
+  renderSummary();
+  document.querySelectorAll("[data-action]").forEach(button => button.onclick = () => dispatch({ type:button.dataset.action }));
+}
+
+function renderGuides() {
+  const tabs = document.getElementById("guideTabs");
+  tabs.innerHTML = Object.entries(D8Experiment.guides).map(([id,guide]) => `<button class="${state.guideId === id ? "active" : ""}" data-guide="${id}">${escapeHtml(guide.title)}</button>`).join("");
+  tabs.querySelectorAll("[data-guide]").forEach(button => button.onclick = () => dispatch({ type:"guide",id:button.dataset.guide }));
+  const guide = D8Experiment.guides[state.guideId];
+  document.getElementById("guideTitle").textContent = guide.title;
+  document.getElementById("guideDescription").textContent = guide.description;
+  document.getElementById("guideSteps").innerHTML = guide.steps.map(step => `<button data-action="${step.type}">${escapeHtml(step.label)}</button>`).join("");
+}
+
+function renderSummary() {
+  const panel = document.getElementById("summaryPanel");
+  const resultsPanel = document.getElementById("resultsPanel");
+  if (!state.summary) {
+    panel.hidden = true;
+    resultsPanel.hidden = true;
+    document.getElementById("verdict").textContent = "Der offizielle Gegenlauf steht aus.";
+    return;
+  }
+  const summary = state.summary;
+  panel.hidden = false;
+  resultsPanel.hidden = !state.results.length;
+  document.getElementById("summaryGrid").innerHTML = [
+    ["Bestandene Läufe",`${summary.passCount} / 20`],
+    ["Regelpaare gleich",`${summary.pairTieCount} / 20`],
+    ["Gleichstände gewechselt",`${summary.tieSwitchCount} / ${summary.tieSwitchTarget}`],
+    ["Unverändert bei immer",`${summary.unchangedAlwaysCount} / 2`],
+    ["Weitere Regelwechsel",number(summary.otherRuleChangeCount)],
+    ["Gepaarte D7-Daten",summary.pairedBaselineMatches ? "identisch" : "abweichend"],
+    ["Protokollintegrität",summary.protocolIntegrityPassed ? "bestanden" : "verletzt"],
+    ["Robustheitsprobe",summary.robustnessPassed ? "bestanden" : "verfehlt"],
+    ["Gesamte Testarbeit",`${number(summary.basis.work)} → ${number(summary.learned.work)}`],
+    ["Gesamtersparnis",`${number(summary.saving)} (${percent(summary.savingPct)})`],
+    ["Gepoolter Break-even",`${number(summary.pooledBreakEven)} Aufgaben`],
+    ["Median Break-even",`${number(summary.medianBreakEven)} Aufgaben`],
+    ["Gesamte Lernarbeit",number(summary.learningWork)],
+    ["Median Lernarbeit",number(summary.medianLearningWork)],
+    ["Gelöste Aufgaben",`${summary.learned.solved} / ${summary.taskCount}`],
+    ["Positive Aktivierungen",`${summary.positive.learned.enabled} / ${summary.positiveDrawCount}`],
+    ["Positive Testarbeit",`${number(summary.positive.basis.work)} → ${number(summary.positive.learned.work)}`],
+    ["Neue Aufgaben",`${summary.newTaskCount} / ${summary.runCount * 44}`],
+    ["Verschiedene Datensätze",`${summary.datasetFingerprintCount} / 20`],
+    ["Familientrennung",summary.trainingFamilyViolations === 0 && summary.testFamilyViolations === 0 ? "sauber" : "verletzt"]
+  ].map(([label,value]) => `<div class="summary-card"><h3>${label}</h3><div class="value">${value}</div></div>`).join("");
+  document.getElementById("distributionText").innerHTML = `<p>Vergleich zu D7: bestandene Läufe ${summary.comparison.passCountDelta >= 0 ? "+" : ""}${summary.comparison.passCountDelta}; gelernte Arbeit ${summary.comparison.learnedWorkDelta >= 0 ? "+" : ""}${number(summary.comparison.learnedWorkDelta)}; Ersparnis ${summary.comparison.savingDelta >= 0 ? "+" : ""}${number(summary.comparison.savingDelta)}.</p><p>Ursprüngliche Regelwahlen: ${countsText(summary.originalRules)}. Umgedrehte Gleichstände: ${summary.tieSwitchCount} von ${summary.tieSwitchTarget}.</p><p>Faktoren: ${countsText(summary.factors)}. Faktor 2 bestanden: ${summary.factorStats[2].passCount} von ${summary.factorStats[2].runCount}, Ersparnis ${percent(summary.factorStats[2].savingPct)}. Faktor 3 bestanden: ${summary.factorStats[3].passCount} von ${summary.factorStats[3].runCount}, Ersparnis ${percent(summary.factorStats[3].savingPct)}.</p><p>Operatoren: ${countsText(summary.operators)}</p><p>Regeln: ${countsText(summary.rules)}</p><p>Ersparnis pro Seed: ${percent(summary.minSavingPct)} bis ${percent(summary.maxSavingPct)}, Median ${percent(summary.medianSavingPct)}.</p><p>Break-even pro Seed: ${number(summary.minBreakEven)} bis ${number(summary.maxBreakEven)} Aufgaben. Unendliche Werte: ${summary.infiniteBreakEvens}.</p><p>Pools je Faktor, Reihenfolge linear positiv, linear Kontrolle, quadratisch positiv, quadratisch Kontrolle: Faktor 2 ${summary.pools[2].affinePositive}, ${summary.pools[2].affineControl}, ${summary.pools[2].quadraticPositive}, ${summary.pools[2].quadraticControl}; Faktor 3 ${summary.pools[3].affinePositive}, ${summary.pools[3].affineControl}, ${summary.pools[3].quadraticPositive}, ${summary.pools[3].quadraticControl}.</p><p>Überschneidung mit D4/D5: ${summary.legacyOverlap} Aufgaben. Abweichungen von der Familiengrenze: Training ${summary.trainingFamilyViolations}, Test ${summary.testFamilyViolations}. Wiederholte Ziehungen zwischen Seeds: ${summary.repeatTaskDraws} von ${summary.taskDrawCount}. Wiederholte positive Testziehungen: ${summary.repeatPositiveDraws} von ${summary.positiveDrawCount}.</p>`;
+  document.getElementById("resultRows").innerHTML = state.results.map((result,index) => `<tr><td>${index + 1}</td><td>${result.seed}</td><td>${result.hiddenFactor}</td><td><code>${escapeHtml(result.operator)}</code></td><td>${escapeHtml(result.originalRule)}</td><td>${escapeHtml(result.rule)}</td><td class="number">${number(result.basis.work)}</td><td class="number">${number(result.learned.work)}</td><td class="number">${percent(result.savingPct)}</td><td class="number">${number(result.breakEvenTasks)}</td><td class="${result.passed ? "good" : "bad"}">${result.passed ? "ja" : "nein"}</td><td>${result.passed ? "erfüllt" : escapeHtml(result.failureReasons.join("; "))}</td></tr>`).join("");
+  const verdict = document.getElementById("verdict");
+  verdict.className = summary.robustnessPassed ? "good" : "bad";
+  verdict.textContent = !summary.protocolIntegrityPassed ? "Der Lauf ist wegen einer Protokollabweichung ungültig." : summary.robustnessPassed ? "Der D7-Transfer hält auch mit der anderen Gleichstandsregel." : "Der D7-Transfer hängt von der Gleichstandsregel ab.";
+}
+
+render();
+</script>
+</body>
+</html>
