@@ -53,7 +53,7 @@
 
   <section class="panel">
     <h2>Aufgezeichneter Lauf</h2>
-    <p id="recordedText" class="small muted">Noch offen. Protokoll, Seed-Liste und Ergebnis werden in dieser Reihenfolge festgehalten.</p>
+    <p id="recordedText" class="small muted">Das Protokoll wurde im Commit <a href="https://github.com/Aporia-Evo/ontoLogic/commit/f011a10df90a367b1bcbe3969d3f97bf32ee24bc">f011a10</a> vor der Seed-Ziehung festgehalten. Die Seed-Liste steht jetzt fest. Der offizielle Lauf ist noch offen.</p>
   </section>
 
   <div class="tabs" id="guideTabs"></div>
@@ -107,7 +107,7 @@ const D5Experiment = (() => {
   const MAX_COST = 7;
   const VALUE_LIMIT = 1_000_000;
   const RULE_WORK_PER_TASK = 44;
-  const SEEDS = Object.freeze([]);
+  const SEEDS = Object.freeze([3001123663,3290467571,2415171620,2154570405,78180180,419135701,4085858824,3279384967,1094100532,3065697511,973154779,2482284644,1353392824,2080728157,2530021973,3367758492,2364579891,2204472695,4283638262,1872055620]);
 
   const V = () => ({ type:"var",cost:1 });
   const C = value => ({ type:"const",value,cost:1 });
