@@ -51,7 +51,7 @@
 <main>
   <h1>D4: Operator und Einsatzregel selbst wählen</h1>
   <p class="intro">Die Frage ist: Kann ein kleiner symbolischer Sucher aus Demonstrationen einen Operator erzeugen, aus getrennten Kalibrierungsaufgaben genau eine Einsatzregel wählen und damit auf 20 zurückgehaltenen Aufgaben netto Sucharbeit sparen?</p>
-  <div class="notice">PROTOKOLL D4. Seed <code>__D4_SEED__</code>. Er wird erst nach dem Protokoll-Commit zufällig gezogen. Acht Demonstrationen, 16 Kalibrierungsaufgaben und 20 Testaufgaben. Operatoren haben höchstens AST-Kosten 3. Einsatzregeln bestehen aus genau einem Prädikat.</div>
+  <div class="notice">PROTOKOLL D4. Seed <code>800607964</code>, gezogen nach dem Protokoll-Commit. Acht Demonstrationen, 16 Kalibrierungsaufgaben und 20 Testaufgaben. Operatoren haben höchstens AST-Kosten 3. Einsatzregeln bestehen aus genau einem Prädikat.</div>
 
   <section class="panel">
     <h2>Erfolgsschwelle</h2>
@@ -105,7 +105,7 @@ const D4Experiment = (() => {
   const MAX_COST = 7;
   const VALUE_LIMIT = 1_000_000;
   const RULE_WORK_PER_TASK = 44;
-  const SEED = __D4_SEED__;
+  const SEED = 800607964;
 
   const V = () => ({ type:"var",cost:1 });
   const C = value => ({ type:"const",value,cost:1 });
