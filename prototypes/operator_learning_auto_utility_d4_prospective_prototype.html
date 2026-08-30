@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>D4: Operator und Einsatzregel selbst wählen</title>
+  <style>
+    :root { color-scheme:light; --bg:#f3f1eb; --paper:#fffdf8; --ink:#22211f; --muted:#6c6962; --line:#d9d4c9; --accent:#285f55; --soft:#e1eee9; --good:#276447; --good-soft:#e5f1e9; --bad:#8b3a32; --bad-soft:#f5e7e4; --warn:#725719; --warn-soft:#f4edda; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 ui-sans-serif,system-ui,sans-serif; }
+    main { width:min(1120px,calc(100% - 32px)); margin:34px auto 64px; }
+    h1,h2,h3,p { margin-top:0; }
+    h1 { font-size:clamp(28px,4vw,44px); line-height:1.08; margin-bottom:12px; }
+    h2 { font-size:20px; margin-bottom:14px; }
+    h3 { font-size:15px; margin-bottom:8px; }
+    .intro { max-width:900px; color:var(--muted); font-size:18px; margin-bottom:20px; }
+    .notice,.message { padding:11px 14px; border:1px solid var(--line); border-radius:10px; margin-bottom:18px; }
+    .notice { background:#f8f5ee; color:var(--muted); font-size:14px; }
+    .message { background:var(--soft); color:#173e37; }
+    .panel { background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:16px; }
+    .protocol,.state-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+    .protocol div,.state-card { background:#faf8f2; border:1px solid var(--line); border-radius:10px; padding:13px; }
+    .state-card { min-height:110px; }
+    .value { font-size:21px; font-weight:700; color:var(--accent); margin-bottom:4px; overflow-wrap:anywhere; }
+    .tabs,.actions,.steps { display:flex; flex-wrap:wrap; gap:8px; }
+    .tabs { margin-bottom:14px; }
+    .actions { margin-bottom:18px; }
+    button { appearance:none; border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:9px; padding:9px 13px; font:inherit; cursor:pointer; }
+    button:hover { border-color:var(--accent); }
+    button.primary { background:var(--accent); border-color:var(--accent); color:white; }
+    button.tab.active { background:var(--soft); border-color:var(--accent); color:#173e37; }
+    .guide { display:grid; grid-template-columns:1.3fr 1fr; gap:20px; }
+    .guide-side { border-left:3px solid var(--accent); padding-left:14px; }
+    .muted { color:var(--muted); }
+    .small { font-size:14px; }
+    code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; background:#eeeae1; border-radius:5px; padding:1px 5px; }
+    .table-wrap { overflow-x:auto; }
+    table { border-collapse:collapse; width:100%; font-size:14px; }
+    th,td { border-bottom:1px solid var(--line); padding:9px 8px; text-align:left; vertical-align:top; }
+    th { color:var(--muted); font-weight:600; }
+    td.number,th.number { text-align:right; font-variant-numeric:tabular-nums; }
+    .good { color:var(--good); font-weight:700; }
+    .bad { color:var(--bad); font-weight:700; }
+    .verdict { padding:14px; border-radius:10px; background:var(--good-soft); color:var(--good); font-weight:650; }
+    .verdict.caution { background:var(--warn-soft); color:var(--warn); }
+    .verdict.bad { background:var(--bad-soft); color:var(--bad); }
+    @media (max-width:820px) { .protocol,.state-grid,.guide { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>D4: Operator und Einsatzregel selbst wählen</h1>
+  <p class="intro">Die Frage ist: Kann ein kleiner symbolischer Sucher aus Demonstrationen einen Operator erzeugen, aus getrennten Kalibrierungsaufgaben genau eine Einsatzregel wählen und damit auf 20 zurückgehaltenen Aufgaben netto Sucharbeit sparen?</p>
+  <div class="notice">PROTOKOLL D4. Seed <code>__D4_SEED__</code>. Er wird erst nach dem Protokoll-Commit zufällig gezogen. Acht Demonstrationen, 16 Kalibrierungsaufgaben und 20 Testaufgaben. Operatoren haben höchstens AST-Kosten 3. Einsatzregeln bestehen aus genau einem Prädikat.</div>
+
+  <section class="panel">
+    <h2>Erfolgsschwelle</h2>
+    <div class="protocol">
+      <div><strong>Selbst erzeugt</strong><br><span class="small muted">Ein Operator und eine datenabhängige Regel werden gewählt.</span></div>
+      <div><strong>Vollständig</strong><br><span class="small muted">Alle drei Arme lösen alle 20 Testaufgaben.</span></div>
+      <div><strong>Nettonutzen</strong><br><span class="small muted">Im Test mindestens 10 Prozent weniger Arbeit als die Basis. Lernkosten stehen separat.</span></div>
+      <div><strong>Begrenzung</strong><br><span class="small muted">Die Regel ist günstiger als der ständig aktive Operator.</span></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Aufzeichnung</h2>
+    <p class="small muted">Das Protokoll ist bereit. Das Ergebnis wird nach einer vollständigen Ausführung eingetragen. Lernaufwand und Testarbeit werden getrennt ausgewiesen.</p>
+  </section>
+
+  <div class="tabs" id="guideTabs"></div>
+  <section class="panel guide">
+    <div><h2 id="guideTitle"></h2><p id="guideDescription" class="muted"></p></div>
+    <div class="guide-side"><h3>Geführter Ablauf</h3><div class="steps" id="guideSteps"></div></div>
+  </section>
+
+  <div class="actions">
+    <button data-action="discover">Operator erzeugen</button>
+    <button data-action="learn">Einsatzregel wählen</button>
+    <button data-action="evaluate">Test öffnen</button>
+    <button class="primary" data-action="all">Alles ausführen</button>
+    <button data-action="reset">Zurücksetzen</button>
+  </div>
+  <div class="message" id="message">Bereit. Die drei Aufgabensätze sind durch den Seed festgelegt.</div>
+
+  <section class="panel">
+    <h2>Aktueller Zustand</h2>
+    <div class="state-grid">
+      <div class="state-card"><h3>Phase</h3><div class="value" id="phaseValue">bereit</div><div class="small muted">Demonstration, Kalibrierung, Test.</div></div>
+      <div class="state-card"><h3>Erzeugter Operator</h3><div class="value" id="operatorValue">offen</div><div class="small muted" id="operatorDetail">Kandidaten wurden noch nicht bewertet.</div></div>
+      <div class="state-card"><h3>Gewählte Regel</h3><div class="value" id="ruleValue">offen</div><div class="small muted" id="ruleDetail">Kalibrierung steht aus.</div></div>
+      <div class="state-card"><h3>Testarbeit</h3><div class="value" id="testValue">offen</div><div class="small muted" id="testDetail">20 Aufgaben bleiben zurückgehalten.</div></div>
+    </div>
+  </section>
+
+  <section class="panel"><h2>Lernzustand</h2><div id="learningState" class="muted">Noch keine Lernphase ausgeführt.</div></section>
+  <section class="panel"><h2>Testvergleich</h2><div id="testTable" class="muted">Der Test ist geschlossen.</div></section>
+  <section class="panel"><h2>Befund</h2><div id="verdict" class="verdict caution">Noch kein Befund.</div></section>
+</main>
+
+<script>
+const D4Experiment = (() => {
+  const INPUTS = [-3,-2,-1,0,1,2,3];
+  const CONSTANTS = [-2,-1,0,1,2,3];
+  const MAX_COST = 7;
+  const VALUE_LIMIT = 1_000_000;
+  const RULE_WORK_PER_TASK = 44;
+  const SEED = __D4_SEED__;
+
+  const V = () => ({ type:"var",cost:1 });
+  const C = value => ({ type:"const",value,cost:1 });
+  const B = (op,left,right) => {
+    if ((op === "add" || op === "mul") && format(left) > format(right)) [left,right] = [right,left];
+    return { type:"binary",op,left,right,cost:1 + left.cost + right.cost };
+  };
+  const Call = (name,arg) => ({ type:"call",name,arg,cost:1 + arg.cost });
+  const OPS = {
+    add:{ symbol:"+",fn:(a,b) => a + b,commutative:true },
+    sub:{ symbol:"−",fn:(a,b) => a - b,commutative:false },
+    mul:{ symbol:"×",fn:(a,b) => a * b,commutative:true }
+  };
+
+  function format(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return String(ast.value);
+    if (ast.type === "call") return `${ast.name}(${format(ast.arg)})`;
+    return `(${format(ast.left)} ${OPS[ast.op].symbol} ${format(ast.right)})`;
+  }
+
+  function key(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return `c:${ast.value}`;
+    if (ast.type === "call") return `call:${ast.name}(${key(ast.arg)})`;
+    return `${ast.op}(${key(ast.left)},${key(ast.right)})`;
+  }
+
+  function evalAst(ast,input,macros) {
+    if (ast.type === "var") return input;
+    if (ast.type === "const") return ast.value;
+    if (ast.type === "call") return evalAst(macros[ast.name].definition,evalAst(ast.arg,input,macros),{});
+    const value = OPS[ast.op].fn(evalAst(ast.left,input,macros),evalAst(ast.right,input,macros));
+    return Number.isFinite(value) && Math.abs(value) <= VALUE_LIMIT ? value : NaN;
+  }
+
+  function primitiveCount(ast,macros) {
+    if (ast.type === "var" || ast.type === "const") return 0;
+    if (ast.type === "binary") return 1 + primitiveCount(ast.left,macros) + primitiveCount(ast.right,macros);
+    return primitiveCount(ast.arg,macros) + primitiveCount(macros[ast.name].definition,{});
+  }
+
+  function signature(ast,macros = {}) {
+    const values = INPUTS.map(input => evalAst(ast,input,macros));
+    return values.some(Number.isNaN) ? null : values.join(",");
+  }
+
+  function sum(values) { return values.reduce((total,value) => total + value,0); }
+
+  function enumerate(macros = {}) {
+    const byCost = Array.from({ length:MAX_COST + 1 },() => []);
+    const seen = new Map();
+    const attemptsByCost = Array(MAX_COST + 1).fill(0);
+    const workByCost = Array(MAX_COST + 1).fill(0);
+    function accept(cost,batch) {
+      batch.sort((a,b) => key(a).localeCompare(key(b)));
+      for (const ast of batch) {
+        const sig = signature(ast,macros);
+        if (sig === null) continue;
+        attemptsByCost[cost] += 1;
+        workByCost[cost] += primitiveCount(ast,macros) * INPUTS.length;
+        if (seen.has(sig)) continue;
+        seen.set(sig,ast);
+        byCost[cost].push(ast);
+      }
+    }
+    accept(1,[V(),...CONSTANTS.map(C)]);
+    for (let cost = 2; cost <= MAX_COST; cost += 1) {
+      const batch = [];
+      for (const name of Object.keys(macros).sort()) for (const arg of byCost[cost - 1]) batch.push(Call(name,arg));
+      for (let leftCost = 1; leftCost < cost; leftCost += 1) {
+        const rightCost = cost - 1 - leftCost;
+        if (rightCost < 1) continue;
+        for (const [op,spec] of Object.entries(OPS)) for (const left of byCost[leftCost]) for (const right of byCost[rightCost]) {
+          if (spec.commutative && key(left) > key(right)) continue;
+          batch.push(B(op,left,right));
+        }
+      }
+      accept(cost,batch);
+    }
+    return { byCost,seen,attemptsByCost,workByCost };
+  }
+
+  function targetSignature(task) { return task.values.join(","); }
+
+  function searchStats(enumeration,task) {
+    const solution = enumeration.seen.get(targetSignature(task));
+    if (!solution) return { found:false,attempts:sum(enumeration.attemptsByCost),work:sum(enumeration.workByCost) };
+    return { found:true,attempts:sum(enumeration.attemptsByCost.slice(0,solution.cost + 1)),work:sum(enumeration.workByCost.slice(0,solution.cost + 1)) };
+  }
+
+  function measure(tasks,enumeration) {
+    const rows = tasks.map(task => ({ task,stats:searchStats(enumeration,task) }));
+    return { rows,attempts:sum(rows.map(row => row.stats.attempts)),work:sum(rows.map(row => row.stats.work)),solved:sum(rows.map(row => Number(row.stats.found))) };
+  }
+
+  const x = () => V();
+  const add = (a,b) => B("add",a,b);
+  const sub = (a,b) => B("sub",a,b);
+  const mul = (a,b) => B("mul",a,b);
+  const square = () => mul(x(),x());
+  const signedAdd = (ast,value) => value >= 0 ? add(ast,C(value)) : sub(ast,C(-value));
+  const shift = value => signedAdd(x(),value);
+  const squareShift = value => signedAdd(square(),value);
+  const linear = (factor,value) => signedAdd(mul(C(factor),x()),value);
+  const quadraticMix = (sign,value) => signedAdd(sign > 0 ? add(square(),x()) : sub(square(),x()),value);
+  const scale = (factor,ast) => mul(C(factor),ast);
+
+  function random(seed) {
+    let value = seed >>> 0;
+    return () => {
+      value = (value + 0x6D2B79F5) >>> 0;
+      let t = value;
+      t = Math.imul(t ^ t >>> 15,t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7,t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function shuffled(items,rng) {
+    const result = [...items];
+    for (let index = result.length - 1; index > 0; index -= 1) {
+      const other = Math.floor(rng() * (index + 1));
+      [result[index],result[other]] = [result[other],result[index]];
+    }
+    return result;
+  }
+
+  function buildDataset() {
+    const rng = random(SEED);
+    const hiddenFactor = rng() < .5 ? 2 : 3;
+    const inners = [
+      x(),
+      ...[-2,-1,1,2,3].map(shift),
+      ...[-2,-1,0,1,2,3].map(squareShift),
+      ...[2,3].flatMap(factor => [-2,-1,0,1,2,3].map(value => linear(factor,value))),
+      quadraticMix(1,0),quadraticMix(-1,0)
+    ];
+    const backgrounds = [
+      ...[-2,-1,1,2,3].map(shift),
+      ...[-2,-1,0,1,2,3].map(squareShift),
+      ...[-2,-1,0,1,2,3].map(value => quadraticMix(1,value)),
+      ...[-2,-1,0,1,2,3].map(value => quadraticMix(-1,value))
+    ];
+    const makeTask = (id,expression) => ({ id,values:INPUTS.map(input => evalAst(expression,input,{})) });
+    const unique = tasks => {
+      const seen = new Set();
+      return tasks.filter(task => {
+        const sig = targetSignature(task);
+        if (seen.has(sig)) return false;
+        seen.add(sig);
+        return true;
+      });
+    };
+    const positives = shuffled(unique(inners.map((inner,index) => makeTask(`P${String(index + 1).padStart(2,"0")}`,scale(hiddenFactor,inner)))),rng);
+    const positiveSignatures = new Set(positives.map(targetSignature));
+    const controls = shuffled(unique(backgrounds.map((expression,index) => makeTask(`B${String(index + 1).padStart(2,"0")}`,expression))).filter(task => !positiveSignatures.has(targetSignature(task))),rng);
+    if (positives.length < 26 || controls.length < 18) throw new Error("Zu wenige eindeutige Aufgaben für D4.");
+    const discovery = positives.slice(0,8);
+    const calibration = shuffled([...positives.slice(8,16),...controls.slice(0,8)],rng);
+    const test = shuffled([...positives.slice(16,26),...controls.slice(8,18)],rng);
+    return { hiddenFactor,discovery,calibration,test };
+  }
+
+  const BASE = enumerate({});
+  const DATA = buildDataset();
+
+  function containsVariable(ast) {
+    if (ast.type === "var") return true;
+    if (ast.type === "const") return false;
+    if (ast.type === "call") return containsVariable(ast.arg);
+    return containsVariable(ast.left) || containsVariable(ast.right);
+  }
+
+  function operatorCandidates() {
+    const identity = signature(x(),{});
+    return BASE.byCost[3]
+      .filter(ast => containsVariable(ast) && signature(ast,{}) !== identity)
+      .filter(ast => new Set(INPUTS.map(input => evalAst(ast,input,{}))).size > 1)
+      .sort((a,b) => key(a).localeCompare(key(b)));
+  }
+
+  function discoverOperator() {
+    const base = measure(DATA.discovery,BASE);
+    const candidates = operatorCandidates().map(definition => {
+      const macros = { op:{ name:"op",definition } };
+      const enumeration = enumerate(macros);
+      const measured = measure(DATA.discovery,enumeration);
+      return { definition,enumeration,measured,savings:base.work - measured.work };
+    });
+    candidates.sort((a,b) => b.savings - a.savings || a.definition.cost - b.definition.cost || key(a.definition).localeCompare(key(b.definition)));
+    const best = candidates[0];
+    return {
+      candidateCount:candidates.length,
+      trainingWork:sum(candidates.map(candidate => candidate.measured.work)),
+      base,
+      candidate:best && best.savings > 0 ? { definition:best.definition,enumeration:best.enumeration,savings:best.savings,measured:best.measured } : null
+    };
+  }
+
+  function features(task) {
+    const values = task.values;
+    const y0 = values[INPUTS.indexOf(0)];
+    const y1 = values[INPUTS.indexOf(1)];
+    const y2 = values[INPUTS.indexOf(2)];
+    const a = (y2 - 2 * y1 + y0) / 2;
+    const b = y1 - y0 - a;
+    const c = y0;
+    const quadratic = [a,b,c].every(Number.isInteger) && values.every((value,index) => value === a * INPUTS[index] ** 2 + b * INPUTS[index] + c);
+    const degree = !quadratic ? 3 : a !== 0 ? 2 : b !== 0 ? 1 : 0;
+    return { values,a,b,c,degree,quadratic };
+  }
+
+  const RULES = [
+    { id:"always",label:"immer",cost:0,test:() => true },
+    { id:"never",label:"nie",cost:0,test:() => false },
+    ...[2,3].map(divisor => ({ id:`coeff-${divisor}`,label:`alle Koeffizienten durch ${divisor} teilbar`,cost:RULE_WORK_PER_TASK,test:f => f.quadratic && [f.a,f.b,f.c].every(value => value % divisor === 0) })),
+    ...[2,3].map(divisor => ({ id:`values-${divisor}`,label:`alle Zielwerte durch ${divisor} teilbar`,cost:RULE_WORK_PER_TASK,test:f => f.values.every(value => value % divisor === 0) })),
+    { id:"degree-0",label:"Grad 0",cost:RULE_WORK_PER_TASK,test:f => f.degree === 0 },
+    { id:"degree-1",label:"Grad höchstens 1",cost:RULE_WORK_PER_TASK,test:f => f.degree <= 1 },
+    { id:"degree-2",label:"Grad 2",cost:RULE_WORK_PER_TASK,test:f => f.degree === 2 },
+    { id:"symmetric",label:"symmetrische Zielwerte",cost:RULE_WORK_PER_TASK,test:f => f.quadratic && f.b === 0 },
+    { id:"zero-at-origin",label:"Zielwert bei 0 ist 0",cost:RULE_WORK_PER_TASK,test:f => f.c === 0 }
+  ];
+
+  function evaluateRule(rule,tasks,candidateEnumeration) {
+    const rows = tasks.map(task => {
+      const enabled = rule.test(features(task));
+      const stats = searchStats(enabled ? candidateEnumeration : BASE,task);
+      return { task,enabled,stats };
+    });
+    return {
+      rows,
+      attempts:sum(rows.map(row => row.stats.attempts)),
+      work:sum(rows.map(row => row.stats.work)) + rule.cost * tasks.length,
+      solved:sum(rows.map(row => Number(row.stats.found)),0),
+      enabled:sum(rows.map(row => Number(row.enabled))),
+      checks:rule.cost ? tasks.length : 0
+    };
+  }
+
+  function learnRule(discovery) {
+    if (!discovery.candidate) return { rule:RULES.find(rule => rule.id === "never"),evaluated:[],trainingWork:0 };
+    const base = measure(DATA.calibration,BASE);
+    const evaluated = RULES.map(rule => {
+      const measured = evaluateRule(rule,DATA.calibration,discovery.candidate.enumeration);
+      return { rule,measured,savings:base.work - measured.work };
+    }).sort((a,b) => b.savings - a.savings || a.rule.cost - b.rule.cost || a.rule.id.localeCompare(b.rule.id));
+    return { rule:evaluated[0].rule,measured:evaluated[0].measured,base,evaluated,trainingWork:sum(evaluated.map(item => item.measured.work)) };
+  }
+
+  function evaluateTest(discovery,learning) {
+    const basis = measure(DATA.test,BASE);
+    const always = discovery.candidate ? evaluateRule(RULES.find(rule => rule.id === "always"),DATA.test,discovery.candidate.enumeration) : { ...basis,enabled:0,checks:0 };
+    const learned = discovery.candidate ? evaluateRule(learning.rule,DATA.test,discovery.candidate.enumeration) : { ...basis,enabled:0,checks:0 };
+    return { basis,always,learned };
+  }
+
+  function initialState(guideId = "full") { return { guideId,phase:"ready",discovery:null,learning:null,evaluation:null,message:"Bereit. Die drei Aufgabensätze sind durch den Seed festgelegt." }; }
+
+  function reducer(state,action) {
+    if (action.type === "guide") return initialState(action.id);
+    if (action.type === "reset") return initialState(state.guideId);
+    if (action.type === "discover") {
+      if (state.discovery) return { ...state,message:"Der Operator wurde bereits erzeugt." };
+      const discovery = discoverOperator();
+      return { ...state,phase:"discovered",discovery,message:discovery.candidate ? `Operator erzeugt: op(x) = ${format(discovery.candidate.definition)}.` : "Kein Operator brachte auf den Demonstrationen einen Vorteil." };
+    }
+    if (action.type === "learn") {
+      if (!state.discovery) return { ...state,message:"Zuerst muss der Operator erzeugt werden." };
+      if (state.learning) return { ...state,message:"Die Einsatzregel wurde bereits gewählt." };
+      const learning = learnRule(state.discovery);
+      return { ...state,phase:"learned",learning,message:`Einsatzregel gewählt: ${learning.rule.label}.` };
+    }
+    if (action.type === "evaluate") {
+      if (!state.learning) return { ...state,message:"Zuerst muss die Einsatzregel gewählt werden." };
+      if (state.evaluation) return { ...state,message:"Der Test wurde bereits ausgewertet." };
+      const evaluation = evaluateTest(state.discovery,state.learning);
+      return { ...state,phase:"evaluated",evaluation,message:"Die 20 zurückgehaltenen Aufgaben sind ausgewertet." };
+    }
+    if (action.type === "all") {
+      let next = state;
+      if (!next.discovery) next = reducer(next,{ type:"discover" });
+      if (!next.learning) next = reducer(next,{ type:"learn" });
+      if (!next.evaluation) next = reducer(next,{ type:"evaluate" });
+      return next;
+    }
+    return state;
+  }
+
+  const guides = {
+    full:{ title:"Vollständiger Lauf",description:"Erzeuge den Operator, wähle die Regel und öffne den zurückgehaltenen Test in dieser Reihenfolge.",steps:[{label:"Neu starten",type:"reset"},{label:"Operator erzeugen",type:"discover"},{label:"Regel wählen",type:"learn"},{label:"Test öffnen",type:"evaluate"}] },
+    discovery:{ title:"Operatorwahl",description:"Alle unären Ausdrücke mit AST-Kosten 3 treten gegen dieselben acht Demonstrationen an. Die höchste Nettoersparnis gewinnt.",steps:[{label:"Neu starten",type:"reset"},{label:"Operator erzeugen",type:"discover"}] },
+    rule:{ title:"Regelwahl",description:"Elf einzelne symbolische Regeln treten auf 16 Kalibrierungsaufgaben gegeneinander an. Die geringste Gesamtarbeit gewinnt.",steps:[{label:"Neu starten",type:"reset"},{label:"Operator erzeugen",type:"discover"},{label:"Regel wählen",type:"learn"}] }
+  };
+
+  return { DATA,guides,initialState,reducer,format };
+})();
+
+let state = D4Experiment.initialState();
+function dispatch(action) { state = D4Experiment.reducer(state,action); render(); }
+function number(value) { return new Intl.NumberFormat("de-DE").format(value); }
+function percent(part,total) { return total ? `${new Intl.NumberFormat("de-DE",{maximumFractionDigits:1}).format(part / total * 100)} %` : "0 %"; }
+function escapeHtml(value) { return String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;"); }
+
+function render() { renderGuide(); renderState(); renderLearning(); renderTest(); renderVerdict(); bindButtons(); }
+
+function renderGuide() {
+  const guide = D4Experiment.guides[state.guideId];
+  document.getElementById("guideTabs").innerHTML = Object.entries(D4Experiment.guides).map(([id,item]) => `<button class="tab ${id === state.guideId ? "active" : ""}" data-guide="${id}">${escapeHtml(item.title)}</button>`).join("");
+  document.getElementById("guideTitle").textContent = guide.title;
+  document.getElementById("guideDescription").textContent = guide.description;
+  document.getElementById("guideSteps").innerHTML = guide.steps.map(step => `<button data-action="${step.type}">${escapeHtml(step.label)}</button>`).join("");
+}
+
+function renderState() {
+  const phaseLabels = { ready:"bereit",discovered:"Operator erzeugt",learned:"Regel gewählt",evaluated:"Test ausgewertet" };
+  document.getElementById("phaseValue").textContent = phaseLabels[state.phase];
+  document.getElementById("operatorValue").textContent = state.discovery?.candidate ? `op(x) = ${D4Experiment.format(state.discovery.candidate.definition)}` : state.discovery ? "keiner" : "offen";
+  document.getElementById("operatorDetail").textContent = state.discovery ? `${state.discovery.candidateCount} Kandidaten, ${number(state.discovery.trainingWork)} Lernarbeit.` : "Kandidaten wurden noch nicht bewertet.";
+  document.getElementById("ruleValue").textContent = state.learning ? state.learning.rule.label : "offen";
+  document.getElementById("ruleDetail").textContent = state.learning ? `${number(state.learning.trainingWork)} Kalibrierungsarbeit.` : "Kalibrierung steht aus.";
+  if (state.evaluation) {
+    const saved = state.evaluation.basis.work - state.evaluation.learned.work;
+    document.getElementById("testValue").textContent = saved >= 0 ? `${number(saved)} weniger` : `${number(-saved)} mehr`;
+    document.getElementById("testDetail").textContent = `${percent(saved,state.evaluation.basis.work)} gegenüber der Basis.`;
+  } else {
+    document.getElementById("testValue").textContent = "offen";
+    document.getElementById("testDetail").textContent = "20 Aufgaben bleiben zurückgehalten.";
+  }
+  document.getElementById("message").textContent = state.message;
+}
+
+function renderLearning() {
+  const target = document.getElementById("learningState");
+  if (!state.discovery) { target.className = "muted"; target.textContent = "Noch keine Lernphase ausgeführt."; return; }
+  target.className = "";
+  const operatorText = state.discovery.candidate ? `<code>op(x) = ${escapeHtml(D4Experiment.format(state.discovery.candidate.definition))}</code> spart auf den Demonstrationen ${number(state.discovery.candidate.savings)} Arbeit.` : "Kein Operator wurde übernommen.";
+  const ruleText = state.learning ? ` Gewählte Einsatzregel: <strong>${escapeHtml(state.learning.rule.label)}</strong>. Sie spart auf der Kalibrierung ${number(state.learning.base.work - state.learning.measured.work)} Arbeit.` : " Die Einsatzregel steht noch aus.";
+  let paybackText = "";
+  if (state.evaluation && state.learning) {
+    const trainingWork = state.discovery.trainingWork + state.learning.trainingWork;
+    const savedPerTask = (state.evaluation.basis.work - state.evaluation.learned.work) / 20;
+    paybackText = savedPerTask > 0 ? ` Bei gleichbleibender Ersparnis amortisiert sich die Lernarbeit nach ${number(Math.ceil(trainingWork / savedPerTask))} Aufgaben.` : " Die Lernarbeit amortisiert sich bei diesem Testergebnis nicht.";
+  }
+  const auditText = state.evaluation ? ` Generatorfaktor: ${D4Experiment.DATA.hiddenFactor}.` : " Der Generatorfaktor wird nach dem Test angezeigt.";
+  target.innerHTML = `<p>${operatorText}${ruleText}${paybackText}</p><p class="small muted">${auditText} Die Lernlogik erhält nur Zielwerte und ihre eigene Suchtabelle.</p>`;
+}
+
+function armRow(label,arm) { return `<tr><td>${escapeHtml(label)}</td><td class="number">${arm.solved} / 20</td><td class="number">${number(arm.attempts)}</td><td class="number">${number(arm.work)}</td><td class="number">${arm.enabled ?? 0}</td></tr>`; }
+
+function renderTest() {
+  const target = document.getElementById("testTable");
+  if (!state.evaluation) { target.className = "muted"; target.textContent = "Der Test ist geschlossen."; return; }
+  target.className = "table-wrap";
+  target.innerHTML = `<table><thead><tr><th>Arm</th><th class="number">Gelöst</th><th class="number">Suchknoten</th><th class="number">Arbeit</th><th class="number">Freigaben</th></tr></thead><tbody>${armRow("Basis",state.evaluation.basis)}${armRow("Operator ständig aktiv",state.evaluation.always)}${armRow("Gelernte Regel",state.evaluation.learned)}</tbody></table>`;
+}
+
+function renderVerdict() {
+  const target = document.getElementById("verdict");
+  if (!state.evaluation) { target.className = "verdict caution"; target.textContent = "Noch kein Befund."; return; }
+  const { basis,always,learned } = state.evaluation;
+  const saved = basis.work - learned.work;
+  const learnedCondition = !["always","never"].includes(state.learning.rule.id);
+  const complete = [basis,always,learned].every(arm => arm.solved === 20);
+  const success = Boolean(state.discovery.candidate) && learnedCondition && complete && saved / basis.work >= .10 && learned.work < always.work;
+  if (success) {
+    target.className = "verdict";
+    target.textContent = `Schwelle erreicht: Operator und Regel wurden aus getrennten Lerndaten gewählt. Alle 20 Testaufgaben wurden gelöst. Die Regel spart ${number(saved)} Arbeit, also ${percent(saved,basis.work)}, und gab den Operator ${learned.enabled} Mal frei.`;
+  } else {
+    const reasons = [];
+    if (!state.discovery.candidate) reasons.push("kein Operator brachte auf den Demonstrationen einen Vorteil");
+    if (!learnedCondition) reasons.push("es entstand keine datenabhängige Einsatzbedingung");
+    if (!complete) reasons.push("mindestens ein Arm löste nicht alle Aufgaben");
+    if (saved / basis.work < .10) reasons.push(`die Ersparnis lag bei ${percent(Math.max(0,saved),basis.work)}`);
+    if (learned.work >= always.work) reasons.push("die Regel war nicht günstiger als der ständig aktive Operator");
+    target.className = "verdict bad";
+    target.textContent = `Schwelle verfehlt: ${reasons.join("; ")}.`;
+  }
+}
+
+function bindButtons() {
+  document.querySelectorAll("[data-guide]").forEach(button => { button.onclick = () => dispatch({ type:"guide",id:button.dataset.guide }); });
+  document.querySelectorAll("[data-action]").forEach(button => { button.onclick = () => dispatch({ type:button.dataset.action }); });
+}
+
+render();
+</script>
+</body>
+</html>
