@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>D12: Eine Nutzenregel erzeugen</title>
+<style>
+  :root { color-scheme:dark; --bg:#0d1117; --panel:#161b22; --line:#30363d; --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --good:#3fb950; --bad:#f85149; }
+  * { box-sizing:border-box; }
+  body { max-width:1120px; margin:0 auto; padding:32px 20px 64px; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,sans-serif; }
+  h1,h2,h3,p { margin-top:0; }
+  h1 { margin-bottom:8px; font-size:clamp(28px,5vw,46px); }
+  h2 { font-size:20px; }
+  h3 { font-size:15px; }
+  code { color:#d2a8ff; }
+  button { border:1px solid var(--line); border-radius:8px; padding:10px 14px; background:#21262d; color:var(--text); cursor:pointer; }
+  button:hover,button.active { border-color:var(--accent); color:var(--accent); }
+  button.primary { background:#1f6feb; border-color:#1f6feb; color:white; }
+  .intro { max-width:850px; color:var(--muted); font-size:18px; }
+  .notice,.message { padding:12px 14px; border:1px solid var(--line); border-radius:8px; background:#0b2740; }
+  .panel { margin-top:18px; padding:20px; border:1px solid var(--line); border-radius:10px; background:var(--panel); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(205px,1fr)); gap:12px; }
+  .card { padding:14px; border:1px solid var(--line); border-radius:8px; background:#0d1117; }
+  .value { font-size:21px; font-weight:700; }
+  .small { font-size:14px; }
+  .muted { color:var(--muted); }
+  .good { color:var(--good); }
+  .bad { color:var(--bad); }
+  .tabs,.actions,.steps { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
+  .guide { display:grid; grid-template-columns:2fr 1fr; gap:24px; }
+  .message { margin-top:12px; background:#111820; }
+  .table-wrap { overflow-x:auto; max-height:430px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th,td { padding:8px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+  th.number,td.number { text-align:right; }
+  @media (max-width:760px) { .guide { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+  <h1>D12: Kann das System eine Nutzenregel erzeugen?</h1>
+  <p class="intro">Das Programm erzeugt Proben aus festen Ausdrucksvorlagen. Es misst, wann der gefundene Operator Sucharbeit spart, baut daraus eine kleine Regel und nutzt die festgehaltene D10-Evaluationsmenge erst danach.</p>
+
+  <div class="notice"><strong>Protokoll D12-v1.</strong> Seed <code>2978031812</code>. Acht feste Atome. Eine Regel besteht aus einer oder zwei verschiedenen UND-Klauseln mit jeweils höchstens vier Atomen. Die Auswahl nutzt 73 sortierte, programmgenerierte Proben. Erfolg verlangt vollständige Protokolltreue, 20 gelöste Aufgaben, mindestens 10 Prozent weniger Arbeit als die Basissuche und weniger Arbeit als der Operator im Dauereinsatz.</div>
+  <p class="small muted">D12 ist ein gezielter Konstruktionstest auf dem bereits verwendeten harten D10-Bestand. Entscheidend ist hier, ob die festgelegte Regelsuche eine nützliche Regel bauen kann.</p>
+
+  <section class="panel">
+    <h2>Vorab festgelegt</h2>
+    <div class="grid">
+      <div class="card"><h3>Proben</h3><div class="value">73</div><div class="small muted">34 davon zeigen einen gemessenen Vorteil.</div></div>
+      <div class="card"><h3>Regelraum</h3><div class="value">13.203</div><div class="small muted">162 Klauseln, höchstens zwei pro Regel.</div></div>
+      <div class="card"><h3>Regelkosten</h3><div class="value">44</div><div class="small muted">Arbeitseinheiten je Evaluationsaufgabe.</div></div>
+      <div class="card"><h3>Erfolgsschwelle</h3><div class="value">10 %</div><div class="small muted">Ersparnis gegenüber der Basissuche.</div></div>
+    </div>
+  </section>
+
+  <div class="tabs" id="guideTabs"></div>
+  <section class="panel guide">
+    <div><h2 id="guideTitle"></h2><p id="guideDescription" class="muted"></p></div>
+    <div><h3>Geführter Ablauf</h3><div class="steps" id="guideSteps"></div></div>
+  </section>
+
+  <div class="actions">
+    <button data-action="discover">Operator finden</button>
+    <button data-action="probe">Proben erzeugen</button>
+    <button data-action="synthesize">Regel bauen</button>
+    <button data-action="evaluate">Evaluieren</button>
+    <button class="primary" data-action="all">Alles ausführen</button>
+    <button data-action="reset">Zurücksetzen</button>
+  </div>
+  <div class="message" id="message">Bereit. Das Protokoll ist festgehalten.</div>
+
+  <section class="panel">
+    <h2>Aktueller Zustand</h2>
+    <div class="grid">
+      <div class="card"><h3>Phase</h3><div class="value" id="phaseValue">bereit</div></div>
+      <div class="card"><h3>Operator</h3><div class="value" id="operatorValue">offen</div><div class="small muted" id="divisorValue">Teiler offen</div></div>
+      <div class="card"><h3>Proben</h3><div class="value" id="probeValue">0 / 73</div><div class="small muted" id="usefulValue">Nutzen offen</div></div>
+      <div class="card"><h3>Erzeugte Regel</h3><div class="value" id="ruleValue">offen</div><div class="small muted" id="fitValue">Anpassung offen</div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="synthesisPanel" hidden>
+    <h2>Regelerzeugung</h2>
+    <div class="grid" id="synthesisGrid"></div>
+  </section>
+
+  <section class="panel" id="evaluationPanel" hidden>
+    <h2>Evaluation</h2>
+    <div class="grid" id="evaluationGrid"></div>
+    <p id="verdict" class="muted"></p>
+    <p id="recordedText" class="small muted"></p>
+  </section>
+
+  <section class="panel" id="routingPanel" hidden>
+    <h2>Entscheidungen auf der Evaluation</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Aufgabe</th><th>Gruppe</th><th>Regel</th><th>Günstiger</th><th class="number">Basis</th><th class="number">Operator</th><th class="number">Abstand zum Ideal</th></tr></thead>
+      <tbody id="routingRows"></tbody>
+    </table></div>
+  </section>
+
+  <section class="panel" id="probePanel" hidden>
+    <h2>Programmgenerierte Proben</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Probe</th><th>Signatur</th><th class="number">Basis</th><th class="number">Operator</th><th>Vorteil</th></tr></thead>
+      <tbody id="probeRows"></tbody>
+    </table></div>
+  </section>
+
+<script>
+const D12Experiment = (() => {
+  const SEED = 2978031812;
+  const INPUTS = [-3,-2,-1,0,1,2,3];
+  const CONSTANTS = [-2,-1,0,1,2,3];
+  const MAX_COST = 7;
+  const VALUE_LIMIT = 1_000_000;
+  const RULE_WORK_PER_TASK = 44;
+  const EXPECTED = Object.freeze({
+    datasetFingerprint:"8510e1b1",
+    discoverySequenceFingerprint:"a92fe2c2",
+    testSequenceFingerprint:"e028874e",
+    probeFingerprint:"87acf874",
+    atomFingerprint:"78097f74",
+    clauseCount:162,
+    ruleCount:13203,
+    selectedRuleId:"A&B|MB&N",
+    probeCount:73,
+    usefulCount:34,
+    zeroErrorRuleCount:8,
+    bestComplexityCount:1,
+    candidateCount:16,
+    discoverySavings:413854,
+    discoveryTrainingWork:9198861
+  });
+
+  const V = () => ({ type:"var",cost:1 });
+  const C = value => ({ type:"const",value,cost:1 });
+  const B = (op,left,right) => {
+    if ((op === "add" || op === "mul") && format(left) > format(right)) [left,right] = [right,left];
+    return { type:"binary",op,left,right,cost:1 + left.cost + right.cost };
+  };
+  const Call = (name,arg) => ({ type:"call",name,arg,cost:1 + arg.cost });
+  const OPS = {
+    add:{ symbol:"+",fn:(a,b) => a + b,commutative:true },
+    sub:{ symbol:"−",fn:(a,b) => a - b,commutative:false },
+    mul:{ symbol:"×",fn:(a,b) => a * b,commutative:true }
+  };
+
+  function format(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return String(ast.value);
+    if (ast.type === "call") return `${ast.name}(${format(ast.arg)})`;
+    return `(${format(ast.left)} ${OPS[ast.op].symbol} ${format(ast.right)})`;
+  }
+
+  function key(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return `c:${ast.value}`;
+    if (ast.type === "call") return `call:${ast.name}(${key(ast.arg)})`;
+    return `${ast.op}(${key(ast.left)},${key(ast.right)})`;
+  }
+
+  function evalAst(ast,input,macros) {
+    if (ast.type === "var") return input;
+    if (ast.type === "const") return ast.value;
+    if (ast.type === "call") return evalAst(macros[ast.name].definition,evalAst(ast.arg,input,macros),{});
+    const value = OPS[ast.op].fn(evalAst(ast.left,input,macros),evalAst(ast.right,input,macros));
+    return Number.isFinite(value) && Math.abs(value) <= VALUE_LIMIT ? value : NaN;
+  }
+
+  function primitiveCount(ast,macros) {
+    if (ast.type === "var" || ast.type === "const") return 0;
+    if (ast.type === "binary") return 1 + primitiveCount(ast.left,macros) + primitiveCount(ast.right,macros);
+    return primitiveCount(ast.arg,macros) + primitiveCount(macros[ast.name].definition,{});
+  }
+
+  function signature(ast,macros = {}) {
+    const values = INPUTS.map(input => evalAst(ast,input,macros));
+    return values.some(Number.isNaN) ? null : values.join(",");
+  }
+
+  function sum(values) { return values.reduce((total,value) => total + value,0); }
+  function compareId(left,right) { return left < right ? -1 : left > right ? 1 : 0; }
+
+  function enumerate(macros = {}) {
+    const byCost = Array.from({ length:MAX_COST + 1 },() => []);
+    const seen = new Map();
+    const attemptsByCost = Array(MAX_COST + 1).fill(0);
+    const workByCost = Array(MAX_COST + 1).fill(0);
+    function accept(cost,batch) {
+      batch.sort((a,b) => key(a).localeCompare(key(b)));
+      for (const ast of batch) {
+        const sig = signature(ast,macros);
+        if (sig === null) continue;
+        attemptsByCost[cost] += 1;
+        workByCost[cost] += primitiveCount(ast,macros) * INPUTS.length;
+        if (seen.has(sig)) continue;
+        seen.set(sig,ast);
+        byCost[cost].push(ast);
+      }
+    }
+    accept(1,[V(),...CONSTANTS.map(C)]);
+    for (let cost = 2; cost <= MAX_COST; cost += 1) {
+      const batch = [];
+      for (const name of Object.keys(macros).sort()) for (const arg of byCost[cost - 1]) batch.push(Call(name,arg));
+      for (let leftCost = 1; leftCost < cost; leftCost += 1) {
+        const rightCost = cost - 1 - leftCost;
+        if (rightCost < 1) continue;
+        for (const [op,spec] of Object.entries(OPS)) for (const left of byCost[leftCost]) for (const right of byCost[rightCost]) {
+          if (spec.commutative && key(left) > key(right)) continue;
+          batch.push(B(op,left,right));
+        }
+      }
+      accept(cost,batch);
+    }
+    return { byCost,seen,attemptsByCost,workByCost };
+  }
+
+  function targetSignature(task) { return task.values.join(","); }
+
+  function searchStats(enumeration,task) {
+    const solution = enumeration.seen.get(targetSignature(task));
+    if (!solution) return { found:false,attempts:sum(enumeration.attemptsByCost),work:sum(enumeration.workByCost) };
+    return { found:true,attempts:sum(enumeration.attemptsByCost.slice(0,solution.cost + 1)),work:sum(enumeration.workByCost.slice(0,solution.cost + 1)) };
+  }
+
+  function measure(tasks,enumeration) {
+    const rows = tasks.map(task => ({ task,stats:searchStats(enumeration,task) }));
+    return { rows,attempts:sum(rows.map(row => row.stats.attempts)),work:sum(rows.map(row => row.stats.work)),solved:sum(rows.map(row => Number(row.stats.found))) };
+  }
+
+  const x = () => V();
+  const add = (a,b) => B("add",a,b);
+  const sub = (a,b) => B("sub",a,b);
+  const mul = (a,b) => B("mul",a,b);
+  const square = () => mul(x(),x());
+  const signedAdd = (ast,value) => value >= 0 ? add(ast,C(value)) : sub(ast,C(-value));
+  const shift = value => signedAdd(x(),value);
+  const squareShift = value => signedAdd(square(),value);
+  const linear = (factor,value) => signedAdd(mul(C(factor),x()),value);
+  const quadraticMix = (sign,value) => signedAdd(sign > 0 ? add(square(),x()) : sub(square(),x()),value);
+  const scale = (factor,ast) => mul(C(factor),ast);
+  const cubicCounterexample = () => sub(mul(mul(x(),x()),x()),x());
+
+  function random(seed) {
+    let value = seed >>> 0;
+    return () => {
+      value = (value + 0x6D2B79F5) >>> 0;
+      let t = value;
+      t = Math.imul(t ^ t >>> 15,t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7,t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function shuffled(items,rng) {
+    const result = [...items];
+    for (let index = result.length - 1; index > 0; index -= 1) {
+      const other = Math.floor(rng() * (index + 1));
+      [result[index],result[other]] = [result[other],result[index]];
+    }
+    return result;
+  }
+
+  function legacySignatures() {
+    const oldInners = [
+      x(),
+      ...[-2,-1,1,2,3].map(shift),
+      ...[-2,-1,0,1,2,3].map(squareShift),
+      ...[2,3].flatMap(factor => [-2,-1,0,1,2,3].map(value => linear(factor,value))),
+      quadraticMix(1,0),quadraticMix(-1,0)
+    ];
+    const oldBackgrounds = [
+      ...[-2,-1,1,2,3].map(shift),
+      ...[-2,-1,0,1,2,3].map(squareShift),
+      ...[-2,-1,0,1,2,3].map(value => quadraticMix(1,value)),
+      ...[-2,-1,0,1,2,3].map(value => quadraticMix(-1,value))
+    ];
+    const blocked = new Set(oldBackgrounds.map(expression => signature(expression,{})));
+    for (const factor of [2,3]) for (const inner of oldInners) blocked.add(signature(scale(factor,inner),{}));
+    return blocked;
+  }
+
+  function taskFromSignature(id,sig) { return { id,values:sig.split(",").map(Number) }; }
+
+  function fingerprint(text) {
+    let hash = 2166136261;
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash,16777619);
+    }
+    return (hash >>> 0).toString(16).padStart(8,"0");
+  }
+
+  const BASE = enumerate({});
+
+  function containsVariable(ast) {
+    if (ast.type === "var") return true;
+    if (ast.type === "const") return false;
+    if (ast.type === "call") return containsVariable(ast.arg);
+    return containsVariable(ast.left) || containsVariable(ast.right);
+  }
+
+  function features(task) {
+    const values = task.values;
+    const y0 = values[INPUTS.indexOf(0)];
+    const y1 = values[INPUTS.indexOf(1)];
+    const y2 = values[INPUTS.indexOf(2)];
+    const a = (y2 - 2 * y1 + y0) / 2;
+    const b = y1 - y0 - a;
+    const c = y0;
+    const quadratic = [a,b,c].every(Number.isInteger) && values.every((value,index) => value === a * INPUTS[index] ** 2 + b * INPUTS[index] + c);
+    const degree = !quadratic ? 3 : a !== 0 ? 2 : b !== 0 ? 1 : 0;
+    return { values,a,b,c,degree,quadratic };
+  }
+
+  function buildDataset(seed) {
+    const rng = random(seed);
+    const hiddenFactor = rng() < .5 ? 2 : 3;
+    const blocked = legacySignatures();
+    const positiveBySignature = new Map();
+    for (let cost = 1; cost <= 5; cost += 1) for (const inner of BASE.byCost[cost]) {
+      if (!containsVariable(inner)) continue;
+      const sig = signature(scale(hiddenFactor,inner),{});
+      if (!BASE.seen.has(sig) || blocked.has(sig)) continue;
+      if (!positiveBySignature.has(sig)) positiveBySignature.set(sig,inner);
+    }
+    const positiveSignatures = new Set(positiveBySignature.keys());
+    const controlSignatures = [...BASE.seen.entries()]
+      .filter(([sig,ast]) => containsVariable(ast) && !blocked.has(sig) && !positiveSignatures.has(sig))
+      .map(([sig]) => sig);
+    const degreeOf = sig => features(taskFromSignature("T00",sig)).degree;
+    const affinePositivePool = shuffled([...positiveSignatures].filter(sig => degreeOf(sig) === 1),rng);
+    const quadraticPositivePool = shuffled([...positiveSignatures].filter(sig => degreeOf(sig) === 2),rng);
+    const affineControlPool = shuffled(controlSignatures.filter(sig => degreeOf(sig) === 1),rng);
+    const quadraticControlPool = shuffled(controlSignatures.filter(sig => degreeOf(sig) === 2),rng);
+    const counterexampleSignature = signature(cubicCounterexample(),{});
+    if (affinePositivePool.length < 16 || quadraticPositivePool.length < 11 || affineControlPool.length < 8 || quadraticControlPool.length < 10) throw new Error("Zu wenige Aufgaben für D12.");
+    const discoverySignatures = affinePositivePool.slice(0,8);
+    const d7CalibrationSource = [...affinePositivePool.slice(8,16),...affineControlPool.slice(0,8)];
+    const d9CalibrationSource = [...d7CalibrationSource.slice(0,15),counterexampleSignature];
+    const d10CalibrationSource = [...d9CalibrationSource];
+    d10CalibrationSource[7] = quadraticPositivePool[10];
+    const calibrationOrder = shuffled([...d7CalibrationSource.keys()],rng);
+    const calibrationSignatures = calibrationOrder.map(index => d10CalibrationSource[index]);
+    const positiveTestSignatures = quadraticPositivePool.slice(0,10);
+    const controlTestSignatures = quadraticControlPool.slice(0,10);
+    const testSignatures = shuffled([...positiveTestSignatures,...controlTestSignatures],rng);
+    const discovery = discoverySignatures.map((sig,index) => taskFromSignature(`T${String(index + 1).padStart(2,"0")}`,sig));
+    const calibration = calibrationSignatures.map((sig,index) => taskFromSignature(`T${String(index + 9).padStart(2,"0")}`,sig));
+    const test = testSignatures.map((sig,index) => taskFromSignature(`T${String(index + 25).padStart(2,"0")}`,sig));
+    const allSignatures = [...discoverySignatures,...calibrationSignatures,...testSignatures];
+    const taskFingerprints = allSignatures.map(fingerprint);
+    const datasetFingerprint = fingerprint(`D:${[...discoverySignatures].sort().join("|")};C:${[...calibrationSignatures].sort().join("|")};T:${[...testSignatures].sort().join("|")}`);
+    const legacyOverlap = allSignatures.filter(sig => blocked.has(sig)).length;
+    if (new Set(allSignatures).size !== 44 || legacyOverlap !== 0) throw new Error("Der D12-Split ist nicht sauber.");
+    return {
+      hiddenFactor,discovery,calibration,test,testPositiveSignatures:positiveTestSignatures,
+      datasetFingerprint,legacyOverlap,uniqueTaskCount:new Set(allSignatures).size,
+      discoverySequenceFingerprint:fingerprint(taskFingerprints.slice(0,8).join("|")),
+      testSequenceFingerprint:fingerprint(taskFingerprints.slice(24).join("|"))
+    };
+  }
+
+  function operatorCandidates() {
+    const identity = signature(x(),{});
+    return BASE.byCost[3]
+      .filter(ast => containsVariable(ast) && signature(ast,{}) !== identity)
+      .filter(ast => new Set(INPUTS.map(input => evalAst(ast,input,{}))).size > 1)
+      .sort((a,b) => key(a).localeCompare(key(b)));
+  }
+
+  function discoverOperator(data) {
+    const base = measure(data.discovery,BASE);
+    const candidates = operatorCandidates().map(definition => {
+      const enumeration = enumerate({ op:{ name:"op",definition } });
+      const measured = measure(data.discovery,enumeration);
+      return { definition,enumeration,measured,savings:base.work - measured.work };
+    });
+    candidates.sort((a,b) => b.savings - a.savings || a.definition.cost - b.definition.cost || key(a.definition).localeCompare(key(b.definition)));
+    const best = candidates[0];
+    return {
+      candidateCount:candidates.length,
+      trainingWork:sum(candidates.map(candidate => candidate.measured.work)),
+      base,
+      operator:best ? format(best.definition) : null,
+      candidate:best && best.savings > 0 ? best : null
+    };
+  }
+
+  function inferDivisor(definition) {
+    const outputs = INPUTS.map(input => evalAst(definition,input,{}));
+    const factor = evalAst(definition,1,{}) - evalAst(definition,0,{});
+    if (!Number.isInteger(factor) || factor === 0 || outputs.some((value,index) => value !== factor * INPUTS[index])) throw new Error("Der Operator ist keine reine ganzzahlige Skalierung.");
+    return Math.abs(factor);
+  }
+
+  function generateUtilityProbes(discovery) {
+    if (!discovery.candidate) throw new Error("Es wurde kein nutzbarer Operator gefunden.");
+    const signatures = [...legacySignatures()].sort();
+    const probes = signatures.map((sig,index) => {
+      const task = taskFromSignature(`P${String(index + 1).padStart(3,"0")}`,sig);
+      const base = searchStats(BASE,task);
+      const candidate = searchStats(discovery.candidate.enumeration,task);
+      return { id:task.id,signature:sig,task,features:features(task),base,candidate,useful:candidate.work < base.work };
+    });
+    return {
+      probes,
+      probeFingerprint:fingerprint(probes.map(probe => `${probe.signature}:${Number(probe.useful)}`).join("|")),
+      usefulCount:sum(probes.map(probe => Number(probe.useful))),
+      baseSolved:sum(probes.map(probe => Number(probe.base.found))),
+      candidateSolved:sum(probes.map(probe => Number(probe.candidate.found))),
+      measurementWork:sum(probes.map(probe => probe.base.work + probe.candidate.work))
+    };
+  }
+
+  function atomDefinitions(divisor) {
+    return [
+      { id:"A",label:`a durch ${divisor} teilbar`,test:f => f.quadratic && f.a % divisor === 0 },
+      { id:"B",label:`b durch ${divisor} teilbar`,test:f => f.quadratic && f.b % divisor === 0 },
+      { id:"C",label:`c durch ${divisor} teilbar`,test:f => f.quadratic && f.c % divisor === 0 },
+      { id:"L",label:"Grad höchstens 1",test:f => f.degree <= 1 },
+      { id:"MA",label:`|a| mindestens ${divisor}`,test:f => f.quadratic && Math.abs(f.a) >= divisor },
+      { id:"MB",label:`|b| mindestens ${divisor}`,test:f => f.quadratic && Math.abs(f.b) >= divisor },
+      { id:"MC",label:`|c| mindestens ${divisor}`,test:f => f.quadratic && Math.abs(f.c) >= divisor },
+      { id:"N",label:"|c| ungleich |b|",test:f => f.quadratic && Math.abs(f.c) !== Math.abs(f.b) }
+    ];
+  }
+
+  function clausesFrom(atoms) {
+    const clauses = [];
+    for (let mask = 1; mask < 2 ** atoms.length; mask += 1) {
+      const members = atoms.filter((atom,index) => mask & (1 << index));
+      if (members.length <= 4) clauses.push({
+        id:members.map(atom => atom.id).join("&"),
+        label:members.map(atom => atom.label).join(" UND "),
+        atoms:members,
+        test:f => members.every(atom => atom.test(f))
+      });
+    }
+    return clauses.sort((a,b) => compareId(a.id,b.id));
+  }
+
+  function candidateRules(clauses) {
+    const rules = clauses.map(clause => [clause]);
+    for (let left = 0; left < clauses.length; left += 1) for (let right = left + 1; right < clauses.length; right += 1) rules.push([clauses[left],clauses[right]]);
+    return rules.map(parts => ({
+      id:parts.map(part => part.id).join("|"),
+      label:parts.map(part => `(${part.label})`).join(" ODER "),
+      clauses:parts,
+      atomCount:sum(parts.map(part => part.atoms.length)),
+      test:f => parts.some(part => part.test(f))
+    }));
+  }
+
+  function synthesizeUtilityRule(probeSet,divisor) {
+    const atoms = atomDefinitions(divisor);
+    const clauses = clausesFrom(atoms);
+    const rules = candidateRules(clauses);
+    const evaluated = rules.map(rule => ({
+      rule,
+      errors:sum(probeSet.probes.map(probe => Number(rule.test(probe.features) !== probe.useful)))
+    })).sort((left,right) => left.errors - right.errors || left.rule.atomCount - right.rule.atomCount || left.rule.clauses.length - right.rule.clauses.length || compareId(left.rule.id,right.rule.id));
+    const best = evaluated[0];
+    const zeroErrorRuleCount = evaluated.filter(item => item.errors === 0).length;
+    const bestComplexityCount = evaluated.filter(item => item.errors === best.errors && item.rule.atomCount === best.rule.atomCount && item.rule.clauses.length === best.rule.clauses.length).length;
+    return {
+      rule:{ ...best.rule,cost:RULE_WORK_PER_TASK },
+      errors:best.errors,
+      atoms,
+      clauses,
+      ruleCount:rules.length,
+      ruleEvaluations:rules.length * probeSet.probes.length,
+      zeroErrorRuleCount,
+      bestComplexityCount,
+      atomFingerprint:fingerprint(atoms.map(atom => atom.id).join("|"))
+    };
+  }
+
+  function evaluateRule(rule,tasks,candidateEnumeration) {
+    const rows = tasks.map(task => {
+      const enabled = rule.test(features(task));
+      const stats = searchStats(enabled ? candidateEnumeration : BASE,task);
+      return { task,enabled,stats };
+    });
+    return {
+      rows,
+      attempts:sum(rows.map(row => row.stats.attempts)),
+      work:sum(rows.map(row => row.stats.work)) + rule.cost * tasks.length,
+      solved:sum(rows.map(row => Number(row.stats.found))),
+      enabled:sum(rows.map(row => Number(row.enabled))),
+      checks:rule.cost ? tasks.length : 0
+    };
+  }
+
+  function compactArm(arm) { return { attempts:arm.attempts,work:arm.work,solved:arm.solved,enabled:arm.enabled || 0,checks:arm.checks || 0 }; }
+
+  function subset(arm,signatures,ruleCost) {
+    const allowed = new Set(signatures);
+    const rows = arm.rows.filter(row => allowed.has(targetSignature(row.task)));
+    return {
+      work:sum(rows.map(row => row.stats.work)) + ruleCost * rows.length,
+      solved:sum(rows.map(row => Number(row.stats.found))),
+      enabled:sum(rows.map(row => Number(row.enabled)))
+    };
+  }
+
+  function evaluateD12(data,discovery,probeSet,synthesis) {
+    const basis = measure(data.test,BASE);
+    const always = evaluateRule({ id:"always",cost:0,test:() => true },data.test,discovery.candidate.enumeration);
+    const generated = evaluateRule(synthesis.rule,data.test,discovery.candidate.enumeration);
+    const oracleRows = data.test.map(task => {
+      const base = searchStats(BASE,task);
+      const candidate = searchStats(discovery.candidate.enumeration,task);
+      return { task,base,candidate,useful:candidate.work < base.work };
+    });
+    const oracleWork = sum(oracleRows.map(row => Math.min(row.base.work,row.candidate.work))) + RULE_WORK_PER_TASK * data.test.length;
+    const routingCorrect = sum(oracleRows.map((row,index) => Number(generated.rows[index].enabled === row.useful)));
+    const probeSignatures = new Set(probeSet.probes.map(probe => probe.signature));
+    const evaluationOverlap = data.test.filter(task => probeSignatures.has(targetSignature(task))).length;
+    const datasetOverlap = [...data.discovery,...data.calibration,...data.test].filter(task => probeSignatures.has(targetSignature(task))).length;
+    const saving = basis.work - generated.work;
+    const savingPct = saving / basis.work;
+    const positiveSet = new Set(data.testPositiveSignatures);
+    const routingRows = oracleRows.map((row,index) => {
+      const enabled = generated.rows[index].enabled;
+      const chosenWork = enabled ? row.candidate.work : row.base.work;
+      return {
+        id:row.task.id,
+        signature:targetSignature(row.task),
+        group:positiveSet.has(targetSignature(row.task)) ? "positiv" : "Kontrolle",
+        enabled,
+        useful:row.useful,
+        baseWork:row.base.work,
+        candidateWork:row.candidate.work,
+        regret:chosenWork - Math.min(row.base.work,row.candidate.work)
+      };
+    });
+    const assertions = {
+      seed:SEED === 2978031812,
+      factor:data.hiddenFactor === 3,
+      dataset:data.datasetFingerprint === EXPECTED.datasetFingerprint,
+      discoverySequence:data.discoverySequenceFingerprint === EXPECTED.discoverySequenceFingerprint,
+      testSequence:data.testSequenceFingerprint === EXPECTED.testSequenceFingerprint,
+      taskSplit:data.uniqueTaskCount === 44 && data.legacyOverlap === 0,
+      operator:format(discovery.candidate.definition) === "(3 × x)",
+      divisor:inferDivisor(discovery.candidate.definition) === 3,
+      candidateCount:discovery.candidateCount === EXPECTED.candidateCount,
+      discoverySavings:discovery.candidate.savings === EXPECTED.discoverySavings,
+      discoveryTrainingWork:discovery.trainingWork === EXPECTED.discoveryTrainingWork,
+      probeCount:probeSet.probes.length === EXPECTED.probeCount,
+      uniqueProbes:new Set(probeSet.probes.map(probe => probe.signature)).size === EXPECTED.probeCount,
+      probeArmsSolved:probeSet.baseSolved === EXPECTED.probeCount && probeSet.candidateSolved === EXPECTED.probeCount,
+      usefulCount:probeSet.usefulCount === EXPECTED.usefulCount,
+      probeFingerprint:probeSet.probeFingerprint === EXPECTED.probeFingerprint,
+      evaluationOverlap:evaluationOverlap === 0,
+      datasetOverlap:datasetOverlap === 0,
+      atomFingerprint:synthesis.atomFingerprint === EXPECTED.atomFingerprint,
+      clauseCount:synthesis.clauses.length === EXPECTED.clauseCount,
+      ruleCount:synthesis.ruleCount === EXPECTED.ruleCount,
+      selectedRule:synthesis.rule.id === EXPECTED.selectedRuleId,
+      zeroTrainingErrors:synthesis.errors === 0,
+      zeroErrorRuleCount:synthesis.zeroErrorRuleCount === EXPECTED.zeroErrorRuleCount,
+      uniqueBestComplexity:synthesis.bestComplexityCount === EXPECTED.bestComplexityCount,
+      ruleBounds:synthesis.rule.clauses.length >= 1 && synthesis.rule.clauses.length <= 2 && synthesis.rule.clauses.every(clause => clause.atoms.length >= 1 && clause.atoms.length <= 4),
+      ruleCost:synthesis.rule.cost === RULE_WORK_PER_TASK,
+      taskCount:data.test.length === 20,
+      solved:generated.solved === 20,
+      saving:savingPct >= .10,
+      belowAlways:generated.work < always.work,
+      exactAccounting:generated.work === sum(generated.rows.map(row => row.stats.work)) + RULE_WORK_PER_TASK * data.test.length
+    };
+    const protocolKeys = Object.keys(assertions).filter(key => !["solved","saving","belowAlways"].includes(key));
+    const protocolIntegrity = protocolKeys.every(key => assertions[key]);
+    return {
+      protocol:"D12-v1",seed:SEED,hiddenFactor:data.hiddenFactor,operator:format(discovery.candidate.definition),divisor:inferDivisor(discovery.candidate.definition),
+      ruleId:synthesis.rule.id,rule:synthesis.rule.label,ruleCostPerTask:RULE_WORK_PER_TASK,
+      probeCount:probeSet.probes.length,usefulCount:probeSet.usefulCount,probeFingerprint:probeSet.probeFingerprint,
+      atomFingerprint:synthesis.atomFingerprint,clauseCount:synthesis.clauses.length,ruleCount:synthesis.ruleCount,
+      trainingErrors:synthesis.errors,zeroErrorRuleCount:synthesis.zeroErrorRuleCount,bestComplexityCount:synthesis.bestComplexityCount,
+      operatorDiscoveryWork:discovery.trainingWork,probeMeasurementWork:probeSet.measurementWork,ruleEvaluations:synthesis.ruleEvaluations,
+      generationWork:probeSet.measurementWork + discovery.trainingWork,
+      basis:compactArm(basis),always:compactArm(always),generated:compactArm(generated),
+      positive:subset(generated,data.testPositiveSignatures,RULE_WORK_PER_TASK),
+      controls:subset(generated,data.test.filter(task => !data.testPositiveSignatures.includes(targetSignature(task))).map(targetSignature),RULE_WORK_PER_TASK),
+      saving,savingPct,oracleWork,regret:generated.work - oracleWork,routingCorrect,routingAccuracy:routingCorrect / data.test.length,
+      evaluationOverlap,datasetOverlap,routingRows,
+      probes:probeSet.probes.map(probe => ({ id:probe.id,signature:probe.signature,baseWork:probe.base.work,candidateWork:probe.candidate.work,useful:probe.useful })),
+      assertions,protocolIntegrity,passed:protocolIntegrity && assertions.solved && assertions.saving && assertions.belowAlways
+    };
+  }
+
+  function initialState(guideId = "full") {
+    return { guideId,phase:"ready",data:null,discovery:null,probeSet:null,synthesis:null,result:null,message:"Bereit. Das Protokoll ist festgehalten." };
+  }
+
+  function reducer(state,action) {
+    if (action.type === "guide") return { ...state,guideId:action.id };
+    if (action.type === "reset") return initialState(state.guideId);
+    if (action.type === "discover") {
+      if (state.discovery) return { ...state,message:"Der Operator wurde bereits gefunden." };
+      const data = buildDataset(SEED);
+      const discovery = discoverOperator(data);
+      return { ...state,phase:"discovered",data,discovery,message:`Operator ${discovery.operator} wurde gefunden.` };
+    }
+    if (action.type === "probe") {
+      if (!state.discovery) return { ...state,message:"Zuerst muss der Operator gefunden werden." };
+      if (state.probeSet) return { ...state,message:"Die Proben wurden bereits erzeugt." };
+      const probeSet = generateUtilityProbes(state.discovery);
+      return { ...state,phase:"probed",probeSet,message:`${probeSet.probes.length} Proben wurden erzeugt.` };
+    }
+    if (action.type === "synthesize") {
+      if (!state.probeSet) return { ...state,message:"Zuerst müssen die Proben erzeugt werden." };
+      if (state.synthesis) return { ...state,message:"Die Regel wurde bereits gebaut." };
+      const synthesis = synthesizeUtilityRule(state.probeSet,inferDivisor(state.discovery.candidate.definition));
+      return { ...state,phase:"synthesized",synthesis,message:`Regel ${synthesis.rule.id} wurde gebaut.` };
+    }
+    if (action.type === "evaluate") {
+      if (!state.synthesis) return { ...state,message:"Zuerst muss die Regel gebaut werden." };
+      if (state.result) return { ...state,message:"Die Evaluation wurde bereits ausgeführt." };
+      const result = evaluateD12(state.data,state.discovery,state.probeSet,state.synthesis);
+      return { ...state,phase:"evaluated",result,message:"Die festgehaltene Evaluation wurde ausgeführt." };
+    }
+    if (action.type === "all") {
+      let next = state;
+      for (const type of ["discover","probe","synthesize","evaluate"]) if (!next.result) next = reducer(next,{ type });
+      return next;
+    }
+    return state;
+  }
+
+  function runD12() {
+    let state = initialState();
+    for (const type of ["discover","probe","synthesize","evaluate"]) state = reducer(state,{ type });
+    return state.result;
+  }
+
+  const guides = {
+    full:{ title:"Gesamtlauf",description:"Finde den Operator, erzeuge Proben, baue die Regel und öffne dann die festgehaltene Evaluation.",steps:[{label:"Neu starten",type:"reset"},{label:"Operator finden",type:"discover"},{label:"Proben erzeugen",type:"probe"},{label:"Regel bauen",type:"synthesize"},{label:"Evaluieren",type:"evaluate"}] },
+    generation:{ title:"Regelerzeugung",description:"Betrachte nur den Weg vom gefundenen Operator über gemessene Proben bis zur kleinsten passenden Regel.",steps:[{label:"Neu starten",type:"reset"},{label:"Operator finden",type:"discover"},{label:"Proben erzeugen",type:"probe"},{label:"Regel bauen",type:"synthesize"}] },
+    evaluation:{ title:"Nutzenmessung",description:"Baue die Regel und vergleiche danach Basis, Dauereinsatz, erzeugte Regel und ideale Weiterleitung.",steps:[{label:"Neu starten",type:"reset"},{label:"Alles ausführen",type:"all"}] }
+  };
+
+  return { SEED,EXPECTED,guides,initialState,reducer,runD12 };
+})();
+</script>
+
+<script id="recorded-results" type="application/json">null</script>
+
+<script>
+const recorded = JSON.parse(document.getElementById("recorded-results").textContent);
+let state = D12Experiment.initialState();
+if (recorded) state = { ...state,phase:"evaluated",result:recorded,message:"Der aufgezeichnete Lauf ist geladen." };
+
+function dispatch(action) { state = D12Experiment.reducer(state,action); render(); }
+function number(value) { return new Intl.NumberFormat("de-DE",{ maximumFractionDigits:1 }).format(value); }
+function percent(value) { return `${number(value * 100)} %`; }
+function escapeHtml(value) { return String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;"); }
+function card(label,value,detail = "") { return `<div class="card"><h3>${escapeHtml(label)}</h3><div class="value">${escapeHtml(value)}</div>${detail ? `<div class="small muted">${escapeHtml(detail)}</div>` : ""}</div>`; }
+
+function renderGuides() {
+  const tabs = document.getElementById("guideTabs");
+  tabs.innerHTML = Object.entries(D12Experiment.guides).map(([id,guide]) => `<button class="${state.guideId === id ? "active" : ""}" data-guide="${id}">${escapeHtml(guide.title)}</button>`).join("");
+  tabs.querySelectorAll("[data-guide]").forEach(button => button.onclick = () => dispatch({ type:"guide",id:button.dataset.guide }));
+  const guide = D12Experiment.guides[state.guideId];
+  document.getElementById("guideTitle").textContent = guide.title;
+  document.getElementById("guideDescription").textContent = guide.description;
+  document.getElementById("guideSteps").innerHTML = guide.steps.map(step => `<button data-action="${step.type}">${escapeHtml(step.label)}</button>`).join("");
+}
+
+function render() {
+  const phaseLabels = { ready:"bereit",discovered:"Operator gefunden",probed:"Proben erzeugt",synthesized:"Regel gebaut",evaluated:"evaluiert" };
+  document.getElementById("phaseValue").textContent = phaseLabels[state.phase];
+  document.getElementById("operatorValue").textContent = state.discovery ? state.discovery.operator : state.result ? state.result.operator : "offen";
+  document.getElementById("divisorValue").textContent = state.synthesis ? "Teiler aus Operator abgeleitet" : state.result ? `Teiler ${state.result.divisor}` : "Teiler offen";
+  document.getElementById("probeValue").textContent = state.probeSet ? `${state.probeSet.probes.length} / 73` : state.result ? `${state.result.probeCount} / 73` : "0 / 73";
+  document.getElementById("usefulValue").textContent = state.probeSet ? `${state.probeSet.usefulCount} mit Vorteil` : state.result ? `${state.result.usefulCount} mit Vorteil` : "Nutzen offen";
+  document.getElementById("ruleValue").textContent = state.synthesis ? state.synthesis.rule.id : state.result ? state.result.ruleId : "offen";
+  document.getElementById("fitValue").textContent = state.synthesis ? `${state.synthesis.errors} Fehler auf Proben` : state.result ? `${state.result.trainingErrors} Fehler auf Proben` : "Anpassung offen";
+  document.getElementById("message").textContent = state.message;
+  renderGuides();
+  renderDetails();
+  document.querySelectorAll("[data-action]").forEach(button => button.onclick = () => dispatch({ type:button.dataset.action }));
+}
+
+function renderDetails() {
+  const synthesis = state.synthesis;
+  const result = state.result;
+  const synthesisPanel = document.getElementById("synthesisPanel");
+  synthesisPanel.hidden = !synthesis && !result;
+  if (!synthesisPanel.hidden) document.getElementById("synthesisGrid").innerHTML = [
+    card("Regel",synthesis ? synthesis.rule.id : result.ruleId,synthesis ? synthesis.rule.label : result.rule),
+    card("Klauselraum",number(synthesis ? synthesis.clauses.length : result.clauseCount)),
+    card("Geprüfte Regeln",number(synthesis ? synthesis.ruleCount : result.ruleCount)),
+    card("Fehlerfreie Regeln",number(synthesis ? synthesis.zeroErrorRuleCount : result.zeroErrorRuleCount)),
+    card("Beste Komplexität",number(synthesis ? synthesis.bestComplexityCount : result.bestComplexityCount),"genau ein Kandidat")
+  ].join("");
+
+  const evaluationPanel = document.getElementById("evaluationPanel");
+  evaluationPanel.hidden = !result;
+  if (result) {
+    document.getElementById("evaluationGrid").innerHTML = [
+      card("Basisarbeit",number(result.basis.work)),
+      card("Dauereinsatz",number(result.always.work)),
+      card("Erzeugte Regel",number(result.generated.work)),
+      card("Ersparnis",percent(result.savingPct),number(result.saving)),
+      card("Gelöst",`${result.generated.solved} / 20`),
+      card("Aktiviert",`${result.generated.enabled} / 20`),
+      card("Ideale Arbeit",number(result.oracleWork)),
+      card("Abstand zum Ideal",number(result.regret)),
+      card("Weiterleitung",percent(result.routingAccuracy),`${result.routingCorrect} von 20`),
+      card("Operator finden",number(result.operatorDiscoveryWork),"gemessene Sucharbeit"),
+      card("Proben beschriften",number(result.probeMeasurementWork),"gemessene Sucharbeit"),
+      card("Regelentscheidungen",number(result.ruleEvaluations),"Kandidat mal Probe")
+    ].join("");
+    const verdict = document.getElementById("verdict");
+    verdict.className = result.passed ? "good" : "bad";
+    verdict.textContent = result.passed ? "D12 besteht die vorab festgelegte Schwelle." : "D12 verfehlt die vorab festgelegte Schwelle.";
+    const recordedText = document.getElementById("recordedText");
+    recordedText.innerHTML = result.protocolCommit
+      ? `Das Protokoll wurde vor der Evaluation im Commit <a href="https://github.com/Aporia-Evo/ontoLogic/commit/${escapeHtml(result.protocolCommit)}">${escapeHtml(result.protocolCommit.slice(0,7))}</a> festgeschrieben.`
+      : "Dieser interaktive Lauf ist nicht als fester Ergebnislauf eingetragen.";
+  }
+
+  const probePanel = document.getElementById("probePanel");
+  const probes = state.probeSet ? state.probeSet.probes.map(probe => ({ ...probe,baseWork:probe.base.work,candidateWork:probe.candidate.work })) : result ? result.probes : null;
+  probePanel.hidden = !probes;
+  if (probes) document.getElementById("probeRows").innerHTML = probes.map(probe => `<tr><td>${probe.id}</td><td><code>${probe.signature}</code></td><td class="number">${number(probe.baseWork)}</td><td class="number">${number(probe.candidateWork)}</td><td class="${probe.useful ? "good" : "muted"}">${probe.useful ? "ja" : "nein"}</td></tr>`).join("");
+
+  const routingPanel = document.getElementById("routingPanel");
+  routingPanel.hidden = !result;
+  if (result) document.getElementById("routingRows").innerHTML = result.routingRows.map(row => `<tr><td>${escapeHtml(row.id)}</td><td>${escapeHtml(row.group)}</td><td class="${row.enabled === row.useful ? "good" : "bad"}">${row.enabled ? "Operator" : "Basis"}</td><td>${row.useful ? "Operator" : "Basis"}</td><td class="number">${number(row.baseWork)}</td><td class="number">${number(row.candidateWork)}</td><td class="number">${number(row.regret)}</td></tr>`).join("");
+}
+
+render();
+</script>
+</body>
+</html>
