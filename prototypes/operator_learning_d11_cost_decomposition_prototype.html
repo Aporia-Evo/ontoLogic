@@ -1,0 +1,1165 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>D11: Kostenzerlegung des Restfehlers</title>
+<style>
+  :root { color-scheme:dark; --bg:#0d1117; --panel:#161b22; --line:#30363d; --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --good:#3fb950; --bad:#f85149; }
+  * { box-sizing:border-box; }
+  body { max-width:1120px; margin:0 auto; padding:32px 20px 64px; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,sans-serif; }
+  h1,h2,h3,p { margin-top:0; }
+  h1 { margin-bottom:8px; font-size:clamp(28px,5vw,46px); }
+  h2 { font-size:20px; }
+  h3 { font-size:15px; }
+  code { color:#d2a8ff; }
+  button { border:1px solid var(--line); border-radius:8px; padding:10px 14px; background:#21262d; color:var(--text); cursor:pointer; }
+  button:hover,button.active { border-color:var(--accent); color:var(--accent); }
+  button.primary { background:#1f6feb; border-color:#1f6feb; color:white; }
+  .intro { max-width:850px; color:var(--muted); font-size:18px; }
+  .notice,.message { padding:12px 14px; border:1px solid var(--line); border-radius:8px; background:#0b2740; }
+  .panel { margin-top:18px; padding:20px; border:1px solid var(--line); border-radius:10px; background:var(--panel); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; }
+  .card { padding:14px; border:1px solid var(--line); border-radius:8px; background:#0d1117; }
+  .value { font-size:21px; font-weight:700; }
+  .small { font-size:14px; }
+  .muted { color:var(--muted); }
+  .good { color:var(--good); }
+  .bad { color:var(--bad); }
+  .tabs,.actions,.steps { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
+  .guide { display:grid; grid-template-columns:2fr 1fr; gap:24px; }
+  .message { margin-top:12px; background:#111820; }
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th,td { padding:9px 8px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+  th.number,td.number { text-align:right; }
+  @media (max-width:760px) { .guide { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+  <h1>D11: Wo entstehen die 180.446?</h1>
+  <p class="intro">Diese Diagnose zerlegt beim verbliebenen Seed jede der 16 Kalibrierungsaufgaben. So wird sichtbar, warum die Gradregel günstiger war.</p>
+
+  <div class="notice"><strong>Festes Protokoll:</strong> Seed <code>2978031812</code>, D10-Datensatz, Operatoren, Regeln und Kosten bleiben gleich. D11 besteht, wenn Faktor, Datensatz, Operator, Regelwahl und Gesamtdifferenz D10 exakt reproduzieren und die 16 Zeilen wieder <code>−180.446</code> ergeben.</div>
+
+  <section class="panel">
+    <h2>Drei Erklärungen</h2>
+    <div class="grid">
+      <div class="card"><strong>Ein Ausreißer</strong><div class="small muted">Gilt, wenn eine negative Zeile mindestens 50 Prozent des gesamten negativen Beitrags erzeugt.</div></div>
+      <div class="card"><strong>Mehrere Kontrollen</strong><div class="small muted">Gilt, wenn kein Ausreißer dominiert und die linearen Kontrollen gemeinsam ins Negative ziehen.</div></div>
+      <div class="card"><strong>Quadratischer Gegenbeitrag</strong><div class="small muted">Gilt, wenn das quadratische Positiv der Koeffizientenregel einen positiven Beitrag liefert.</div></div>
+    </div>
+  </section>
+
+  <div class="tabs" id="guideTabs"></div>
+  <section class="panel guide">
+    <div><h2 id="guideTitle"></h2><p id="guideDescription" class="muted"></p></div>
+    <div><h3>Geführter Ablauf</h3><div class="steps" id="guideSteps"></div></div>
+  </section>
+
+  <div class="actions">
+    <button class="primary" data-action="diagnose">Kosten zerlegen</button>
+    <button data-action="reset">Zurücksetzen</button>
+  </div>
+  <div class="message" id="message"></div>
+
+  <section class="panel">
+    <h2>Aktueller Zustand</h2>
+    <div class="grid" id="stateGrid"></div>
+  </section>
+
+  <section class="panel" id="findingPanel" hidden>
+    <h2>Befund</h2>
+    <div class="grid" id="findingGrid"></div>
+    <p id="findingText" style="margin-top:16px"></p>
+  </section>
+
+  <section class="panel" id="rowsPanel" hidden>
+    <h2>Beiträge, nach Delta sortiert</h2>
+    <p class="small muted"><code>Delta = Arbeit Gradregel − Arbeit Koeffizientenregel</code>. Negative Werte helfen der Gradregel. Die Regelprüfung von 44 ist in beiden Spalten je Aufgabe enthalten.</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Aufgabe</th><th>Art</th><th class="number">Grad</th><th>Koeff. aktiv</th><th>Grad aktiv</th><th class="number">Koeff.-Arbeit</th><th class="number">Grad-Arbeit</th><th class="number">Delta</th><th class="number">Kumuliert</th></tr></thead>
+      <tbody id="rowBody"></tbody>
+    </table></div>
+  </section>
+
+  <section class="panel">
+    <h2>Urteil</h2>
+    <p id="verdict" class="muted">Die Zerlegung steht aus.</p>
+    <p id="recordedText" class="small muted">Das D11-Protokoll wird vor der Messung festgeschrieben.</p>
+  </section>
+
+<script>
+const D11Experiment = (() => {
+  const INPUTS = [-3,-2,-1,0,1,2,3];
+  const CONSTANTS = [-2,-1,0,1,2,3];
+  const MAX_COST = 7;
+  const VALUE_LIMIT = 1_000_000;
+  const RULE_WORK_PER_TASK = 44;
+  const SEEDS = Object.freeze([2548699305,642732048,15024444,3635357303,4273059384,447024945,3123956311,138118016,525193501,1879385110,1137564486,2466308568,3821032107,68954736,462506230,2978031812,1611579873,1687500433,831749843,804145051]);
+  const D7_BASELINE = Object.freeze({
+    passCount:17,
+    basisWork:36778224,
+    alwaysWork:43016022,
+    learnedWork:30867815,
+    saving:5910409,
+    savingPct:0.1607040350833689,
+    factors:Object.freeze([2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3]),
+    operators:Object.freeze(["(x + x)","(3 × x)","(x + x)","(3 × x)","(x + x)","(3 × x)","(x + x)","(3 × x)","(x + x)","(3 × x)","(x + x)","(3 × x)","(-2 × x)","(3 × x)","(x + x)","(3 × x)","(x + x)","(3 × x)","(-2 × x)","(3 × x)"]),
+    datasetFingerprints:Object.freeze(["02593760","213e4349","56279199","3c29c4ae","47d6853a","f569b0af","0aa8d8be","a6b22d74","7c382e3d","175b2164","71594df4","eb20cdfc","6d85766d","5ef2c93b","a4c06a1d","8c40bb16","ded409cc","ec336665","09672240","2c15058c"]),
+    taskSequenceFingerprints:Object.freeze(["3527ea14","ef18f7e5","88402dd8","cb8a6c62","72f61eb1","1413a335","45443b9a","cd15779d","a94d03af","8e68ff56","3b2013ac","ebbea69b","f3c89881","0f58b122","dc5815cd","7ed3b728","82090947","f7fbf917","ef5d22d9","544da5f4"]),
+    discoveryFingerprints:Object.freeze(["72061765","4920a737","2f283484","9a096df2","fb85c087","77302feb","f93efad1","6170507e","dc2d8f35","197cf405","51f4be6a","5e475728","8f4730d9","4dadd074","a60a9d35","a92fe2c2","fff4e687","919bba92","ee2e6fb5","69914cb5"]),
+    testFingerprints:Object.freeze(["9c713747","86e5385d","fdb812fd","de1dcef3","9ceb3120","52b3c1bf","a57fb1bf","5407e2f3","5968085b","b8ff95e2","0a3f89bb","c86b6a19","483c3f5b","ba8352f2","59b6911c","e028874e","b65776b3","2510ff82","033142db","75484e9d"])
+  });
+  const D9_BASELINE = Object.freeze({
+    passCount:17,
+    learnedWork:29722443,
+    saving:7055781,
+    savingPct:0.19184670254876907,
+    selectedDegreeOneCount:2,
+    datasetFingerprints:Object.freeze(["f976a202","601a9fbc","715a2803","752cb356","1e0e1cca","857dbd6b","11c6aa70","09bc5937","d3380cb3","d6e93888","f0c5e035","7ebb05f7","ea0c46d4","47fda403","3a33b221","7ea3062c","a4ba4fcd","0606884d","4aa76f6b","e1d13228"])
+  });
+
+  const V = () => ({ type:"var",cost:1 });
+  const C = value => ({ type:"const",value,cost:1 });
+  const B = (op,left,right) => {
+    if ((op === "add" || op === "mul") && format(left) > format(right)) [left,right] = [right,left];
+    return { type:"binary",op,left,right,cost:1 + left.cost + right.cost };
+  };
+  const Call = (name,arg) => ({ type:"call",name,arg,cost:1 + arg.cost });
+  const OPS = {
+    add:{ symbol:"+",fn:(a,b) => a + b,commutative:true },
+    sub:{ symbol:"−",fn:(a,b) => a - b,commutative:false },
+    mul:{ symbol:"×",fn:(a,b) => a * b,commutative:true }
+  };
+
+  function format(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return String(ast.value);
+    if (ast.type === "call") return `${ast.name}(${format(ast.arg)})`;
+    return `(${format(ast.left)} ${OPS[ast.op].symbol} ${format(ast.right)})`;
+  }
+
+  function key(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return `c:${ast.value}`;
+    if (ast.type === "call") return `call:${ast.name}(${key(ast.arg)})`;
+    return `${ast.op}(${key(ast.left)},${key(ast.right)})`;
+  }
+
+  function evalAst(ast,input,macros) {
+    if (ast.type === "var") return input;
+    if (ast.type === "const") return ast.value;
+    if (ast.type === "call") return evalAst(macros[ast.name].definition,evalAst(ast.arg,input,macros),{});
+    const value = OPS[ast.op].fn(evalAst(ast.left,input,macros),evalAst(ast.right,input,macros));
+    return Number.isFinite(value) && Math.abs(value) <= VALUE_LIMIT ? value : NaN;
+  }
+
+  function primitiveCount(ast,macros) {
+    if (ast.type === "var" || ast.type === "const") return 0;
+    if (ast.type === "binary") return 1 + primitiveCount(ast.left,macros) + primitiveCount(ast.right,macros);
+    return primitiveCount(ast.arg,macros) + primitiveCount(macros[ast.name].definition,{});
+  }
+
+  function signature(ast,macros = {}) {
+    const values = INPUTS.map(input => evalAst(ast,input,macros));
+    return values.some(Number.isNaN) ? null : values.join(",");
+  }
+
+  function sum(values) { return values.reduce((total,value) => total + value,0); }
+
+  function enumerate(macros = {}) {
+    const byCost = Array.from({ length:MAX_COST + 1 },() => []);
+    const seen = new Map();
+    const attemptsByCost = Array(MAX_COST + 1).fill(0);
+    const workByCost = Array(MAX_COST + 1).fill(0);
+    function accept(cost,batch) {
+      batch.sort((a,b) => key(a).localeCompare(key(b)));
+      for (const ast of batch) {
+        const sig = signature(ast,macros);
+        if (sig === null) continue;
+        attemptsByCost[cost] += 1;
+        workByCost[cost] += primitiveCount(ast,macros) * INPUTS.length;
+        if (seen.has(sig)) continue;
+        seen.set(sig,ast);
+        byCost[cost].push(ast);
+      }
+    }
+    accept(1,[V(),...CONSTANTS.map(C)]);
+    for (let cost = 2; cost <= MAX_COST; cost += 1) {
+      const batch = [];
+      for (const name of Object.keys(macros).sort()) for (const arg of byCost[cost - 1]) batch.push(Call(name,arg));
+      for (let leftCost = 1; leftCost < cost; leftCost += 1) {
+        const rightCost = cost - 1 - leftCost;
+        if (rightCost < 1) continue;
+        for (const [op,spec] of Object.entries(OPS)) for (const left of byCost[leftCost]) for (const right of byCost[rightCost]) {
+          if (spec.commutative && key(left) > key(right)) continue;
+          batch.push(B(op,left,right));
+        }
+      }
+      accept(cost,batch);
+    }
+    return { byCost,seen,attemptsByCost,workByCost };
+  }
+
+  function targetSignature(task) { return task.values.join(","); }
+
+  function searchStats(enumeration,task) {
+    const solution = enumeration.seen.get(targetSignature(task));
+    if (!solution) return { found:false,attempts:sum(enumeration.attemptsByCost),work:sum(enumeration.workByCost) };
+    return { found:true,attempts:sum(enumeration.attemptsByCost.slice(0,solution.cost + 1)),work:sum(enumeration.workByCost.slice(0,solution.cost + 1)) };
+  }
+
+  function measure(tasks,enumeration) {
+    const rows = tasks.map(task => ({ task,stats:searchStats(enumeration,task) }));
+    return { rows,attempts:sum(rows.map(row => row.stats.attempts)),work:sum(rows.map(row => row.stats.work)),solved:sum(rows.map(row => Number(row.stats.found))) };
+  }
+
+  const x = () => V();
+  const add = (a,b) => B("add",a,b);
+  const sub = (a,b) => B("sub",a,b);
+  const mul = (a,b) => B("mul",a,b);
+  const square = () => mul(x(),x());
+  const signedAdd = (ast,value) => value >= 0 ? add(ast,C(value)) : sub(ast,C(-value));
+  const shift = value => signedAdd(x(),value);
+  const squareShift = value => signedAdd(square(),value);
+  const linear = (factor,value) => signedAdd(mul(C(factor),x()),value);
+  const quadraticMix = (sign,value) => signedAdd(sign > 0 ? add(square(),x()) : sub(square(),x()),value);
+  const scale = (factor,ast) => mul(C(factor),ast);
+  const cubicCounterexample = () => sub(mul(mul(x(),x()),x()),x());
+
+  function random(seed) {
+    let value = seed >>> 0;
+    return () => {
+      value = (value + 0x6D2B79F5) >>> 0;
+      let t = value;
+      t = Math.imul(t ^ t >>> 15,t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7,t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function shuffled(items,rng) {
+    const result = [...items];
+    for (let index = result.length - 1; index > 0; index -= 1) {
+      const other = Math.floor(rng() * (index + 1));
+      [result[index],result[other]] = [result[other],result[index]];
+    }
+    return result;
+  }
+
+  function legacySignatures() {
+    const oldInners = [
+      x(),
+      ...[-2,-1,1,2,3].map(shift),
+      ...[-2,-1,0,1,2,3].map(squareShift),
+      ...[2,3].flatMap(factor => [-2,-1,0,1,2,3].map(value => linear(factor,value))),
+      quadraticMix(1,0),quadraticMix(-1,0)
+    ];
+    const oldBackgrounds = [
+      ...[-2,-1,1,2,3].map(shift),
+      ...[-2,-1,0,1,2,3].map(squareShift),
+      ...[-2,-1,0,1,2,3].map(value => quadraticMix(1,value)),
+      ...[-2,-1,0,1,2,3].map(value => quadraticMix(-1,value))
+    ];
+    const blocked = new Set(oldBackgrounds.map(expression => signature(expression,{})));
+    for (const factor of [2,3]) for (const inner of oldInners) blocked.add(signature(scale(factor,inner),{}));
+    return blocked;
+  }
+
+  function taskFromSignature(id,sig) {
+    return { id,values:sig.split(",").map(Number) };
+  }
+
+  function fingerprint(text) {
+    let hash = 2166136261;
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash,16777619);
+    }
+    return (hash >>> 0).toString(16).padStart(8,"0");
+  }
+
+  function buildDataset(seed) {
+    const rng = random(seed);
+    const hiddenFactor = rng() < .5 ? 2 : 3;
+    const blocked = legacySignatures();
+    const positiveBySignature = new Map();
+    for (let cost = 1; cost <= 5; cost += 1) {
+      for (const inner of BASE.byCost[cost]) {
+        if (!containsVariable(inner)) continue;
+        const sig = signature(scale(hiddenFactor,inner),{});
+        if (!BASE.seen.has(sig) || blocked.has(sig)) continue;
+        if (!positiveBySignature.has(sig)) positiveBySignature.set(sig,inner);
+      }
+    }
+    const positiveSignatures = new Set(positiveBySignature.keys());
+    const controlSignatures = [...BASE.seen.entries()]
+      .filter(([sig,ast]) => containsVariable(ast) && !blocked.has(sig) && !positiveSignatures.has(sig))
+      .map(([sig]) => sig);
+    const degreeOf = sig => features(taskFromSignature("T00",sig)).degree;
+    const affinePositivePool = shuffled([...positiveSignatures].filter(sig => degreeOf(sig) === 1),rng);
+    const quadraticPositivePool = shuffled([...positiveSignatures].filter(sig => degreeOf(sig) === 2),rng);
+    const affineControlPool = shuffled(controlSignatures.filter(sig => degreeOf(sig) === 1),rng);
+    const quadraticControlPool = shuffled(controlSignatures.filter(sig => degreeOf(sig) === 2),rng);
+    const counterexampleSignature = signature(cubicCounterexample(),{});
+    const counterexampleValues = counterexampleSignature.split(",").map(Number);
+    const counterexampleSignatureMatches = counterexampleSignature === "-24,-6,0,0,0,6,24";
+    const counterexampleValuesDivisible = counterexampleValues.every(value => value % hiddenFactor === 0);
+    if (!counterexampleSignatureMatches || !counterexampleValuesDivisible || new Set(counterexampleValues).size < 2 || !BASE.seen.has(counterexampleSignature) || blocked.has(counterexampleSignature) || positiveSignatures.has(counterexampleSignature) || degreeOf(counterexampleSignature) !== 3) {
+      throw new Error("Das D10-Gegenbeispiel ist nicht sauber verfügbar.");
+    }
+    if (affinePositivePool.length < 16 || quadraticPositivePool.length < 11 || affineControlPool.length < 8 || quadraticControlPool.length < 10) {
+      throw new Error("Zu wenige Aufgaben für den D10-Lauf.");
+    }
+    const discoverySignatures = affinePositivePool.slice(0,8);
+    const d7CalibrationSource = [...affinePositivePool.slice(8,16),...affineControlPool.slice(0,8)];
+    const d9CalibrationSource = [...d7CalibrationSource.slice(0,15),counterexampleSignature];
+    const quadraticCalibrationSignature = quadraticPositivePool[10];
+    const d10CalibrationSource = [...d9CalibrationSource];
+    d10CalibrationSource[7] = quadraticCalibrationSignature;
+    const calibrationOrder = shuffled([...d7CalibrationSource.keys()],rng);
+    const d7CalibrationSignatures = calibrationOrder.map(index => d7CalibrationSource[index]);
+    const d9CalibrationSignatures = calibrationOrder.map(index => d9CalibrationSource[index]);
+    const calibrationSignatures = calibrationOrder.map(index => d10CalibrationSource[index]);
+    const positiveTestSignatures = quadraticPositivePool.slice(0,10);
+    const controlTestSignatures = quadraticControlPool.slice(0,10);
+    const testSignatures = shuffled([...positiveTestSignatures,...controlTestSignatures],rng);
+    const discovery = discoverySignatures.map((sig,index) => taskFromSignature(`T${String(index + 1).padStart(2,"0")}`,sig));
+    const calibration = calibrationSignatures.map((sig,index) => taskFromSignature(`T${String(index + 9).padStart(2,"0")}`,sig));
+    const test = testSignatures.map((sig,index) => taskFromSignature(`T${String(index + 25).padStart(2,"0")}`,sig));
+    const allTasks = [...discovery,...calibration,...test];
+    const signatures = allTasks.map(targetSignature);
+    const d7Signatures = [...discoverySignatures,...d7CalibrationSignatures,...testSignatures];
+    const d9Signatures = [...discoverySignatures,...d9CalibrationSignatures,...testSignatures];
+    const taskFingerprints = signatures.map(fingerprint);
+    const d7TaskFingerprints = d7Signatures.map(fingerprint);
+    const uniqueTaskCount = new Set(signatures).size;
+    const legacyOverlap = signatures.filter(sig => blocked.has(sig)).length;
+    const newTaskCount = signatures.length - legacyOverlap;
+    const counterexampleCount = calibrationSignatures.filter(sig => sig === counterexampleSignature).length;
+    const calibrationPositiveCount = calibrationSignatures.filter(sig => positiveSignatures.has(sig)).length;
+    const calibrationAffineControlCount = calibrationSignatures.filter(sig => sig !== counterexampleSignature && !positiveSignatures.has(sig) && degreeOf(sig) === 1).length;
+    const discoveryNonAffineCount = discovery.filter(task => features(task).degree !== 1).length;
+    const calibrationAffineCount = calibration.filter(task => features(task).degree === 1).length;
+    const calibrationQuadraticCount = calibration.filter(task => features(task).degree === 2).length;
+    const calibrationCubicCount = calibration.filter(task => features(task).degree === 3).length;
+    const testNonQuadraticCount = test.filter(task => features(task).degree !== 2).length;
+    const calibrationPairDifferenceCount = sum(calibrationSignatures.map((sig,index) => Number(sig !== d9CalibrationSignatures[index])));
+    const calibrationPairUnchangedCount = calibrationSignatures.length - calibrationPairDifferenceCount;
+    const pairedDifferenceIsQuadraticPositive = calibrationSignatures.some((sig,index) => sig === quadraticCalibrationSignature && sig !== d9CalibrationSignatures[index]);
+    const quadraticCalibrationCount = calibrationSignatures.filter(sig => sig === quadraticCalibrationSignature).length;
+    const quadraticCalibrationIsFresh = !positiveTestSignatures.includes(quadraticCalibrationSignature) && !d9Signatures.includes(quadraticCalibrationSignature);
+    if (uniqueTaskCount !== 44 || legacyOverlap !== 0 || counterexampleCount !== 1 || quadraticCalibrationCount !== 1 || !quadraticCalibrationIsFresh || calibrationPositiveCount !== 8 || calibrationAffineControlCount !== 7 || discoveryNonAffineCount !== 0 || calibrationAffineCount !== 14 || calibrationQuadraticCount !== 1 || calibrationCubicCount !== 1 || testNonQuadraticCount !== 0 || calibrationPairDifferenceCount !== 1 || calibrationPairUnchangedCount !== 15 || !pairedDifferenceIsQuadraticPositive) {
+      throw new Error("D10-Aufgaben entsprechen nicht dem festgelegten Split.");
+    }
+    return {
+      hiddenFactor,discovery,calibration,test,
+      affinePositivePoolCount:affinePositivePool.length,
+      quadraticPositivePoolCount:quadraticPositivePool.length,
+      affineControlPoolCount:affineControlPool.length,
+      quadraticControlPoolCount:quadraticControlPool.length,
+      uniqueTaskCount,
+      newTaskCount,
+      legacyOverlap,
+      discoveryNonAffineCount,
+      calibrationAffineCount,
+      calibrationQuadraticCount,
+      calibrationCubicCount,
+      testNonQuadraticCount,
+      calibrationPairDifferenceCount,
+      calibrationPairUnchangedCount,
+      pairedDifferenceIsQuadraticPositive,
+      counterexampleCount,
+      counterexampleSignature,
+      counterexampleSignatureMatches,
+      counterexampleValuesDivisible,
+      calibrationPositiveCount,
+      calibrationAffineControlCount,
+      counterexampleTaskId:calibration.find(task => targetSignature(task) === counterexampleSignature).id,
+      quadraticCalibrationCount,
+      quadraticCalibrationIsFresh,
+      quadraticCalibrationTaskId:calibration.find(task => targetSignature(task) === quadraticCalibrationSignature).id,
+      calibrationPositiveSignatures:calibrationSignatures.filter(sig => positiveSignatures.has(sig)),
+      testPositiveSignatures:positiveTestSignatures,
+      taskFingerprints,
+      d7DatasetFingerprint:fingerprint(`D:${[...discoverySignatures].sort().join("|")};C:${[...d7CalibrationSignatures].sort().join("|")};T:${[...testSignatures].sort().join("|")}`),
+      d7TaskSequenceFingerprint:fingerprint(d7TaskFingerprints.join("|")),
+      d9DatasetFingerprint:fingerprint(`D:${[...discoverySignatures].sort().join("|")};C:${[...d9CalibrationSignatures].sort().join("|")};T:${[...testSignatures].sort().join("|")}`),
+      discoverySequenceFingerprint:fingerprint(taskFingerprints.slice(0,8).join("|")),
+      testSequenceFingerprint:fingerprint(taskFingerprints.slice(24).join("|")),
+      datasetFingerprint:fingerprint(`D:${[...discoverySignatures].sort().join("|")};C:${[...calibrationSignatures].sort().join("|")};T:${[...testSignatures].sort().join("|")}`)
+    };
+  }
+
+  const BASE = enumerate({});
+
+  function containsVariable(ast) {
+    if (ast.type === "var") return true;
+    if (ast.type === "const") return false;
+    if (ast.type === "call") return containsVariable(ast.arg);
+    return containsVariable(ast.left) || containsVariable(ast.right);
+  }
+
+  function operatorCandidates() {
+    const identity = signature(x(),{});
+    return BASE.byCost[3]
+      .filter(ast => containsVariable(ast) && signature(ast,{}) !== identity)
+      .filter(ast => new Set(INPUTS.map(input => evalAst(ast,input,{}))).size > 1)
+      .sort((a,b) => key(a).localeCompare(key(b)));
+  }
+
+  function discoverOperator(data) {
+    const base = measure(data.discovery,BASE);
+    const candidates = operatorCandidates().map(definition => {
+      const macros = { op:{ name:"op",definition } };
+      const enumeration = enumerate(macros);
+      const measured = measure(data.discovery,enumeration);
+      return { definition,enumeration,measured,savings:base.work - measured.work };
+    });
+    candidates.sort((a,b) => b.savings - a.savings || a.definition.cost - b.definition.cost || key(a.definition).localeCompare(key(b.definition)));
+    const best = candidates[0];
+    return {
+      candidateCount:candidates.length,
+      trainingWork:sum(candidates.map(candidate => candidate.measured.work)),
+      base,
+      candidate:best && best.savings > 0 ? { definition:best.definition,enumeration:best.enumeration,savings:best.savings,measured:best.measured } : null
+    };
+  }
+
+  function features(task) {
+    const values = task.values;
+    const y0 = values[INPUTS.indexOf(0)];
+    const y1 = values[INPUTS.indexOf(1)];
+    const y2 = values[INPUTS.indexOf(2)];
+    const a = (y2 - 2 * y1 + y0) / 2;
+    const b = y1 - y0 - a;
+    const c = y0;
+    const quadratic = [a,b,c].every(Number.isInteger) && values.every((value,index) => value === a * INPUTS[index] ** 2 + b * INPUTS[index] + c);
+    const degree = !quadratic ? 3 : a !== 0 ? 2 : b !== 0 ? 1 : 0;
+    return { values,a,b,c,degree,quadratic };
+  }
+
+  const RULES = [
+    { id:"always",label:"immer",cost:0,test:() => true },
+    { id:"never",label:"nie",cost:0,test:() => false },
+    ...[2,3].map(divisor => ({ id:`coeff-${divisor}`,label:`alle Koeffizienten durch ${divisor} teilbar`,cost:RULE_WORK_PER_TASK,test:f => f.quadratic && [f.a,f.b,f.c].every(value => value % divisor === 0) })),
+    ...[2,3].map(divisor => ({ id:`values-${divisor}`,label:`alle Zielwerte durch ${divisor} teilbar`,cost:RULE_WORK_PER_TASK,test:f => f.values.every(value => value % divisor === 0) })),
+    { id:"degree-0",label:"Grad 0",cost:RULE_WORK_PER_TASK,test:f => f.degree === 0 },
+    { id:"degree-1",label:"Grad höchstens 1",cost:RULE_WORK_PER_TASK,test:f => f.degree <= 1 },
+    { id:"degree-2",label:"Grad 2",cost:RULE_WORK_PER_TASK,test:f => f.degree === 2 },
+    { id:"symmetric",label:"symmetrische Zielwerte",cost:RULE_WORK_PER_TASK,test:f => f.quadratic && f.b === 0 },
+    { id:"zero-at-origin",label:"Zielwert bei 0 ist 0",cost:RULE_WORK_PER_TASK,test:f => f.c === 0 }
+  ];
+
+  function evaluateRule(rule,tasks,candidateEnumeration) {
+    const rows = tasks.map(task => {
+      const enabled = rule.test(features(task));
+      const stats = searchStats(enabled ? candidateEnumeration : BASE,task);
+      return { task,enabled,stats };
+    });
+    return {
+      rows,
+      attempts:sum(rows.map(row => row.stats.attempts)),
+      work:sum(rows.map(row => row.stats.work)) + rule.cost * tasks.length,
+      solved:sum(rows.map(row => Number(row.stats.found))),
+      enabled:sum(rows.map(row => Number(row.enabled))),
+      checks:rule.cost ? tasks.length : 0
+    };
+  }
+
+  function learnRule(data,discovery) {
+    if (!discovery.candidate) return { rule:RULES.find(rule => rule.id === "never"),evaluated:[],trainingWork:0 };
+    const base = measure(data.calibration,BASE);
+    const evaluated = RULES.map(rule => {
+      const measured = evaluateRule(rule,data.calibration,discovery.candidate.enumeration);
+      return { rule,measured,savings:base.work - measured.work };
+    }).sort((a,b) => b.savings - a.savings || a.rule.cost - b.rule.cost || a.rule.id.localeCompare(b.rule.id));
+    return { rule:evaluated[0].rule,measured:evaluated[0].measured,base,evaluated,trainingWork:sum(evaluated.map(item => item.measured.work)) };
+  }
+
+  function evaluateTest(data,discovery,learning) {
+    const basis = measure(data.test,BASE);
+    const always = discovery.candidate ? evaluateRule(RULES.find(rule => rule.id === "always"),data.test,discovery.candidate.enumeration) : { ...basis,enabled:0,checks:0 };
+    const learned = discovery.candidate ? evaluateRule(learning.rule,data.test,discovery.candidate.enumeration) : { ...basis,enabled:0,checks:0 };
+    return { basis,always,learned };
+  }
+
+  function compactArm(arm) {
+    return { attempts:arm.attempts,work:arm.work,solved:arm.solved,enabled:arm.enabled || 0,checks:arm.checks || 0 };
+  }
+
+  function compactSubset(arm,include,ruleCost = 0) {
+    const rows = arm.rows.filter(row => include(targetSignature(row.task)));
+    return {
+      attempts:sum(rows.map(row => row.stats.attempts)),
+      work:sum(rows.map(row => row.stats.work)) + ruleCost * rows.length,
+      solved:sum(rows.map(row => Number(row.stats.found))),
+      enabled:sum(rows.map(row => Number(row.enabled || false))),
+      checks:ruleCost ? rows.length : 0
+    };
+  }
+
+  function compactRun(seed,data,discovery,learning,evaluation) {
+    const saving = evaluation.basis.work - evaluation.learned.work;
+    const savingPct = evaluation.basis.work ? saving / evaluation.basis.work : 0;
+    const learningWork = discovery.trainingWork + learning.trainingWork;
+    const savingPerTask = saving / data.test.length;
+    const ruleIsSpecific = !["always","never"].includes(learning.rule.id);
+    const coefficientItem = learning.evaluated.find(item => item.rule.id === `coeff-${data.hiddenFactor}`);
+    const valueItem = learning.evaluated.find(item => item.rule.id === `values-${data.hiddenFactor}`);
+    const degreeItem = learning.evaluated.find(item => item.rule.id === "degree-1");
+    const coefficientAdvantage = coefficientItem && valueItem ? valueItem.measured.work - coefficientItem.measured.work : null;
+    const pairDifferences = coefficientItem && valueItem ? coefficientItem.measured.rows
+      .map((row,index) => ({ coefficient:row,value:valueItem.measured.rows[index] }))
+      .filter(pair => pair.coefficient.enabled !== pair.value.enabled) : [];
+    const pairDecisionDifferenceCount = pairDifferences.length;
+    const counterexamplePair = pairDifferences.find(pair => pair.coefficient.task.id === data.counterexampleTaskId);
+    const counterexampleDecisionSeparates = pairDifferences.length === 1 && Boolean(counterexamplePair) && !counterexamplePair.coefficient.enabled && counterexamplePair.value.enabled;
+    const counterexampleWorkDifference = counterexamplePair ? counterexamplePair.value.stats.work - counterexamplePair.coefficient.stats.work : null;
+    const pairAdvantageExplained = counterexampleDecisionSeparates && coefficientAdvantage === counterexampleWorkDifference;
+    const pairCalibrationSolved = Boolean(coefficientItem && valueItem) && coefficientItem.measured.solved === 16 && valueItem.measured.solved === 16;
+    const pairEnabledDelta = coefficientItem && valueItem ? valueItem.measured.enabled - coefficientItem.measured.enabled : null;
+    const coefficientBeatsValues = Number.isFinite(coefficientAdvantage) && coefficientAdvantage > 0;
+    const pairTied = coefficientAdvantage === 0;
+    const valuesBeatCoefficient = Number.isFinite(coefficientAdvantage) && coefficientAdvantage < 0;
+    const coefficientDegreeAdvantage = coefficientItem && degreeItem ? degreeItem.measured.work - coefficientItem.measured.work : null;
+    const quadraticIndex = coefficientItem ? coefficientItem.measured.rows.findIndex(row => row.task.id === data.quadraticCalibrationTaskId) : -1;
+    const quadraticCoefficientRow = quadraticIndex >= 0 ? coefficientItem.measured.rows[quadraticIndex] : null;
+    const quadraticDegreeRow = quadraticIndex >= 0 && degreeItem ? degreeItem.measured.rows[quadraticIndex] : null;
+    const quadraticDecisionSeparates = Boolean(quadraticCoefficientRow && quadraticDegreeRow && quadraticCoefficientRow.enabled && !quadraticDegreeRow.enabled);
+    const quadraticEvidenceWorkAdvantage = quadraticDecisionSeparates ? quadraticDegreeRow.stats.work - quadraticCoefficientRow.stats.work : null;
+    const quadraticEvidenceFavorsCoefficient = Number.isFinite(quadraticEvidenceWorkAdvantage) && quadraticEvidenceWorkAdvantage > 0;
+    const coefficientBeatsDegree = Number.isFinite(coefficientDegreeAdvantage) && coefficientDegreeAdvantage > 0;
+    const coefficientDegreeCalibrationSolved = Boolean(coefficientItem && degreeItem) && coefficientItem.measured.solved === 16 && degreeItem.measured.solved === 16;
+    const positiveSet = new Set(data.testPositiveSignatures);
+    const isPositive = sig => positiveSet.has(sig);
+    const isControl = sig => !positiveSet.has(sig);
+    const testBreakdown = {
+      positive:{
+        basis:compactSubset(evaluation.basis,isPositive),
+        always:compactSubset(evaluation.always,isPositive),
+        learned:compactSubset(evaluation.learned,isPositive,learning.rule.cost)
+      },
+      controls:{
+        basis:compactSubset(evaluation.basis,isControl),
+        always:compactSubset(evaluation.always,isControl),
+        learned:compactSubset(evaluation.learned,isControl,learning.rule.cost)
+      }
+    };
+    const failureReasons = [];
+    if (!discovery.candidate) failureReasons.push("kein nützlicher Operator");
+    if (!ruleIsSpecific) failureReasons.push("keine spezifische Einsatzregel");
+    if (evaluation.basis.solved !== 20 || evaluation.always.solved !== 20 || evaluation.learned.solved !== 20) failureReasons.push("Aufgabe ungelöst");
+    if (evaluation.learned.work > evaluation.basis.work * 0.9) failureReasons.push("weniger als 10 Prozent Ersparnis");
+    if (evaluation.learned.work >= evaluation.always.work) failureReasons.push("nicht günstiger als ständig aktiv");
+    if (testBreakdown.positive.learned.enabled !== 10) failureReasons.push("nicht alle positiven Testaufgaben aktiviert");
+    if (testBreakdown.positive.learned.work >= testBreakdown.positive.basis.work) failureReasons.push("keine Ersparnis auf positiven Testaufgaben");
+    const passed = failureReasons.length === 0;
+    return {
+      seed,
+      hiddenFactor:data.hiddenFactor,
+      affinePositivePoolCount:data.affinePositivePoolCount,
+      quadraticPositivePoolCount:data.quadraticPositivePoolCount,
+      affineControlPoolCount:data.affineControlPoolCount,
+      quadraticControlPoolCount:data.quadraticControlPoolCount,
+      uniqueTaskCount:data.uniqueTaskCount,
+      newTaskCount:data.newTaskCount,
+      legacyOverlap:data.legacyOverlap,
+      discoveryNonAffineCount:data.discoveryNonAffineCount,
+      calibrationAffineCount:data.calibrationAffineCount,
+      calibrationQuadraticCount:data.calibrationQuadraticCount,
+      calibrationCubicCount:data.calibrationCubicCount,
+      testNonQuadraticCount:data.testNonQuadraticCount,
+      calibrationPairDifferenceCount:data.calibrationPairDifferenceCount,
+      calibrationPairUnchangedCount:data.calibrationPairUnchangedCount,
+      pairedDifferenceIsQuadraticPositive:data.pairedDifferenceIsQuadraticPositive,
+      counterexampleCount:data.counterexampleCount,
+      counterexampleSignature:data.counterexampleSignature,
+      counterexampleSignatureMatches:data.counterexampleSignatureMatches,
+      counterexampleValuesDivisible:data.counterexampleValuesDivisible,
+      calibrationPositiveCount:data.calibrationPositiveCount,
+      calibrationAffineControlCount:data.calibrationAffineControlCount,
+      counterexampleTaskId:data.counterexampleTaskId,
+      quadraticCalibrationCount:data.quadraticCalibrationCount,
+      quadraticCalibrationIsFresh:data.quadraticCalibrationIsFresh,
+      quadraticCalibrationTaskId:data.quadraticCalibrationTaskId,
+      d7DatasetFingerprint:data.d7DatasetFingerprint,
+      d7TaskSequenceFingerprint:data.d7TaskSequenceFingerprint,
+      d9DatasetFingerprint:data.d9DatasetFingerprint,
+      discoverySequenceFingerprint:data.discoverySequenceFingerprint,
+      testSequenceFingerprint:data.testSequenceFingerprint,
+      coefficientAdvantage,
+      pairDecisionDifferenceCount,
+      counterexampleDecisionSeparates,
+      counterexampleWorkDifference,
+      pairAdvantageExplained,
+      pairCalibrationSolved,
+      pairEnabledDelta,
+      coefficientBeatsValues,
+      pairTied,
+      valuesBeatCoefficient,
+      coefficientDegreeAdvantage,
+      quadraticDecisionSeparates,
+      quadraticEvidenceWorkAdvantage,
+      quadraticEvidenceFavorsCoefficient,
+      coefficientBeatsDegree,
+      coefficientDegreeCalibrationSolved,
+      testPositiveFingerprints:data.testPositiveSignatures.map(fingerprint),
+      taskFingerprints:data.taskFingerprints,
+      datasetFingerprint:data.datasetFingerprint,
+      candidateCount:discovery.candidateCount,
+      operator:discovery.candidate ? format(discovery.candidate.definition) : null,
+      ruleId:learning.rule.id,
+      rule:learning.rule.label,
+      demonstrationSavings:discovery.candidate ? discovery.candidate.savings : 0,
+      calibrationSavings:learning.base && learning.measured ? learning.base.work - learning.measured.work : 0,
+      learningWork,
+      basis:compactArm(evaluation.basis),
+      always:compactArm(evaluation.always),
+      learned:compactArm(evaluation.learned),
+      testBreakdown,
+      saving,
+      savingPct,
+      breakEvenTasks:savingPerTask > 0 ? Math.ceil(learningWork / savingPerTask) : null,
+      passed,
+      failureReasons
+    };
+  }
+
+  function runSeed(seed) {
+    const data = buildDataset(seed);
+    const discovery = discoverOperator(data);
+    const learning = learnRule(data,discovery);
+    const evaluation = evaluateTest(data,discovery,learning);
+    return compactRun(seed,data,discovery,learning,evaluation);
+  }
+
+  const D11_SEED = 2978031812;
+  const D11_EXPECTED = Object.freeze({
+    hiddenFactor:3,
+    datasetFingerprint:"8510e1b1",
+    operator:"(3 × x)",
+    selectedRuleId:"degree-1",
+    coefficientRuleId:"coeff-3",
+    degreeRuleId:"degree-1",
+    counterexampleTaskId:"T20",
+    quadraticTaskId:"T21",
+    calibrationCount:16,
+    coefficientWork:993976,
+    degreeWork:813530,
+    coefficientEnabled:8,
+    degreeEnabled:14,
+    coefficientDegreeAdvantage:-180446,
+    ruleCost:44
+  });
+
+  function diagnose(seed = D11_SEED) {
+    const data = buildDataset(seed);
+    const discovery = discoverOperator(data);
+    const learning = learnRule(data,discovery);
+    const coefficientItem = learning.evaluated.find(item => item.rule.id === D11_EXPECTED.coefficientRuleId);
+    const degreeItem = learning.evaluated.find(item => item.rule.id === D11_EXPECTED.degreeRuleId);
+    if (!coefficientItem || !degreeItem || !discovery.candidate) throw new Error("D11 kann die beiden Regeln nicht vergleichen.");
+
+    const positiveSet = new Set(data.calibrationPositiveSignatures);
+    const pairedRowsMatch = coefficientItem.measured.rows.every((row,index) => {
+      const other = degreeItem.measured.rows[index];
+      return other && row.task.id === other.task.id && targetSignature(row.task) === targetSignature(other.task);
+    });
+    let cumulativeDelta = 0;
+    const rows = coefficientItem.measured.rows.map((coefficientRow,index) => {
+      const degreeRow = degreeItem.measured.rows[index];
+      const sig = targetSignature(coefficientRow.task);
+      const coefficientWork = coefficientRow.stats.work + coefficientItem.rule.cost;
+      const degreeWork = degreeRow.stats.work + degreeItem.rule.cost;
+      const delta = degreeWork - coefficientWork;
+      let type = positiveSet.has(sig) ? "lineares Positiv" : "lineare Kontrolle";
+      if (coefficientRow.task.id === data.quadraticCalibrationTaskId) type = "quadratisches Positiv";
+      if (coefficientRow.task.id === data.counterexampleTaskId) type = "kubische Kontrolle";
+      return {
+        id:coefficientRow.task.id,
+        signature:sig,
+        degree:features(coefficientRow.task).degree,
+        type,
+        coefficientEnabled:coefficientRow.enabled,
+        degreeEnabled:degreeRow.enabled,
+        coefficientWork,
+        degreeWork,
+        delta
+      };
+    }).sort((a,b) => a.delta - b.delta || a.id.localeCompare(b.id))
+      .map(row => ({ ...row,cumulativeDelta:cumulativeDelta += row.delta }));
+
+    const coefficientWork = sum(rows.map(row => row.coefficientWork));
+    const degreeWork = sum(rows.map(row => row.degreeWork));
+    const rowDelta = sum(rows.map(row => row.delta));
+    const measuredDelta = degreeItem.measured.work - coefficientItem.measured.work;
+    const negativeRows = rows.filter(row => row.delta < 0);
+    const negativeMagnitude = -sum(negativeRows.map(row => row.delta));
+    const largestNegativeRow = negativeRows[0] || null;
+    const largestNegativeShare = largestNegativeRow && negativeMagnitude ? Math.abs(largestNegativeRow.delta) / negativeMagnitude : 0;
+    const groupDelta = rows.reduce((totals,row) => {
+      totals[row.type] = (totals[row.type] || 0) + row.delta;
+      return totals;
+    },{});
+    const quadraticRow = rows.find(row => row.id === data.quadraticCalibrationTaskId);
+    const singleTaskDominates = largestNegativeShare >= 0.5;
+    const controlsAccumulate = !singleTaskDominates && (groupDelta["lineare Kontrolle"] || 0) < 0;
+    const quadraticHelps = Boolean(quadraticRow && quadraticRow.delta > 0);
+    const assertions = {
+      seed:seed === D11_SEED,
+      factor:data.hiddenFactor === D11_EXPECTED.hiddenFactor,
+      dataset:data.datasetFingerprint === D11_EXPECTED.datasetFingerprint,
+      operator:format(discovery.candidate.definition) === D11_EXPECTED.operator,
+      selectedRule:learning.rule.id === D11_EXPECTED.selectedRuleId,
+      rulePair:coefficientItem.rule.id === D11_EXPECTED.coefficientRuleId && degreeItem.rule.id === D11_EXPECTED.degreeRuleId,
+      taskPairing:pairedRowsMatch,
+      taskCount:rows.length === D11_EXPECTED.calibrationCount,
+      taskIds:data.counterexampleTaskId === D11_EXPECTED.counterexampleTaskId && data.quadraticCalibrationTaskId === D11_EXPECTED.quadraticTaskId,
+      equalRuleCost:coefficientItem.rule.cost === D11_EXPECTED.ruleCost && degreeItem.rule.cost === D11_EXPECTED.ruleCost,
+      solved:coefficientItem.measured.solved === 16 && degreeItem.measured.solved === 16,
+      enabled:coefficientItem.measured.enabled === D11_EXPECTED.coefficientEnabled && degreeItem.measured.enabled === D11_EXPECTED.degreeEnabled,
+      armWork:coefficientWork === D11_EXPECTED.coefficientWork && degreeWork === D11_EXPECTED.degreeWork,
+      exactAccounting:rowDelta === measuredDelta,
+      d10Delta:measuredDelta === D11_EXPECTED.coefficientDegreeAdvantage
+    };
+    return {
+      protocol:"D11-v1",
+      seed,
+      hiddenFactor:data.hiddenFactor,
+      datasetFingerprint:data.datasetFingerprint,
+      operator:format(discovery.candidate.definition),
+      selectedRuleId:learning.rule.id,
+      selectedRule:learning.rule.label,
+      coefficientRule:coefficientItem.rule.label,
+      degreeRule:degreeItem.rule.label,
+      ruleCostPerTask:coefficientItem.rule.cost,
+      coefficientWork,
+      degreeWork,
+      coefficientEnabled:coefficientItem.measured.enabled,
+      degreeEnabled:degreeItem.measured.enabled,
+      measuredDelta,
+      rowDelta,
+      largestNegativeRow,
+      largestNegativeShare,
+      groupDelta,
+      quadraticRow,
+      singleTaskDominates,
+      controlsAccumulate,
+      quadraticHelps,
+      assertions,
+      passed:Object.values(assertions).every(Boolean),
+      rows
+    };
+  }
+
+  function initialDiagnosticState() {
+    return { phase:"bereit",result:null,message:"Bereit für die Zerlegung des festgelegten Seeds." };
+  }
+
+  function diagnosticReducer(state,action) {
+    if (action.type === "reset") return initialDiagnosticState();
+    if (action.type === "diagnose") {
+      const result = diagnose();
+      return { phase:"zerlegt",result,message:result.passed ? "Die D10-Differenz ist vollständig zerlegt." : "Die Zerlegung stimmt nicht mit D10 überein." };
+    }
+    return state;
+  }
+
+  function median(values) {
+    if (!values.length) return null;
+    const sorted = [...values].sort((a,b) => a - b);
+    const middle = Math.floor(sorted.length / 2);
+    return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+  }
+
+  function counts(results,field) {
+    return results.reduce((all,result) => {
+      const value = String(result[field]);
+      all[value] = (all[value] || 0) + 1;
+      return all;
+    },{});
+  }
+
+  function sumArm(results,name) {
+    return results.reduce((total,result) => ({
+      attempts:total.attempts + result[name].attempts,
+      work:total.work + result[name].work,
+      solved:total.solved + result[name].solved,
+      enabled:total.enabled + result[name].enabled,
+      checks:total.checks + result[name].checks
+    }),{ attempts:0,work:0,solved:0,enabled:0,checks:0 });
+  }
+
+  function sumBreakdown(results,group,name) {
+    return results.reduce((total,result) => {
+      const arm = result.testBreakdown[group][name];
+      return {
+        attempts:total.attempts + arm.attempts,
+        work:total.work + arm.work,
+        solved:total.solved + arm.solved,
+        enabled:total.enabled + arm.enabled,
+        checks:total.checks + arm.checks
+      };
+    },{ attempts:0,work:0,solved:0,enabled:0,checks:0 });
+  }
+
+  function summarize(results) {
+    const basis = sumArm(results,"basis");
+    const always = sumArm(results,"always");
+    const learned = sumArm(results,"learned");
+    const saving = basis.work - learned.work;
+    const savingPct = basis.work ? saving / basis.work : 0;
+    const passCount = sum(results.map(result => Number(result.passed)));
+    const percentages = results.map(result => result.savingPct);
+    const breakEvens = results.map(result => result.breakEvenTasks).filter(Number.isFinite);
+    const learningWorks = results.map(result => result.learningWork);
+    const learningWork = sum(learningWorks);
+    const newTaskCount = sum(results.map(result => result.newTaskCount));
+    const legacyOverlap = sum(results.map(result => result.legacyOverlap));
+    const minUniqueTaskCount = results.length ? Math.min(...results.map(result => result.uniqueTaskCount)) : 0;
+    const datasetFingerprintCount = new Set(results.map(result => result.datasetFingerprint)).size;
+    const taskDrawCount = sum(results.map(result => result.taskFingerprints.length));
+    const distinctTaskCount = new Set(results.flatMap(result => result.taskFingerprints)).size;
+    const positiveDrawCount = sum(results.map(result => result.testPositiveFingerprints.length));
+    const distinctPositiveTaskCount = new Set(results.flatMap(result => result.testPositiveFingerprints)).size;
+    const discoveryNonAffineCount = sum(results.map(result => result.discoveryNonAffineCount));
+    const calibrationAffineCount = sum(results.map(result => result.calibrationAffineCount));
+    const calibrationQuadraticCount = sum(results.map(result => result.calibrationQuadraticCount));
+    const calibrationCubicCount = sum(results.map(result => result.calibrationCubicCount));
+    const testNonQuadraticCount = sum(results.map(result => result.testNonQuadraticCount));
+    const calibrationPairDifferenceCount = sum(results.map(result => result.calibrationPairDifferenceCount));
+    const calibrationPairUnchangedCount = sum(results.map(result => result.calibrationPairUnchangedCount));
+    const pairedDifferenceQuadraticPositiveCount = sum(results.map(result => Number(result.pairedDifferenceIsQuadraticPositive)));
+    const counterexampleCount = sum(results.map(result => result.counterexampleCount));
+    const counterexampleSignatureMatchCount = sum(results.map(result => Number(result.counterexampleSignatureMatches)));
+    const counterexampleDivisibilityCount = sum(results.map(result => Number(result.counterexampleValuesDivisible)));
+    const calibrationPositiveCount = sum(results.map(result => result.calibrationPositiveCount));
+    const calibrationAffineControlCount = sum(results.map(result => result.calibrationAffineControlCount));
+    const quadraticCalibrationCount = sum(results.map(result => result.quadraticCalibrationCount));
+    const quadraticCalibrationFreshCount = sum(results.map(result => Number(result.quadraticCalibrationIsFresh)));
+    const pairDecisionDifferenceCount = sum(results.map(result => result.pairDecisionDifferenceCount));
+    const counterexampleDecisionSeparationCount = sum(results.map(result => Number(result.counterexampleDecisionSeparates)));
+    const pairAdvantageExplainedCount = sum(results.map(result => Number(result.pairAdvantageExplained)));
+    const pairCalibrationSolvedCount = sum(results.map(result => Number(result.pairCalibrationSolved)));
+    const coefficientBetterCount = sum(results.map(result => Number(result.coefficientBeatsValues)));
+    const pairTieCount = sum(results.map(result => Number(result.pairTied)));
+    const valuesBetterCount = sum(results.map(result => Number(result.valuesBeatCoefficient)));
+    const coefficientBetterDegreeCount = sum(results.map(result => Number(result.coefficientBeatsDegree)));
+    const quadraticDecisionSeparationCount = sum(results.map(result => Number(result.quadraticDecisionSeparates)));
+    const quadraticEvidenceFavorsCoefficientCount = sum(results.map(result => Number(result.quadraticEvidenceFavorsCoefficient)));
+    const coefficientDegreeCalibrationSolvedCount = sum(results.map(result => Number(result.coefficientDegreeCalibrationSolved)));
+    const selectedCoefficientCount = sum(results.map(result => Number(/^coeff-[23]$/.test(result.ruleId))));
+    const selectedAlwaysCount = sum(results.map(result => Number(result.ruleId === "always")));
+    const selectedDegreeOneCount = sum(results.map(result => Number(result.ruleId === "degree-1")));
+    const selectedOtherCount = results.length - selectedCoefficientCount - selectedAlwaysCount - selectedDegreeOneCount;
+    const factorSequencesMatch = results.every((result,index) => result.hiddenFactor === D7_BASELINE.factors[index]);
+    const discoverySequencesMatch = results.every((result,index) => result.discoverySequenceFingerprint === D7_BASELINE.discoveryFingerprints[index]);
+    const testSequencesMatch = results.every((result,index) => result.testSequenceFingerprint === D7_BASELINE.testFingerprints[index]);
+    const d7DatasetFingerprintsMatch = results.every((result,index) => result.d7DatasetFingerprint === D7_BASELINE.datasetFingerprints[index]);
+    const d7TaskSequencesMatch = results.every((result,index) => result.d7TaskSequenceFingerprint === D7_BASELINE.taskSequenceFingerprints[index]);
+    const d9DatasetFingerprintsMatch = results.every((result,index) => result.d9DatasetFingerprint === D9_BASELINE.datasetFingerprints[index]);
+    const operatorSequencesMatch = results.every((result,index) => result.operator === D7_BASELINE.operators[index]);
+    const operatorCounts = counts(results,"operator");
+    const operatorSelectionMatches = operatorCounts["(x + x)"] === 8 && operatorCounts["(3 × x)"] === 10 && operatorCounts["(-2 × x)"] === 2;
+    const positive = {
+      basis:sumBreakdown(results,"positive","basis"),
+      always:sumBreakdown(results,"positive","always"),
+      learned:sumBreakdown(results,"positive","learned")
+    };
+    const controls = {
+      basis:sumBreakdown(results,"controls","basis"),
+      always:sumBreakdown(results,"controls","always"),
+      learned:sumBreakdown(results,"controls","learned")
+    };
+    const factorStats = Object.fromEntries([2,3].map(factor => {
+      const subset = results.filter(result => result.hiddenFactor === factor);
+      const factorBasis = sum(subset.map(result => result.basis.work));
+      const factorLearned = sum(subset.map(result => result.learned.work));
+      const factorSaving = factorBasis - factorLearned;
+      return [factor,{
+        runCount:subset.length,
+        passCount:sum(subset.map(result => Number(result.passed))),
+        basisWork:factorBasis,
+        learnedWork:factorLearned,
+        saving:factorSaving,
+        savingPct:factorBasis ? factorSaving / factorBasis : 0
+      }];
+    }));
+    const pools = Object.fromEntries([2,3].map(factor => {
+      const sample = results.find(result => result.hiddenFactor === factor);
+      return [factor,sample ? {
+        affinePositive:sample.affinePositivePoolCount,
+        affineControl:sample.affineControlPoolCount,
+        quadraticPositive:sample.quadraticPositivePoolCount,
+        quadraticControl:sample.quadraticControlPoolCount
+      } : null];
+    }));
+    const thresholdPassed = results.length === 20 && passCount >= 16 && factorStats[2].runCount === 10 && factorStats[3].runCount === 10 && factorStats[2].passCount >= 8 && factorStats[3].passCount >= 8 && basis.solved === 400 && always.solved === 400 && learned.solved === 400 && positive.learned.enabled === 200 && positive.learned.work < positive.basis.work && newTaskCount === 880 && legacyOverlap === 0 && minUniqueTaskCount === 44 && datasetFingerprintCount === 20 && discoveryNonAffineCount === 0 && calibrationAffineCount === 280 && calibrationQuadraticCount === 20 && calibrationCubicCount === 20 && testNonQuadraticCount === 0;
+    const pairedDataMatches = factorSequencesMatch && discoverySequencesMatch && testSequencesMatch && d7DatasetFingerprintsMatch && d7TaskSequencesMatch && d9DatasetFingerprintsMatch && operatorSequencesMatch && operatorSelectionMatches && basis.work === D7_BASELINE.basisWork && always.work === D7_BASELINE.alwaysWork;
+    const protocolIntegrityPassed = results.length === 20 && pairedDataMatches && counterexampleCount === 20 && counterexampleSignatureMatchCount === 20 && counterexampleDivisibilityCount === 20 && quadraticCalibrationCount === 20 && quadraticCalibrationFreshCount === 20 && calibrationPositiveCount === 160 && calibrationAffineControlCount === 140 && calibrationPairDifferenceCount === 20 && calibrationPairUnchangedCount === 300 && pairedDifferenceQuadraticPositiveCount === 20 && newTaskCount === 880 && legacyOverlap === 0 && minUniqueTaskCount === 44 && datasetFingerprintCount === 20 && discoveryNonAffineCount === 0 && calibrationAffineCount === 280 && calibrationQuadraticCount === 20 && calibrationCubicCount === 20 && testNonQuadraticCount === 0;
+    const valueRuleSeparationPassed = coefficientBetterCount === 20 && pairDecisionDifferenceCount === 20 && pairTieCount === 0 && valuesBetterCount === 0 && counterexampleDecisionSeparationCount === 20 && pairAdvantageExplainedCount === 20 && pairCalibrationSolvedCount === 20;
+    const degreeRuleSeparationPassed = coefficientBetterDegreeCount === 20 && quadraticDecisionSeparationCount === 20 && quadraticEvidenceFavorsCoefficientCount === 20 && coefficientDegreeCalibrationSolvedCount === 20 && selectedDegreeOneCount === 0;
+    const ruleSeparationPassed = valueRuleSeparationPassed && degreeRuleSeparationPassed;
+    const causalPassed = protocolIntegrityPassed && ruleSeparationPassed && thresholdPassed;
+    return {
+      runCount:results.length,
+      passCount,
+      taskCount:results.length * 20,
+      basis,
+      always,
+      learned,
+      saving,
+      savingPct,
+      learningWork,
+      newTaskCount,
+      legacyOverlap,
+      minUniqueTaskCount,
+      datasetFingerprintCount,
+      taskDrawCount,
+      distinctTaskCount,
+      repeatTaskDraws:taskDrawCount - distinctTaskCount,
+      positiveDrawCount,
+      distinctPositiveTaskCount,
+      repeatPositiveDraws:positiveDrawCount - distinctPositiveTaskCount,
+      discoveryNonAffineCount,
+      calibrationAffineCount,
+      calibrationQuadraticCount,
+      calibrationCubicCount,
+      testNonQuadraticCount,
+      calibrationPairDifferenceCount,
+      calibrationPairUnchangedCount,
+      pairedDifferenceQuadraticPositiveCount,
+      counterexampleCount,
+      counterexampleSignatureMatchCount,
+      counterexampleDivisibilityCount,
+      calibrationPositiveCount,
+      calibrationAffineControlCount,
+      quadraticCalibrationCount,
+      quadraticCalibrationFreshCount,
+      pairDecisionDifferenceCount,
+      counterexampleDecisionSeparationCount,
+      pairAdvantageExplainedCount,
+      pairCalibrationSolvedCount,
+      coefficientBetterCount,
+      pairTieCount,
+      valuesBetterCount,
+      coefficientBetterDegreeCount,
+      quadraticDecisionSeparationCount,
+      quadraticEvidenceFavorsCoefficientCount,
+      coefficientDegreeCalibrationSolvedCount,
+      selectedCoefficientCount,
+      selectedAlwaysCount,
+      selectedDegreeOneCount,
+      selectedOtherCount,
+      factorSequencesMatch,
+      discoverySequencesMatch,
+      testSequencesMatch,
+      d7DatasetFingerprintsMatch,
+      d7TaskSequencesMatch,
+      d9DatasetFingerprintsMatch,
+      operatorSequencesMatch,
+      operatorSelectionMatches,
+      pairedDataMatches,
+      protocolIntegrityPassed,
+      valueRuleSeparationPassed,
+      degreeRuleSeparationPassed,
+      ruleSeparationPassed,
+      comparison:{
+        passCountDelta:passCount - D9_BASELINE.passCount,
+        learnedWorkDelta:learned.work - D9_BASELINE.learnedWork,
+        savingDelta:saving - D9_BASELINE.saving,
+        savingPctDelta:savingPct - D9_BASELINE.savingPct,
+        selectedDegreeOneDelta:selectedDegreeOneCount - D9_BASELINE.selectedDegreeOneCount
+      },
+      positive,
+      controls,
+      factorStats,
+      pools,
+      medianLearningWork:median(learningWorks),
+      medianSavingPct:median(percentages),
+      minSavingPct:percentages.length ? Math.min(...percentages) : null,
+      maxSavingPct:percentages.length ? Math.max(...percentages) : null,
+      medianBreakEven:median(breakEvens),
+      minBreakEven:breakEvens.length ? Math.min(...breakEvens) : null,
+      maxBreakEven:breakEvens.length ? Math.max(...breakEvens) : null,
+      infiniteBreakEvens:results.length - breakEvens.length,
+      pooledBreakEven:saving > 0 ? Math.ceil(20 * learningWork / saving) : null,
+      factors:counts(results,"hiddenFactor"),
+      operators:operatorCounts,
+      rules:counts(results,"rule"),
+      passed:thresholdPassed,
+      causalPassed
+    };
+  }
+
+  function validateSeeds(seeds) {
+    if (seeds.length !== 20) throw new Error("D10 benötigt genau 20 Seeds.");
+    if (new Set(seeds).size !== 20) throw new Error("D10 benötigt 20 unterschiedliche Seeds.");
+    if (!seeds.every(seed => Number.isInteger(seed) && seed >= 0 && seed <= 0xFFFFFFFF)) throw new Error("Jeder Seed muss eine 32-Bit-Ganzzahl sein.");
+    const factorCounts = seeds.reduce((counts,seed) => {
+      const factor = random(seed)() < .5 ? 2 : 3;
+      counts[factor] += 1;
+      return counts;
+    },{ 2:0,3:0 });
+    if (factorCounts[2] !== 10 || factorCounts[3] !== 10) throw new Error("D10 benötigt genau zehn Seeds je Faktor.");
+  }
+
+  function runAll(seeds = SEEDS) {
+    validateSeeds(seeds);
+    const results = seeds.map(runSeed);
+    return { results,summary:summarize(results) };
+  }
+
+  function initialState(guideId = "full") {
+    return { guideId,phase:"ready",records:[],results:[],summary:null,message:SEEDS.length ? "Bereit. Die 20 Seeds sind festgehalten." : "Bereit. Vor dem offiziellen Lauf bleibt die Seed-Liste leer." };
+  }
+
+  function reducer(state,action) {
+    if (action.type === "guide") return initialState(action.id);
+    if (action.type === "reset") return initialState(state.guideId);
+    if (action.type === "discover") {
+      if (state.records.length) return { ...state,message:"Die 20 Operatoren wurden bereits erzeugt." };
+      if (SEEDS.length !== 20) return { ...state,message:"Die Seed-Liste ist noch nicht festgehalten." };
+      const records = SEEDS.map(seed => {
+        const data = buildDataset(seed);
+        return { seed,data,discovery:discoverOperator(data) };
+      });
+      return { ...state,phase:"discovered",records,message:`${records.length} Operatoren wurden erzeugt.` };
+    }
+    if (action.type === "learn") {
+      if (!state.records.length) return { ...state,message:"Zuerst müssen die Operatoren erzeugt werden." };
+      if (state.records[0].learning) return { ...state,message:"Die Einsatzregeln wurden bereits gewählt." };
+      const records = state.records.map(record => ({ ...record,learning:learnRule(record.data,record.discovery) }));
+      return { ...state,phase:"learned",records,message:`${records.length} Einsatzregeln wurden gewählt.` };
+    }
+    if (action.type === "evaluate") {
+      if (!state.records.length || !state.records[0].learning) return { ...state,message:"Zuerst müssen die Einsatzregeln gewählt werden." };
+      if (state.summary) return { ...state,message:"Die Holdouts wurden bereits ausgewertet." };
+      const results = state.records.map(record => compactRun(record.seed,record.data,record.discovery,record.learning,evaluateTest(record.data,record.discovery,record.learning)));
+      return { ...state,phase:"evaluated",results,summary:summarize(results),message:`${results.length} Holdouts wurden ausgewertet.` };
+    }
+    if (action.type === "all") {
+      let next = state;
+      if (!next.records.length) next = reducer(next,{ type:"discover" });
+      if (next.records.length && !next.records[0].learning) next = reducer(next,{ type:"learn" });
+      if (!next.summary) next = reducer(next,{ type:"evaluate" });
+      return next;
+    }
+    return state;
+  }
+
+  const guides = {
+    full:{ title:"Vollständiger Lauf",description:"Erzeuge für jeden Seed den Operator, wähle die Einsatzregel und öffne danach die 20 Holdouts.",steps:[{label:"Neu starten",type:"reset"},{label:"Operatoren erzeugen",type:"discover"},{label:"Regeln wählen",type:"learn"},{label:"Holdouts öffnen",type:"evaluate"}] },
+    identification:{ title:"Regeltrennung",description:"Prüfe, ob das einzelne quadratische Positiv die Gradregel verdrängt und die kubische Kontrolle weiterhin die Zielwertregel trennt.",steps:[{label:"Neu starten",type:"reset"},{label:"Alles ausführen",type:"all"}] },
+    cost:{ title:"Lernkosten",description:"Vergleiche die einmalige Lernarbeit mit dem Break-even pro Seed.",steps:[{label:"Neu starten",type:"reset"},{label:"Alles ausführen",type:"all"}] }
+  };
+
+  return { SEEDS,guides,initialState,reducer,runSeed,runAll,diagnose,initialDiagnosticState,diagnosticReducer };
+})();
+</script>
+
+<script id="recorded-results" type="application/json">null</script>
+
+<script>
+const recorded = JSON.parse(document.getElementById("recorded-results").textContent);
+let state = recorded
+  ? { phase:"zerlegt",result:recorded,message:"Der aufgezeichnete D11-Lauf ist geladen." }
+  : D11Experiment.initialDiagnosticState();
+let guideId = "total";
+
+const guides = {
+  total:{ title:"Gesamtdifferenz",description:"Reproduziere zuerst den festen D10-Abstand und prüfe, ob die 16 Zeilen exakt dieselbe Summe ergeben.",steps:["reset","diagnose"] },
+  rows:{ title:"Einzelbeiträge",description:"Sortiere die Aufgaben nach ihrem Delta. Achte darauf, ob eine Zeile dominiert oder mehrere gleiche Beiträge entstehen.",steps:["reset","diagnose"] },
+  accounting:{ title:"Buchhaltung",description:"Vergleiche beide Gesamtarbeiten mit der Zeilensumme und den festgelegten D10-Werten.",steps:["reset","diagnose"] }
+};
+
+function number(value) {
+  return Number.isFinite(value) ? new Intl.NumberFormat("de-DE").format(value) : "offen";
+}
+function signed(value) {
+  if (!Number.isFinite(value)) return "offen";
+  return value > 0 ? "+" + number(value) : value < 0 ? "−" + number(Math.abs(value)) : "0";
+}
+function yes(value) { return value ? "ja" : "nein"; }
+function dispatch(type) {
+  state = D11Experiment.diagnosticReducer(state,{ type:type });
+  render();
+}
+function setGuide(id) {
+  guideId = id;
+  state = D11Experiment.initialDiagnosticState();
+  render();
+}
+function button(label,type) {
+  return '<button data-action="' + type + '">' + label + '</button>';
+}
+function renderGuides() {
+  document.getElementById("guideTabs").innerHTML = Object.entries(guides).map(function(entry) {
+    return '<button class="' + (entry[0] === guideId ? "active" : "") + '" data-guide="' + entry[0] + '">' + entry[1].title + '</button>';
+  }).join("");
+  const guide = guides[guideId];
+  document.getElementById("guideTitle").textContent = guide.title;
+  document.getElementById("guideDescription").textContent = guide.description;
+  document.getElementById("guideSteps").innerHTML = guide.steps.map(function(type,index) {
+    return button((index + 1) + ". " + (type === "reset" ? "Neu starten" : "Kosten zerlegen"),type);
+  }).join("");
+}
+function render() {
+  renderGuides();
+  const result = state.result;
+  document.getElementById("message").textContent = state.message;
+  document.getElementById("stateGrid").innerHTML = [
+    ["Phase",state.phase,"bereit oder zerlegt"],
+    ["Seed",result ? String(result.seed) : "2978031812","ein festgelegter Fall"],
+    ["Operator",result ? result.operator : "offen","erwartet: (3 × x)"],
+    ["Regelwahl",result ? result.selectedRule : "offen","erwartet: Grad höchstens 1"],
+    ["Koeffizientenregel",result ? number(result.coefficientWork) : "offen","Gesamtarbeit"],
+    ["Gradregel",result ? number(result.degreeWork) : "offen","Gesamtarbeit"],
+    ["Delta",result ? signed(result.measuredDelta) : "offen","erwartet: −180.446"],
+    ["Zeilensumme",result ? signed(result.rowDelta) : "offen","muss dem Delta entsprechen"]
+  ].map(function(item) {
+    return '<div class="card"><h3>' + item[0] + '</h3><div class="value">' + item[1] + '</div><div class="small muted">' + item[2] + '</div></div>';
+  }).join("");
+
+  document.getElementById("findingPanel").hidden = !result;
+  document.getElementById("rowsPanel").hidden = !result;
+  if (!result) {
+    document.getElementById("verdict").textContent = "Die Zerlegung steht aus.";
+    document.getElementById("verdict").className = "muted";
+    return;
+  }
+
+  document.getElementById("findingGrid").innerHTML = [
+    ["Ein Ausreißer",yes(result.singleTaskDominates),Math.round(result.largestNegativeShare * 1000) / 10 + " Prozent größter Anteil"],
+    ["Mehrere Kontrollen",yes(result.controlsAccumulate),signed(result.groupDelta["lineare Kontrolle"] || 0) + " gemeinsam"],
+    ["Quadratischer Beitrag",yes(result.quadraticHelps),signed(result.quadraticRow.delta) + " durch " + result.quadraticRow.id],
+    ["Exakte Buchhaltung",yes(result.assertions.exactAccounting),signed(result.rowDelta) + " aus 16 Zeilen"]
+  ].map(function(item) {
+    return '<div class="card"><h3>' + item[0] + '</h3><div class="value">' + item[1] + '</div><div class="small muted">' + item[2] + '</div></div>';
+  }).join("");
+
+  document.getElementById("findingText").textContent = result.controlsAccumulate && result.quadraticHelps
+    ? "Mehrere lineare Kontrollen bauen den Vorteil der Gradregel auf. Das quadratische Positiv wirkt in die richtige Richtung, gleicht diesen Vorteil aber nur teilweise aus."
+    : "Die gemessenen Beiträge passen nicht zur erwarteten Erklärung.";
+
+  document.getElementById("rowBody").innerHTML = result.rows.map(function(row) {
+    return "<tr><td><code>" + row.id + "</code></td><td>" + row.type + "</td><td class=\"number\">" + row.degree + "</td><td>" + yes(row.coefficientEnabled) + "</td><td>" + yes(row.degreeEnabled) + "</td><td class=\"number\">" + number(row.coefficientWork) + "</td><td class=\"number\">" + number(row.degreeWork) + "</td><td class=\"number\">" + signed(row.delta) + "</td><td class=\"number\">" + signed(row.cumulativeDelta) + "</td></tr>";
+  }).join("");
+
+  document.getElementById("verdict").textContent = result.passed
+    ? "Bestanden. D11 reproduziert D10 und erklärt die Differenz vollständig."
+    : "Nicht bestanden. Mindestens eine festgelegte D10-Prüfung weicht ab.";
+  document.getElementById("verdict").className = result.passed ? "good" : "bad";
+}
+document.addEventListener("click",function(event) {
+  const action = event.target.closest("[data-action]");
+  if (action) dispatch(action.dataset.action);
+  const guide = event.target.closest("[data-guide]");
+  if (guide) setGuide(guide.dataset.guide);
+});
+render();
+</script>
+</body>
+</html>
