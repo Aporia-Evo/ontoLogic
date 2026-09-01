@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>D15: Operatorpotenzial bei exakten Kubiken</title>
+<style>
+  :root {
+    color-scheme:dark;
+    --bg:#0d1117;
+    --panel:#161b22;
+    --panel-2:#0d1117;
+    --line:#30363d;
+    --text:#e6edf3;
+    --muted:#8b949e;
+    --accent:#58a6ff;
+    --good:#3fb950;
+    --bad:#f85149;
+    --warn:#d29922;
+  }
+  * { box-sizing:border-box; }
+  body {
+    max-width:1240px;
+    margin:0 auto;
+    padding:32px 20px 64px;
+    background:var(--bg);
+    color:var(--text);
+    font:16px/1.5 system-ui,sans-serif;
+  }
+  h1,h2,h3,p { margin-top:0; }
+  h1 { margin-bottom:8px; font-size:clamp(28px,5vw,46px); line-height:1.12; }
+  h2 { font-size:20px; }
+  h3 { margin-bottom:6px; font-size:15px; }
+  code { color:#d2a8ff; }
+  button {
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px 14px;
+    background:#21262d;
+    color:var(--text);
+    cursor:pointer;
+  }
+  button:hover,button.active { border-color:var(--accent); color:var(--accent); }
+  button.primary { background:#1f6feb; border-color:#1f6feb; color:white; }
+  .intro { max-width:900px; color:var(--muted); font-size:18px; }
+  .question {
+    margin-top:20px;
+    padding:18px 20px;
+    border:1px solid #1f6feb;
+    border-radius:10px;
+    background:#0b2740;
+    font-size:20px;
+  }
+  .question strong { color:white; }
+  .notice,.message {
+    padding:12px 14px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:#111820;
+  }
+  .notice { margin-top:18px; }
+  .panel {
+    margin-top:18px;
+    padding:20px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:var(--panel);
+  }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(205px,1fr)); gap:12px; }
+  .card { padding:14px; border:1px solid var(--line); border-radius:8px; background:var(--panel-2); }
+  .card.good-card { border-color:color-mix(in srgb,var(--good) 62%,var(--line)); }
+  .card.bad-card { border-color:color-mix(in srgb,var(--bad) 62%,var(--line)); }
+  .value { font-size:21px; font-weight:700; overflow-wrap:anywhere; }
+  .small { font-size:14px; }
+  .muted { color:var(--muted); }
+  .good { color:var(--good); }
+  .bad { color:var(--bad); }
+  .warn { color:var(--warn); }
+  .tabs,.actions,.steps { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
+  .guide { display:grid; grid-template-columns:2fr 1fr; gap:24px; }
+  .message { margin-top:12px; }
+  .factor-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:12px; }
+  .table-wrap { overflow:auto; max-height:620px; border:1px solid var(--line); border-radius:8px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th,td { padding:8px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+  th { position:sticky; top:0; z-index:1; background:#21262d; }
+  th.number,td.number { text-align:right; }
+  tr.useful td { background:rgba(63,185,80,.055); }
+  .status-line { margin:14px 0 0; font-weight:700; }
+  @media (max-width:760px) {
+    .guide,.factor-grid { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+  <h1>D15: Operatorpotenzial bei exakten Kubiken</h1>
+  <p class="intro">D15 prüft die vollständige, im Basissuchraum enthaltene Familie ganzzahliger Kubiken. Die bereits bekannte Kalibrierung <code>x³ − x</code> wird ausgeschlossen. Für jede neue Kubik werden die aufgezeichneten D14-Operatoren mit der Basissuche verglichen.</p>
+
+  <div class="question"><strong>Frage:</strong> Bieten Kubiken genügend Operatorpotenzial, um einen eigenen Kubik-Router zu rechtfertigen?</div>
+
+  <div class="notice"><strong>Protokoll D15-v1.</strong> Der Suchraum bleibt unverändert auf Kosten bis 7 begrenzt. Aus 38 exakten Kubiken wird die bekannte Signatur <code>-24,-6,0,0,0,6,24</code> entfernt. Übrig bleiben 37 sortierte Signaturen, die in früheren Auswertungen nicht verwendet wurden. Beide Operatoren werden auf allen 37 Aufgaben geprüft, insgesamt also in 74 faktorbedingten Fällen. Die Prüfung für einen Faktor gilt nur dann als bestanden, wenn beide Arme alle Aufgaben lösen, der kostenbehaftete Orakelarm mindestens 10 Prozent einspart, der Operator bei mindestens 20 Prozent der Aufgaben einen Vorteil bringt und kein Einzelfall mehr als die Hälfte der Bruttoersparnis ausmacht.</div>
+
+  <section class="panel">
+    <h2>Vorab festgelegt</h2>
+    <div class="grid">
+      <div class="card"><h3>Basiskosten</h3><div class="value">7</div><div class="small muted">Unverändert gegenüber D14.</div></div>
+      <div class="card"><h3>Frische Kubiken</h3><div class="value">37</div><div class="small muted">38 Kubiken abzüglich einer bekannten Signatur.</div></div>
+      <div class="card"><h3>Faktorbedingte Fälle</h3><div class="value">74</div><div class="small muted">Je 37 für Faktor 2 und Faktor 3.</div></div>
+      <div class="card"><h3>Routerarbeit</h3><div class="value">44</div><div class="small muted">Pro Faktor und Aufgabe.</div></div>
+      <div class="card"><h3>Mindestnutzen</h3><div class="value">10 %</div><div class="small muted">Netto gegenüber der Basis, je Faktor.</div></div>
+      <div class="card"><h3>Mindestbreite</h3><div class="value">20 %</div><div class="small muted">Nützliche Aufgaben je Faktor.</div></div>
+    </div>
+  </section>
+
+  <div class="tabs" id="guideTabs"></div>
+  <section class="panel guide">
+    <div><h2 id="guideTitle"></h2><p id="guideDescription" class="muted"></p></div>
+    <div><h3>Geführter Ablauf</h3><div class="steps" id="guideSteps"></div></div>
+  </section>
+
+  <div class="actions">
+    <button data-action="holdout">Kubik-Holdout fixieren</button>
+    <button data-action="operators">D14-Operatoren laden</button>
+    <button class="primary" data-action="evaluate">74 Fälle evaluieren</button>
+    <button data-action="reset">Zurücksetzen</button>
+  </div>
+  <div class="message" id="message">Bereit. Die Ergebnisfelder sind absichtlich leer.</div>
+
+  <section class="panel">
+    <h2>Aktueller Zustand</h2>
+    <div class="grid">
+      <div class="card"><h3>Phase</h3><div class="value" id="phaseValue">bereit</div></div>
+      <div class="card"><h3>Holdout</h3><div class="value" id="holdoutValue">offen</div><div class="small muted" id="holdoutDetail">38 Kubiken erwartet</div></div>
+      <div class="card"><h3>Operatoren</h3><div class="value" id="operatorValue">0 / 2</div><div class="small muted" id="operatorDetail">D14-Aufzeichnungen noch nicht geladen</div></div>
+      <div class="card"><h3>Evaluation</h3><div class="value" id="caseValue">0 / 74</div><div class="small muted" id="caseDetail">noch nicht ausgeführt</div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="protocolPanel" hidden>
+    <h2>Protokollzustand</h2>
+    <div class="grid" id="protocolGrid"></div>
+    <p id="protocolText" class="status-line"></p>
+  </section>
+
+  <section class="panel" id="evaluationPanel" hidden>
+    <h2>Aggregierte Evaluation</h2>
+    <div class="grid" id="evaluationGrid"></div>
+    <div class="factor-grid" id="factorGrid"></div>
+    <p id="verdict" class="status-line"></p>
+    <p class="small muted">Der Dauereinsatz wird als Diagnose ausgewiesen. Die Entscheidung über einen Kubik-Router richtet sich nach den vorab festgelegten Schwellenwerten je Faktor.</p>
+  </section>
+
+  <section class="panel" id="casePanel" hidden>
+    <h2>Alle 74 faktorbedingten Fälle</h2>
+    <p class="small muted">Die Reihenfolge ist fest: zuerst Faktor 2, dann Faktor 3, innerhalb jedes Faktors nach Signatur sortiert.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fall</th>
+            <th>Faktor</th>
+            <th>Koeffizienten a, b, c, d</th>
+            <th>Signatur</th>
+            <th class="number">Basisarbeit</th>
+            <th class="number">Operatorarbeit</th>
+            <th class="number">Beitrag</th>
+            <th>Günstiger Arm</th>
+            <th>Gelöst</th>
+          </tr>
+        </thead>
+        <tbody id="caseRows"></tbody>
+      </table>
+    </div>
+  </section>
+
+<script>
+const D15Experiment = (() => {
+  "use strict";
+
+  const PROTOCOL = "D15-v1";
+  const INPUTS = Object.freeze([-3,-2,-1,0,1,2,3]);
+  const CONSTANTS = Object.freeze([-2,-1,0,1,2,3]);
+  const MAX_COST = 7;
+  const VALUE_LIMIT = 1_000_000;
+  const ROUTER_WORK_PER_TASK = 44;
+  const KNOWN_PRIOR_SIGNATURE = "-24,-6,0,0,0,6,24";
+
+  const EXPECTED = Object.freeze({
+    protocol:PROTOCOL,
+    inputFingerprint:"83d7237a",
+    constantsFingerprint:"e1f1d8c0",
+    base:Object.freeze({
+      counts:Object.freeze([0,7,0,24,0,106,0,514]),
+      attempts:Object.freeze([0,7,0,105,0,672,0,4144]),
+      work:Object.freeze([0,0,0,735,0,9408,0,87024]),
+      seenCount:651,
+      seenFingerprint:"5cef22d5"
+    }),
+    operators:Object.freeze({
+      2:Object.freeze({
+        label:"(x + x)",
+        definitionSignature:"-6,-4,-2,0,2,4,6",
+        definitionFingerprint:"bcb2e38e",
+        counts:Object.freeze([0,7,4,24,38,122,218,664]),
+        attempts:Object.freeze([0,7,7,109,136,746,1570,5418]),
+        work:Object.freeze([0,0,49,791,1932,11774,34636,135464]),
+        seenCount:1077,
+        seenFingerprint:"9dca7f27"
+      }),
+      3:Object.freeze({
+        label:"(3 × x)",
+        definitionSignature:"-9,-6,-3,0,3,6,9",
+        definitionFingerprint:"9725298e",
+        counts:Object.freeze([0,7,5,24,49,141,311,900]),
+        attempts:Object.freeze([0,7,7,110,164,776,1993,6415]),
+        work:Object.freeze([0,0,49,805,2331,12607,44156,166194]),
+        seenCount:1437,
+        seenFingerprint:"85abbd79"
+      })
+    }),
+    family:Object.freeze({
+      fullCount:38,
+      fullFingerprint:"c7a2b263",
+      freshCount:37,
+      freshFingerprint:"f51e4963",
+      knownSignatureFingerprint:"a467b30b",
+      coefficientFingerprint:"f03d46ff",
+      caseCount:74,
+      caseFingerprint:"c710c2fe"
+    }),
+    gates:Object.freeze({
+      minimumNetSavingShare:0.10,
+      minimumUsefulShare:0.20,
+      maximumContributionShare:0.50
+    })
+  });
+
+  const V = () => ({ type:"var",cost:1 });
+  const C = value => ({ type:"const",value,cost:1 });
+  const B = (op,left,right) => {
+    if ((op === "add" || op === "mul") && format(left) > format(right)) [left,right] = [right,left];
+    return { type:"binary",op,left,right,cost:1 + left.cost + right.cost };
+  };
+  const Call = (name,arg) => ({ type:"call",name,arg,cost:1 + arg.cost });
+  const OPS = Object.freeze({
+    add:Object.freeze({ symbol:"+",fn:(a,b) => a + b,commutative:true }),
+    sub:Object.freeze({ symbol:"−",fn:(a,b) => a - b,commutative:false }),
+    mul:Object.freeze({ symbol:"×",fn:(a,b) => a * b,commutative:true })
+  });
+
+  function format(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return String(ast.value);
+    if (ast.type === "call") return `${ast.name}(${format(ast.arg)})`;
+    return `(${format(ast.left)} ${OPS[ast.op].symbol} ${format(ast.right)})`;
+  }
+
+  function key(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return `c:${ast.value}`;
+    if (ast.type === "call") return `call:${ast.name}(${key(ast.arg)})`;
+    return `${ast.op}(${key(ast.left)},${key(ast.right)})`;
+  }
+
+  function evalAst(ast,input,macros) {
+    if (ast.type === "var") return input;
+    if (ast.type === "const") return ast.value;
+    if (ast.type === "call") return evalAst(macros[ast.name].definition,evalAst(ast.arg,input,macros),{});
+    const value = OPS[ast.op].fn(evalAst(ast.left,input,macros),evalAst(ast.right,input,macros));
+    return Number.isFinite(value) && Math.abs(value) <= VALUE_LIMIT ? value : NaN;
+  }
+
+  function primitiveCount(ast,macros) {
+    if (ast.type === "var" || ast.type === "const") return 0;
+    if (ast.type === "binary") return 1 + primitiveCount(ast.left,macros) + primitiveCount(ast.right,macros);
+    return primitiveCount(ast.arg,macros) + primitiveCount(macros[ast.name].definition,{});
+  }
+
+  function signature(ast,macros = {}) {
+    const values = INPUTS.map(input => evalAst(ast,input,macros));
+    return values.some(Number.isNaN) ? null : values.join(",");
+  }
+
+  function fingerprint(text) {
+    let hash = 2166136261;
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash,16777619);
+    }
+    return (hash >>> 0).toString(16).padStart(8,"0");
+  }
+
+  function sum(values) { return values.reduce((total,value) => total + value,0); }
+  function sameArray(left,right) { return left.length === right.length && left.every((value,index) => value === right[index]); }
+
+  function enumerate(macros = {}) {
+    const byCost = Array.from({ length:MAX_COST + 1 },() => []);
+    const seen = new Map();
+    const attemptsByCost = Array(MAX_COST + 1).fill(0);
+    const workByCost = Array(MAX_COST + 1).fill(0);
+
+    function accept(cost,batch) {
+      batch.sort((left,right) => key(left).localeCompare(key(right)));
+      for (const ast of batch) {
+        const sig = signature(ast,macros);
+        if (sig === null) continue;
+        attemptsByCost[cost] += 1;
+        workByCost[cost] += primitiveCount(ast,macros) * INPUTS.length;
+        if (seen.has(sig)) continue;
+        seen.set(sig,ast);
+        byCost[cost].push(ast);
+      }
+    }
+
+    accept(1,[V(),...CONSTANTS.map(C)]);
+    for (let cost = 2; cost <= MAX_COST; cost += 1) {
+      const batch = [];
+      for (const name of Object.keys(macros).sort()) {
+        for (const arg of byCost[cost - 1]) batch.push(Call(name,arg));
+      }
+      for (let leftCost = 1; leftCost < cost; leftCost += 1) {
+        const rightCost = cost - 1 - leftCost;
+        if (rightCost < 1) continue;
+        for (const [op,spec] of Object.entries(OPS)) {
+          for (const left of byCost[leftCost]) {
+            for (const right of byCost[rightCost]) {
+              if (spec.commutative && key(left) > key(right)) continue;
+              batch.push(B(op,left,right));
+            }
+          }
+        }
+      }
+      accept(cost,batch);
+    }
+    return { byCost,seen,attemptsByCost,workByCost };
+  }
+
+  function enumerationSnapshot(enumeration) {
+    const sortedSignatures = [...enumeration.seen.keys()].sort();
+    return {
+      counts:enumeration.byCost.map(items => items.length),
+      attempts:[...enumeration.attemptsByCost],
+      work:[...enumeration.workByCost],
+      seenCount:enumeration.seen.size,
+      seenFingerprint:fingerprint(sortedSignatures.join("|"))
+    };
+  }
+
+  function snapshotMatches(actual,expected) {
+    return sameArray(actual.counts,expected.counts)
+      && sameArray(actual.attempts,expected.attempts)
+      && sameArray(actual.work,expected.work)
+      && actual.seenCount === expected.seenCount
+      && actual.seenFingerprint === expected.seenFingerprint;
+  }
+
+  function searchStats(enumeration,taskSignature) {
+    const solution = enumeration.seen.get(taskSignature);
+    if (!solution) {
+      return {
+        found:false,
+        attempts:sum(enumeration.attemptsByCost),
+        work:sum(enumeration.workByCost)
+      };
+    }
+    return {
+      found:true,
+      attempts:sum(enumeration.attemptsByCost.slice(0,solution.cost + 1)),
+      work:sum(enumeration.workByCost.slice(0,solution.cost + 1))
+    };
+  }
+
+  function detectExactIntegerCubic(values) {
+    if (!Array.isArray(values) || values.length !== INPUTS.length || values.some(value => !Number.isInteger(value))) return null;
+    const y = new Map(INPUTS.map((input,index) => [input,values[index]]));
+    const d = y.get(0);
+    const a = (y.get(2) - y.get(-2) - 2 * (y.get(1) - y.get(-1))) / 12;
+    const b = (y.get(1) + y.get(-1) - 2 * d) / 2;
+    const c = (y.get(1) - y.get(-1)) / 2 - a;
+    const coefficients = [a,b,c,d];
+    if (!coefficients.every(Number.isInteger) || a === 0) return null;
+    const exact = INPUTS.every((input,index) => a * input ** 3 + b * input ** 2 + c * input + d === values[index]);
+    return exact ? Object.freeze({ a,b,c,d,coefficients:Object.freeze(coefficients) }) : null;
+  }
+
+  const BASE = enumerate({});
+  const BASE_SNAPSHOT = Object.freeze(enumerationSnapshot(BASE));
+
+  function buildHoldout() {
+    const full = [...BASE.seen.keys()]
+      .map(sig => {
+        const values = sig.split(",").map(Number);
+        const cubic = detectExactIntegerCubic(values);
+        return cubic ? { signature:sig,values:Object.freeze(values),coefficients:cubic.coefficients } : null;
+      })
+      .filter(Boolean)
+      .sort((left,right) => left.signature.localeCompare(right.signature));
+    const fresh = full.filter(item => item.signature !== KNOWN_PRIOR_SIGNATURE);
+    return Object.freeze({
+      full:Object.freeze(full),
+      fresh:Object.freeze(fresh),
+      fullFingerprint:fingerprint(full.map(item => item.signature).join("|")),
+      freshFingerprint:fingerprint(fresh.map(item => item.signature).join("|")),
+      coefficientFingerprint:fingerprint(fresh.map(item => item.coefficients.join(",")).join("|")),
+      knownPresent:full.some(item => item.signature === KNOWN_PRIOR_SIGNATURE),
+      priorOverlap:fresh.filter(item => item.signature === KNOWN_PRIOR_SIGNATURE).length
+    });
+  }
+
+  function operatorDefinition(factor) {
+    if (factor === 2) return B("add",V(),V());
+    if (factor === 3) return B("mul",C(3),V());
+    throw new Error("Unbekannter Faktor.");
+  }
+
+  function buildOperators() {
+    const result = {};
+    for (const factor of [2,3]) {
+      const definition = operatorDefinition(factor);
+      const macros = { op:{ name:"op",definition } };
+      const enumeration = enumerate(macros);
+      result[factor] = Object.freeze({
+        factor,
+        label:format(definition),
+        definition,
+        definitionSignature:signature(definition,{}),
+        enumeration,
+        snapshot:Object.freeze(enumerationSnapshot(enumeration))
+      });
+    }
+    return Object.freeze(result);
+  }
+
+  function factorCaseFingerprint(holdout) {
+    return fingerprint([2,3].flatMap(factor => holdout.fresh.map(item => `${factor}:${item.signature}`)).join("|"));
+  }
+
+  function protocolAssertions(holdout,operators) {
+    const assertions = {
+      protocol:PROTOCOL === EXPECTED.protocol,
+      maxCost:MAX_COST === 7,
+      routerWork:ROUTER_WORK_PER_TASK === 44,
+      inputs:fingerprint(INPUTS.join("|")) === EXPECTED.inputFingerprint,
+      constants:fingerprint(CONSTANTS.join("|")) === EXPECTED.constantsFingerprint,
+      baseAccounting:snapshotMatches(BASE_SNAPSHOT,EXPECTED.base),
+      fullCubicCount:holdout.full.length === EXPECTED.family.fullCount,
+      fullCubicFingerprint:holdout.fullFingerprint === EXPECTED.family.fullFingerprint,
+      knownPriorPresent:holdout.knownPresent,
+      knownPriorFingerprint:fingerprint(KNOWN_PRIOR_SIGNATURE) === EXPECTED.family.knownSignatureFingerprint,
+      priorOverlap:holdout.priorOverlap === 0,
+      freshCubicCount:holdout.fresh.length === EXPECTED.family.freshCount,
+      freshCubicFingerprint:holdout.freshFingerprint === EXPECTED.family.freshFingerprint,
+      coefficientFingerprint:holdout.coefficientFingerprint === EXPECTED.family.coefficientFingerprint,
+      uniqueFreshCubics:new Set(holdout.fresh.map(item => item.signature)).size === EXPECTED.family.freshCount,
+      allFreshExactCubics:holdout.fresh.every(item => detectExactIntegerCubic(item.values) !== null),
+      caseCount:holdout.fresh.length * 2 === EXPECTED.family.caseCount,
+      caseFingerprint:factorCaseFingerprint(holdout) === EXPECTED.family.caseFingerprint
+    };
+    for (const factor of [2,3]) {
+      const actual = operators[factor];
+      const expected = EXPECTED.operators[factor];
+      assertions[`factor${factor}Label`] = actual.label === expected.label;
+      assertions[`factor${factor}Definition`] = actual.definitionSignature === expected.definitionSignature
+        && fingerprint(actual.definitionSignature) === expected.definitionFingerprint;
+      assertions[`factor${factor}Accounting`] = snapshotMatches(actual.snapshot,expected);
+    }
+    return Object.freeze(assertions);
+  }
+
+  function evaluateFactor(factor,holdout,operator) {
+    const rows = holdout.fresh.map((item,index) => {
+      const base = searchStats(BASE,item.signature);
+      const candidate = searchStats(operator.enumeration,item.signature);
+      const contribution = Math.max(0,base.work - candidate.work);
+      const selected = candidate.work < base.work ? "Operator" : "Basis";
+      return Object.freeze({
+        id:`F${factor}-${String(index + 1).padStart(2,"0")}`,
+        factor,
+        signature:item.signature,
+        coefficients:item.coefficients,
+        base:Object.freeze(base),
+        candidate:Object.freeze(candidate),
+        useful:candidate.work < base.work,
+        contribution,
+        selected
+      });
+    });
+    const baseWork = sum(rows.map(row => row.base.work));
+    const alwaysWork = sum(rows.map(row => row.candidate.work));
+    const selectedSearchWork = sum(rows.map(row => Math.min(row.base.work,row.candidate.work)));
+    const routerWork = ROUTER_WORK_PER_TASK * rows.length;
+    const oracleWork = selectedSearchWork + routerWork;
+    const grossSaving = sum(rows.map(row => row.contribution));
+    const netSaving = baseWork - oracleWork;
+    const usefulCount = sum(rows.map(row => Number(row.useful)));
+    const largestContribution = Math.max(0,...rows.map(row => row.contribution));
+    const netSavingShare = baseWork === 0 ? 0 : netSaving / baseWork;
+    const usefulShare = rows.length === 0 ? 0 : usefulCount / rows.length;
+    const maximumContributionShare = grossSaving === 0 ? 0 : largestContribution / grossSaving;
+    const gates = Object.freeze({
+      baseSolved:rows.every(row => row.base.found),
+      candidateSolved:rows.every(row => row.candidate.found),
+      minimumNetSaving:netSavingShare >= EXPECTED.gates.minimumNetSavingShare,
+      minimumUsefulBreadth:usefulShare >= EXPECTED.gates.minimumUsefulShare,
+      boundedContribution:maximumContributionShare <= EXPECTED.gates.maximumContributionShare
+    });
+    return Object.freeze({
+      factor,
+      operator:operator.label,
+      rows:Object.freeze(rows),
+      baseWork,
+      alwaysWork,
+      selectedSearchWork,
+      routerWork,
+      oracleWork,
+      grossSaving,
+      netSaving,
+      netSavingShare,
+      usefulCount,
+      usefulShare,
+      largestContribution,
+      maximumContributionShare,
+      baseSolved:sum(rows.map(row => Number(row.base.found))),
+      candidateSolved:sum(rows.map(row => Number(row.candidate.found))),
+      alwaysOnWorse:alwaysWork > baseWork,
+      gates,
+      passed:Object.values(gates).every(Boolean)
+    });
+  }
+
+  function evaluateD15(holdout,operators) {
+    const assertions = protocolAssertions(holdout,operators);
+    const protocolIntegrity = Object.values(assertions).every(Boolean);
+    const factors = Object.freeze([2,3].map(factor => evaluateFactor(factor,holdout,operators[factor])));
+    const rows = Object.freeze(factors.flatMap(result => result.rows));
+    const aggregate = Object.freeze({
+      caseCount:rows.length,
+      baseWork:sum(factors.map(result => result.baseWork)),
+      alwaysWork:sum(factors.map(result => result.alwaysWork)),
+      oracleWork:sum(factors.map(result => result.oracleWork)),
+      routerWork:sum(factors.map(result => result.routerWork)),
+      grossSaving:sum(factors.map(result => result.grossSaving)),
+      netSaving:sum(factors.map(result => result.netSaving)),
+      baseSolved:sum(factors.map(result => result.baseSolved)),
+      candidateSolved:sum(factors.map(result => result.candidateSolved)),
+      usefulCount:sum(factors.map(result => result.usefulCount))
+    });
+    return Object.freeze({
+      protocol:PROTOCOL,
+      protocolAssertions:assertions,
+      protocolIntegrity,
+      factors,
+      rows,
+      aggregate,
+      passed:protocolIntegrity && factors.every(result => result.passed)
+    });
+  }
+
+  function initialState(guideId = "question") {
+    return Object.freeze({
+      guideId,
+      phase:"ready",
+      holdout:null,
+      operators:null,
+      result:null,
+      message:"Bereit. Die Ergebnisfelder sind absichtlich leer."
+    });
+  }
+
+  function reducer(state,action) {
+    if (action.type === "guide") return Object.freeze({ ...state,guideId:action.id });
+    if (action.type === "reset") return initialState(state.guideId);
+    if (state.result) return Object.freeze({ ...state,message:"Für einen neuen interaktiven Lauf zuerst zurücksetzen." });
+
+    if (action.type === "holdout") {
+      if (state.holdout) return Object.freeze({ ...state,message:"Der Kubik-Holdout ist bereits fixiert." });
+      const holdout = buildHoldout();
+      return Object.freeze({ ...state,phase:"heldout",holdout,message:"37 neue exakte Kubiken wurden als Holdout fixiert." });
+    }
+
+    if (action.type === "operators") {
+      if (!state.holdout) return Object.freeze({ ...state,message:"Zuerst muss der Kubik-Holdout fixiert werden." });
+      if (state.operators) return Object.freeze({ ...state,message:"Die beiden D14-Operatoren sind bereits geladen." });
+      const operators = buildOperators();
+      return Object.freeze({ ...state,phase:"operators",operators,message:"Die aufgezeichneten Operatoren für Faktor 2 und Faktor 3 wurden geladen." });
+    }
+
+    if (action.type === "evaluate") {
+      if (!state.holdout) return Object.freeze({ ...state,message:"Zuerst muss der Kubik-Holdout fixiert werden." });
+      if (!state.operators) return Object.freeze({ ...state,message:"Zuerst müssen die D14-Operatoren geladen werden." });
+      const result = evaluateD15(state.holdout,state.operators);
+      return Object.freeze({ ...state,phase:"evaluated",result,message:"Alle 74 faktorbedingten Fälle wurden evaluiert." });
+    }
+    return state;
+  }
+
+  function runD15() {
+    let state = initialState();
+    for (const type of ["holdout","operators","evaluate"]) state = reducer(state,{ type });
+    return state.result;
+  }
+
+  const guides = Object.freeze({
+    question:Object.freeze({
+      title:"Fragestellung",
+      description:"Baue zuerst die vollständige, gegenüber früheren Auswertungen überschneidungsfreie Kubikfamilie auf und prüfe danach beide aufgezeichneten Operatoren auf genau denselben 37 Aufgaben.",
+      steps:Object.freeze([
+        Object.freeze({ label:"Holdout fixieren",type:"holdout" }),
+        Object.freeze({ label:"Operatoren laden",type:"operators" }),
+        Object.freeze({ label:"Evaluieren",type:"evaluate" })
+      ])
+    }),
+    protocol:Object.freeze({
+      title:"Protokolltreue",
+      description:"Kontrolliere Familie, Fingerprints und die vollständige Zählung jedes Enumerators, bevor ein Ergebnis als aussagekräftig gilt.",
+      steps:Object.freeze([
+        Object.freeze({ label:"Zurücksetzen",type:"reset" }),
+        Object.freeze({ label:"Holdout fixieren",type:"holdout" }),
+        Object.freeze({ label:"Operatoren laden",type:"operators" })
+      ])
+    }),
+    decision:Object.freeze({
+      title:"Routerentscheidung",
+      description:"Ein eigener Kubik-Router ist nur gerechtfertigt, wenn beide Faktoren die vorab festgelegte Nutzenhöhe, Nutzenbreite und Konzentrationsgrenze erreichen.",
+      steps:Object.freeze([
+        Object.freeze({ label:"Holdout fixieren",type:"holdout" }),
+        Object.freeze({ label:"Operatoren laden",type:"operators" }),
+        Object.freeze({ label:"74 Fälle evaluieren",type:"evaluate" })
+      ])
+    })
+  });
+
+  return Object.freeze({
+    EXPECTED,
+    guides,
+    initialState,
+    reducer,
+    runD15,
+    detectExactIntegerCubic
+  });
+})();
+</script>
+
+<script id="recorded-results" type="application/json">null</script>
+
+<script>
+"use strict";
+
+const recorded = JSON.parse(document.getElementById("recorded-results").textContent);
+let state = D15Experiment.initialState();
+if (recorded) state = Object.freeze({ ...state,phase:"evaluated",result:recorded,message:"Der aufgezeichnete D15-Lauf ist geladen." });
+
+function dispatch(action) {
+  state = D15Experiment.reducer(state,action);
+  render();
+}
+
+function number(value) {
+  return new Intl.NumberFormat("de-DE",{ maximumFractionDigits:1 }).format(value);
+}
+
+function percent(value) {
+  return `${number(value * 100)} %`;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;");
+}
+
+function card(label,value,detail = "",tone = "") {
+  const toneClass = tone === "good" ? " good-card" : tone === "bad" ? " bad-card" : "";
+  return `<div class="card${toneClass}"><h3>${escapeHtml(label)}</h3><div class="value">${escapeHtml(value)}</div>${detail ? `<div class="small muted">${escapeHtml(detail)}</div>` : ""}</div>`;
+}
+
+function renderGuides() {
+  const tabs = document.getElementById("guideTabs");
+  tabs.innerHTML = Object.entries(D15Experiment.guides)
+    .map(([id,guide]) => `<button class="${state.guideId === id ? "active" : ""}" data-guide="${id}">${escapeHtml(guide.title)}</button>`)
+    .join("");
+  tabs.querySelectorAll("[data-guide]").forEach(button => {
+    button.onclick = () => dispatch({ type:"guide",id:button.dataset.guide });
+  });
+  const guide = D15Experiment.guides[state.guideId];
+  document.getElementById("guideTitle").textContent = guide.title;
+  document.getElementById("guideDescription").textContent = guide.description;
+  document.getElementById("guideSteps").innerHTML = guide.steps
+    .map(step => `<button data-action="${step.type}">${escapeHtml(step.label)}</button>`)
+    .join("");
+}
+
+function renderProtocol() {
+  const panel = document.getElementById("protocolPanel");
+  panel.hidden = !state.operators && !state.result;
+  if (panel.hidden) return;
+  const assertions = state.result?.protocolAssertions;
+  const holdout = state.holdout;
+  const operator2 = state.operators?.[2];
+  const operator3 = state.operators?.[3];
+  const expected = D15Experiment.EXPECTED;
+  document.getElementById("protocolGrid").innerHTML = [
+    card("Volle Kubikfamilie",`${holdout?.full.length ?? expected.family.fullCount} / 38`,holdout?.fullFingerprint ?? expected.family.fullFingerprint),
+    card("Frischer Holdout",`${holdout?.fresh.length ?? expected.family.freshCount} / 37`,holdout?.freshFingerprint ?? expected.family.freshFingerprint),
+    card("Bekannte Überschneidung",String(holdout?.priorOverlap ?? 0),"muss null sein"),
+    card("Basis-Enumerator",number(expected.base.seenCount),`Signaturen, Fingerprint ${expected.base.seenFingerprint}`),
+    card("Faktor-2-Enumerator",number(operator2?.snapshot.seenCount ?? expected.operators[2].seenCount),operator2?.snapshot.seenFingerprint ?? expected.operators[2].seenFingerprint),
+    card("Faktor-3-Enumerator",number(operator3?.snapshot.seenCount ?? expected.operators[3].seenCount),operator3?.snapshot.seenFingerprint ?? expected.operators[3].seenFingerprint)
+  ].join("");
+  const protocolText = document.getElementById("protocolText");
+  if (!assertions) {
+    protocolText.className = "status-line muted";
+    protocolText.textContent = "Die festen Werte sind geladen. Die getrennte Integritätsprüfung erfolgt mit der Evaluation.";
+  } else {
+    const failed = Object.entries(assertions).filter(([,value]) => !value).map(([key]) => key);
+    protocolText.className = state.result.protocolIntegrity ? "status-line good" : "status-line bad";
+    protocolText.textContent = state.result.protocolIntegrity
+      ? "Alle geprüften Protokollwerte stimmen mit den vorab festgelegten Werten überein."
+      : `Protokollabweichung bei: ${failed.join(", ")}`;
+  }
+}
+
+function renderEvaluation() {
+  const result = state.result;
+  const evaluationPanel = document.getElementById("evaluationPanel");
+  const casePanel = document.getElementById("casePanel");
+  evaluationPanel.hidden = !result;
+  casePanel.hidden = !result;
+  if (!result) return;
+
+  const aggregate = result.aggregate;
+  const aggregateSavingShare = aggregate.baseWork === 0 ? 0 : aggregate.netSaving / aggregate.baseWork;
+  document.getElementById("evaluationGrid").innerHTML = [
+    card("Protokolltreue",result.protocolIntegrity ? "ja" : "nein","getrennt von den Ergebniskriterien",result.protocolIntegrity ? "good" : "bad"),
+    card("Gelöst mit Basis",`${aggregate.baseSolved} / 74`),
+    card("Gelöst mit Operator",`${aggregate.candidateSolved} / 74`),
+    card("Basisarbeit",number(aggregate.baseWork)),
+    card("Dauereinsatz",number(aggregate.alwaysWork),aggregate.alwaysWork > aggregate.baseWork ? "schlechter als Basis" : "nicht schlechter als Basis"),
+    card("Kostenbehaftetes Orakel",number(aggregate.oracleWork),`einschließlich ${number(aggregate.routerWork)} Einheiten Routerarbeit`),
+    card("Nettoersparnis",percent(aggregateSavingShare),number(aggregate.netSaving)),
+    card("Nützliche Fälle",`${aggregate.usefulCount} / 74`)
+  ].join("");
+
+  const gateLabels = {
+    baseSolved:"Basis löst alle Aufgaben",
+    candidateSolved:"Operatorarm löst alle Aufgaben",
+    minimumNetSaving:"mindestens 10 Prozent Nettoersparnis",
+    minimumUsefulBreadth:"mindestens 20 Prozent nützliche Fälle",
+    boundedContribution:"höchstens 50 Prozent aus einem Einzelfall"
+  };
+  document.getElementById("factorGrid").innerHTML = result.factors.map(factor => {
+    const failed = Object.entries(factor.gates).filter(([,value]) => !value).map(([key]) => gateLabels[key]);
+    const details = factor.passed
+      ? "Alle vorab festgelegten Kriterien erfüllt"
+      : `Nicht erfüllt: ${failed.join(", ")}`;
+    return `<div class="card ${factor.passed ? "good-card" : "bad-card"}">
+      <h3>Faktor ${factor.factor}: ${escapeHtml(factor.operator)}</h3>
+      <div class="value ${factor.passed ? "good" : "bad"}">${factor.passed ? "bestanden" : "nicht bestanden"}</div>
+      <div class="small muted">Nettoersparnis ${escapeHtml(percent(factor.netSavingShare))}, nützliche Fälle ${factor.usefulCount} / 37, größter Einzelanteil ${escapeHtml(percent(factor.maximumContributionShare))}</div>
+      <div class="small muted">Basis ${escapeHtml(number(factor.baseWork))}, Dauereinsatz ${escapeHtml(number(factor.alwaysWork))}, Orakel ${escapeHtml(number(factor.oracleWork))}</div>
+      <div class="small muted">${escapeHtml(details)}</div>
+    </div>`;
+  }).join("");
+
+  const verdict = document.getElementById("verdict");
+  verdict.className = result.passed ? "status-line good" : "status-line bad";
+  verdict.textContent = result.passed
+    ? "D15 beantwortet die Frage mit Ja: Bei beiden Faktoren zeigt sich ein breites, ausreichend großes und nicht von einem Einzelfall dominiertes Operatorpotenzial."
+    : "D15 beantwortet die Frage mit Nein: Bei mindestens einem Faktor werden die vorab festgelegten Kriterien nicht erfüllt. Damit ist ein eigener Kubik-Router nicht gerechtfertigt.";
+
+  document.getElementById("caseRows").innerHTML = result.rows.map(row => {
+    const solved = row.base.found && row.candidate.found ? "beide" : row.base.found ? "nur Basis" : row.candidate.found ? "nur Operator" : "keiner";
+    return `<tr class="${row.useful ? "useful" : ""}">
+      <td><code>${escapeHtml(row.id)}</code></td>
+      <td>${row.factor}</td>
+      <td><code>${escapeHtml(row.coefficients.join(","))}</code></td>
+      <td><code>${escapeHtml(row.signature)}</code></td>
+      <td class="number">${escapeHtml(number(row.base.work))}</td>
+      <td class="number">${escapeHtml(number(row.candidate.work))}</td>
+      <td class="number ${row.useful ? "good" : "muted"}">${escapeHtml(number(row.contribution))}</td>
+      <td>${escapeHtml(row.selected)}</td>
+      <td>${escapeHtml(solved)}</td>
+    </tr>`;
+  }).join("");
+}
+
+function render() {
+  const phaseLabels = { ready:"bereit",heldout:"Holdout fixiert",operators:"Operatoren geladen",evaluated:"evaluiert" };
+  document.getElementById("phaseValue").textContent = phaseLabels[state.phase];
+  const holdoutReady = Boolean(state.holdout || state.result);
+  const operatorsReady = Boolean(state.operators || state.result);
+  const factorLabels = state.operators
+    ? `${state.operators[2].label} und ${state.operators[3].label}`
+    : state.result
+      ? state.result.factors.map(factor => factor.operator).join(" und ")
+      : "D14-Aufzeichnungen noch nicht geladen";
+  document.getElementById("holdoutValue").textContent = holdoutReady ? `${state.holdout?.fresh.length ?? 37} / 37` : "offen";
+  document.getElementById("holdoutDetail").textContent = holdoutReady ? `Vollfamilie ${state.holdout?.full.length ?? 38}, Überschneidung ${state.holdout?.priorOverlap ?? 0}` : "38 Kubiken erwartet";
+  document.getElementById("operatorValue").textContent = operatorsReady ? "2 / 2" : "0 / 2";
+  document.getElementById("operatorDetail").textContent = factorLabels;
+  document.getElementById("caseValue").textContent = state.result ? `${state.result.rows.length} / 74` : "0 / 74";
+  document.getElementById("caseDetail").textContent = state.result ? `${state.result.aggregate.usefulCount} Fälle mit Operatorvorteil` : "noch nicht ausgeführt";
+  document.getElementById("message").textContent = state.message;
+
+  renderGuides();
+  renderProtocol();
+  renderEvaluation();
+  document.querySelectorAll("[data-action]").forEach(button => {
+    button.onclick = () => dispatch({ type:button.dataset.action });
+  });
+}
+
+render();
+</script>
+</body>
+</html>
