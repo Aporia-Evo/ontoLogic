@@ -1,0 +1,879 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>D14: Stabilität über fünf Seeds</title>
+<style>
+  :root { color-scheme:dark; --bg:#0d1117; --panel:#161b22; --line:#30363d; --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --good:#3fb950; --bad:#f85149; }
+  * { box-sizing:border-box; }
+  body { max-width:1120px; margin:0 auto; padding:32px 20px 64px; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,sans-serif; }
+  h1,h2,h3,p { margin-top:0; }
+  h1 { margin-bottom:8px; font-size:clamp(28px,5vw,46px); }
+  h2 { font-size:20px; }
+  h3 { font-size:15px; }
+  code { color:#d2a8ff; }
+  button { border:1px solid var(--line); border-radius:8px; padding:10px 14px; background:#21262d; color:var(--text); cursor:pointer; }
+  button:hover,button.active { border-color:var(--accent); color:var(--accent); }
+  button.primary { background:#1f6feb; border-color:#1f6feb; color:white; }
+  .intro { max-width:850px; color:var(--muted); font-size:18px; }
+  .notice,.message { padding:12px 14px; border:1px solid var(--line); border-radius:8px; background:#0b2740; }
+  .panel { margin-top:18px; padding:20px; border:1px solid var(--line); border-radius:10px; background:var(--panel); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(205px,1fr)); gap:12px; }
+  .card { padding:14px; border:1px solid var(--line); border-radius:8px; background:#0d1117; }
+  .value { font-size:21px; font-weight:700; }
+  .small { font-size:14px; }
+  .muted { color:var(--muted); }
+  .good { color:var(--good); }
+  .bad { color:var(--bad); }
+  .tabs,.actions,.steps { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
+  .guide { display:grid; grid-template-columns:2fr 1fr; gap:24px; }
+  .message { margin-top:12px; background:#111820; }
+  .table-wrap { overflow-x:auto; max-height:430px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th,td { padding:8px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+  th.number,td.number { text-align:right; }
+  @media (max-width:760px) { .guide { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+  <h1>D14: Bleibt der Effekt über fünf Seeds stabil?</h1>
+  <p class="intro">Der D13-Ablauf läuft fünfmal mit vorab abgeleiteten Seeds. Proben, Regelraum, Ranking und Kosten bleiben gleich. Entscheidend ist die gemeinsame Arbeit über alle fünf Splits.</p>
+
+  <div class="notice"><strong>Protokoll D14-v1.</strong> Fünf Seeds werden als Fingerprints von <code>D14-v1:0</code> bis <code>D14-v1:4</code> abgeleitet. Jeder Split enthält sechs positive Aufgaben und vierzehn Kontrollen. Erfolg verlangt vollständige Protokolltreue und 100 gelöste Slots. Die erzeugte Regel muss gemeinsam mindestens 10 Prozent unter der Basis und außerdem unter dem Dauereinsatz liegen. In jedem Seed muss sie unter Basis und Dauereinsatz sowie höchstens auf dem Wert der 73-Proben-Regel liegen. Bei verschiedenen Regel-IDs muss ihr Wert strikt kleiner sein, und mindestens ein solches Paar muss vorkommen. Auch gemeinsam muss sie die 73-Proben-Regel schlagen.</div>
+  <p class="small muted">Die 100 Slots enthalten vorab berechnet 71 verschiedene Signaturen. Wiederholungen zwischen Seeds werden im Ergebnis offen ausgewiesen.</p>
+
+  <section class="panel">
+    <h2>Vorab festgelegt</h2>
+    <div class="grid">
+      <div class="card"><h3>Seeds</h3><div class="value">5</div><div class="small muted">Je 20 Evaluationsslots.</div></div>
+      <div class="card"><h3>Regelraum</h3><div class="value">13.203</div><div class="small muted">162 Klauseln, höchstens zwei pro Regel.</div></div>
+      <div class="card"><h3>Proben je Seed</h3><div class="value">125</div><div class="small muted">73 bisherige und 52 zusätzliche.</div></div>
+      <div class="card"><h3>Erfolgsschwelle</h3><div class="value">10 %</div><div class="small muted">Ersparnis gegenüber der Basissuche.</div></div>
+    </div>
+  </section>
+
+  <div class="tabs" id="guideTabs"></div>
+  <section class="panel guide">
+    <div><h2 id="guideTitle"></h2><p id="guideDescription" class="muted"></p></div>
+    <div><h3>Geführter Ablauf</h3><div class="steps" id="guideSteps"></div></div>
+  </section>
+
+  <div class="actions">
+    <button data-action="discover">Operatoren finden</button>
+    <button data-action="probe">Proben erzeugen</button>
+    <button data-action="synthesize">Regeln bauen</button>
+    <button data-action="evaluate">Evaluieren</button>
+    <button class="primary" data-action="all">Alles ausführen</button>
+    <button data-action="reset">Zurücksetzen</button>
+  </div>
+  <div class="message" id="message">Bereit. Das Protokoll ist festgehalten.</div>
+
+  <section class="panel">
+    <h2>Aktueller Zustand</h2>
+    <div class="grid">
+      <div class="card"><h3>Phase</h3><div class="value" id="phaseValue">bereit</div></div>
+      <div class="card"><h3>Operatoren</h3><div class="value" id="operatorValue">offen</div><div class="small muted" id="divisorValue">Faktoren offen</div></div>
+      <div class="card"><h3>Proben</h3><div class="value" id="probeValue">0 / 625</div><div class="small muted" id="usefulValue">Nutzen offen</div></div>
+      <div class="card"><h3>Regeln</h3><div class="value" id="ruleValue">offen</div><div class="small muted" id="fitValue">Anpassung offen</div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="synthesisPanel" hidden>
+    <h2>Regelerzeugung</h2>
+    <div class="grid" id="synthesisGrid"></div>
+  </section>
+
+  <section class="panel" id="evaluationPanel" hidden>
+    <h2>Evaluation</h2>
+    <div class="grid" id="evaluationGrid"></div>
+    <p id="verdict" class="muted"></p>
+    <p id="recordedText" class="small muted"></p>
+  </section>
+
+  <section class="panel" id="runPanel" hidden>
+    <h2>Ergebnis je Seed</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Seed</th><th>Faktor</th><th>Operator</th><th>73 Proben</th><th>125 Proben</th><th class="number">Basis</th><th class="number">Dauereinsatz</th><th class="number">73 Proben</th><th class="number">125 Proben</th><th class="number">Gelöst</th></tr></thead>
+      <tbody id="runRows"></tbody>
+    </table></div>
+  </section>
+
+<script>
+const D14Experiment = (() => {
+  const PROTOCOL = "D14-v1";
+  const SEEDS = Object.freeze(Array.from({ length:5 },(_,index) => parseInt(fingerprint(`${PROTOCOL}:${index}`),16)));
+  const INPUTS = [-3,-2,-1,0,1,2,3];
+  const CONSTANTS = [-2,-1,0,1,2,3];
+  const MAX_COST = 7;
+  const VALUE_LIMIT = 1_000_000;
+  const RULE_WORK_PER_TASK = 44;
+  const D12_EVALUATION_SIGNATURES = Object.freeze([
+    "-16,-8,-2,2,4,4,2","-18,-3,6,9,6,-3,-18","-2,-4,-4,-2,2,8,16","-21,-6,3,6,3,-6,-21","-25,-16,-9,-4,-1,0,-1",
+    "-27,-12,-3,0,-3,-12,-27","-33,-18,-9,-6,-9,-18,-33","-36,-20,-8,0,4,4,0","-36,-25,-16,-9,-4,-1,0","-5,-2,-1,-2,-5,-10,-17",
+    "-54,-30,-12,0,6,6,0","-8,-3,0,1,0,-3,-8","-9,0,3,0,-9,-24,-45","0,-6,-6,0,12,30,54","0,0,2,6,12,20,30",
+    "18,10,4,0,-2,-2,0","54,24,6,0,6,24,54","6,0,-4,-6,-6,-4,0","81,36,9,0,9,36,81","9,0,-3,0,9,24,45"
+  ]);
+  const EXPECTED = Object.freeze({
+    common:Object.freeze({
+      atomFingerprint:"78097f74",clauseCount:162,ruleCount:13203,
+      probeCount:125,legacyProbeCount:73,extraProbeCount:52,
+      ruleEvaluations:1650375,legacyRuleEvaluations:963819,
+      candidateCount:16,quadraticPoolCount:201,quadraticPoolFingerprint:"156e57b8",
+      extraProbeFingerprint:"9a63deb1",probeSourceFingerprint:"b1382894",
+      priorEvaluationCount:20,priorEvaluationFingerprint:"008dcb4c",
+      evaluationPositiveCount:6,evaluationControlCount:14,
+      totalEvaluationSlots:100,uniqueTestSignatureCount:71,repeatedTestSlots:29,maxTestMultiplicity:4,
+      testSlotFingerprint:"17c4daf8",sortedTestSlotFingerprint:"82fe72a2",testUnionFingerprint:"50d8f27d",
+      pairOverlap:Object.freeze([2,3,7,1,7,2,4,2,5,1]),
+      discoveryTrainingWork:51469257,probeMeasurementWork:114025338,generationWork:165494595,
+      ruleEvaluationsTotal:8251875,legacyRuleEvaluationsTotal:4819095
+    }),
+    factors:Object.freeze({
+      2:Object.freeze({ operator:"(x + x)",divisor:2,probeFingerprint:"cf8b716b",legacyProbeFingerprint:"93804be4",measurementFingerprint:"efa6cc36",usefulCount:41,legacyUsefulCount:30,extraUsefulCount:11,trainingErrors:2,zeroErrorRuleCount:0,bestComplexityCount:1,legacyRuleId:"A&B",selectedRuleId:"A&B",legacyTrainingErrors:0,legacyZeroErrorRuleCount:124,legacyBestComplexityCount:1,probeMeasurementWork:21951678 }),
+      3:Object.freeze({ operator:"(3 × x)",divisor:3,probeFingerprint:"45c7e60a",legacyProbeFingerprint:"87acf874",measurementFingerprint:"d42bdd4f",usefulCount:46,legacyUsefulCount:34,extraUsefulCount:12,trainingErrors:5,zeroErrorRuleCount:0,bestComplexityCount:2,legacyRuleId:"A&B|MB&N",selectedRuleId:"A&B|A&MB&N",legacyTrainingErrors:0,legacyZeroErrorRuleCount:8,legacyBestComplexityCount:1,probeMeasurementWork:24085152 })
+    }),
+    runs:Object.freeze([
+      Object.freeze({ seed:433693078,hiddenFactor:3,datasetFingerprint:"2cd84ff8",discoverySequenceFingerprint:"cb88acb8",testSequenceFingerprint:"a52fc0b6",discoverySavings:399959,discoveryTrainingWork:12565070 }),
+      Object.freeze({ seed:450470697,hiddenFactor:2,datasetFingerprint:"4c238fdd",discoverySequenceFingerprint:"937d0b91",testSequenceFingerprint:"68d21cfd",discoverySavings:474334,discoveryTrainingWork:8005263 }),
+      Object.freeze({ seed:400137840,hiddenFactor:2,datasetFingerprint:"ab9d5ba7",discoverySequenceFingerprint:"82fdbfb2",testSequenceFingerprint:"58cbd676",discoverySavings:412538,discoveryTrainingWork:9077299 }),
+      Object.freeze({ seed:416915459,hiddenFactor:3,datasetFingerprint:"8d8a6881",discoverySequenceFingerprint:"1afbef74",testSequenceFingerprint:"2f9ba3a0",discoverySavings:562688,discoveryTrainingWork:13936237 }),
+      Object.freeze({ seed:500803554,hiddenFactor:2,datasetFingerprint:"880bdfc8",discoverySequenceFingerprint:"95d34a46",testSequenceFingerprint:"b7511fd6",discoverySavings:516446,discoveryTrainingWork:7885388 })
+    ])
+  });
+
+  const V = () => ({ type:"var",cost:1 });
+  const C = value => ({ type:"const",value,cost:1 });
+  const B = (op,left,right) => {
+    if ((op === "add" || op === "mul") && format(left) > format(right)) [left,right] = [right,left];
+    return { type:"binary",op,left,right,cost:1 + left.cost + right.cost };
+  };
+  const Call = (name,arg) => ({ type:"call",name,arg,cost:1 + arg.cost });
+  const OPS = {
+    add:{ symbol:"+",fn:(a,b) => a + b,commutative:true },
+    sub:{ symbol:"−",fn:(a,b) => a - b,commutative:false },
+    mul:{ symbol:"×",fn:(a,b) => a * b,commutative:true }
+  };
+
+  function format(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return String(ast.value);
+    if (ast.type === "call") return `${ast.name}(${format(ast.arg)})`;
+    return `(${format(ast.left)} ${OPS[ast.op].symbol} ${format(ast.right)})`;
+  }
+
+  function key(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return `c:${ast.value}`;
+    if (ast.type === "call") return `call:${ast.name}(${key(ast.arg)})`;
+    return `${ast.op}(${key(ast.left)},${key(ast.right)})`;
+  }
+
+  function evalAst(ast,input,macros) {
+    if (ast.type === "var") return input;
+    if (ast.type === "const") return ast.value;
+    if (ast.type === "call") return evalAst(macros[ast.name].definition,evalAst(ast.arg,input,macros),{});
+    const value = OPS[ast.op].fn(evalAst(ast.left,input,macros),evalAst(ast.right,input,macros));
+    return Number.isFinite(value) && Math.abs(value) <= VALUE_LIMIT ? value : NaN;
+  }
+
+  function primitiveCount(ast,macros) {
+    if (ast.type === "var" || ast.type === "const") return 0;
+    if (ast.type === "binary") return 1 + primitiveCount(ast.left,macros) + primitiveCount(ast.right,macros);
+    return primitiveCount(ast.arg,macros) + primitiveCount(macros[ast.name].definition,{});
+  }
+
+  function signature(ast,macros = {}) {
+    const values = INPUTS.map(input => evalAst(ast,input,macros));
+    return values.some(Number.isNaN) ? null : values.join(",");
+  }
+
+  function sum(values) { return values.reduce((total,value) => total + value,0); }
+  function compareId(left,right) { return left < right ? -1 : left > right ? 1 : 0; }
+
+  function enumerate(macros = {}) {
+    const byCost = Array.from({ length:MAX_COST + 1 },() => []);
+    const seen = new Map();
+    const attemptsByCost = Array(MAX_COST + 1).fill(0);
+    const workByCost = Array(MAX_COST + 1).fill(0);
+    function accept(cost,batch) {
+      batch.sort((a,b) => key(a).localeCompare(key(b)));
+      for (const ast of batch) {
+        const sig = signature(ast,macros);
+        if (sig === null) continue;
+        attemptsByCost[cost] += 1;
+        workByCost[cost] += primitiveCount(ast,macros) * INPUTS.length;
+        if (seen.has(sig)) continue;
+        seen.set(sig,ast);
+        byCost[cost].push(ast);
+      }
+    }
+    accept(1,[V(),...CONSTANTS.map(C)]);
+    for (let cost = 2; cost <= MAX_COST; cost += 1) {
+      const batch = [];
+      for (const name of Object.keys(macros).sort()) for (const arg of byCost[cost - 1]) batch.push(Call(name,arg));
+      for (let leftCost = 1; leftCost < cost; leftCost += 1) {
+        const rightCost = cost - 1 - leftCost;
+        if (rightCost < 1) continue;
+        for (const [op,spec] of Object.entries(OPS)) for (const left of byCost[leftCost]) for (const right of byCost[rightCost]) {
+          if (spec.commutative && key(left) > key(right)) continue;
+          batch.push(B(op,left,right));
+        }
+      }
+      accept(cost,batch);
+    }
+    return { byCost,seen,attemptsByCost,workByCost };
+  }
+
+  function targetSignature(task) { return task.values.join(","); }
+
+  function searchStats(enumeration,task) {
+    const solution = enumeration.seen.get(targetSignature(task));
+    if (!solution) return { found:false,attempts:sum(enumeration.attemptsByCost),work:sum(enumeration.workByCost) };
+    return { found:true,attempts:sum(enumeration.attemptsByCost.slice(0,solution.cost + 1)),work:sum(enumeration.workByCost.slice(0,solution.cost + 1)) };
+  }
+
+  function measure(tasks,enumeration) {
+    const rows = tasks.map(task => ({ task,stats:searchStats(enumeration,task) }));
+    return { rows,attempts:sum(rows.map(row => row.stats.attempts)),work:sum(rows.map(row => row.stats.work)),solved:sum(rows.map(row => Number(row.stats.found))) };
+  }
+
+  const x = () => V();
+  const add = (a,b) => B("add",a,b);
+  const sub = (a,b) => B("sub",a,b);
+  const mul = (a,b) => B("mul",a,b);
+  const square = () => mul(x(),x());
+  const signedAdd = (ast,value) => value >= 0 ? add(ast,C(value)) : sub(ast,C(-value));
+  const shift = value => signedAdd(x(),value);
+  const squareShift = value => signedAdd(square(),value);
+  const linear = (factor,value) => signedAdd(mul(C(factor),x()),value);
+  const quadraticMix = (sign,value) => signedAdd(sign > 0 ? add(square(),x()) : sub(square(),x()),value);
+  const scale = (factor,ast) => mul(C(factor),ast);
+  const cubicCounterexample = () => sub(mul(mul(x(),x()),x()),x());
+
+  function random(seed) {
+    let value = seed >>> 0;
+    return () => {
+      value = (value + 0x6D2B79F5) >>> 0;
+      let t = value;
+      t = Math.imul(t ^ t >>> 15,t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7,t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function shuffled(items,rng) {
+    const result = [...items];
+    for (let index = result.length - 1; index > 0; index -= 1) {
+      const other = Math.floor(rng() * (index + 1));
+      [result[index],result[other]] = [result[other],result[index]];
+    }
+    return result;
+  }
+
+  function legacySignatures() {
+    const oldInners = [
+      x(),
+      ...[-2,-1,1,2,3].map(shift),
+      ...[-2,-1,0,1,2,3].map(squareShift),
+      ...[2,3].flatMap(factor => [-2,-1,0,1,2,3].map(value => linear(factor,value))),
+      quadraticMix(1,0),quadraticMix(-1,0)
+    ];
+    const oldBackgrounds = [
+      ...[-2,-1,1,2,3].map(shift),
+      ...[-2,-1,0,1,2,3].map(squareShift),
+      ...[-2,-1,0,1,2,3].map(value => quadraticMix(1,value)),
+      ...[-2,-1,0,1,2,3].map(value => quadraticMix(-1,value))
+    ];
+    const blocked = new Set(oldBackgrounds.map(expression => signature(expression,{})));
+    for (const factor of [2,3]) for (const inner of oldInners) blocked.add(signature(scale(factor,inner),{}));
+    return blocked;
+  }
+
+  function taskFromSignature(id,sig) { return { id,values:sig.split(",").map(Number) }; }
+
+  function fingerprint(text) {
+    let hash = 2166136261;
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash,16777619);
+    }
+    return (hash >>> 0).toString(16).padStart(8,"0");
+  }
+
+  const BASE = enumerate({});
+
+  function containsVariable(ast) {
+    if (ast.type === "var") return true;
+    if (ast.type === "const") return false;
+    if (ast.type === "call") return containsVariable(ast.arg);
+    return containsVariable(ast.left) || containsVariable(ast.right);
+  }
+
+  function features(task) {
+    const values = task.values;
+    const y0 = values[INPUTS.indexOf(0)];
+    const y1 = values[INPUTS.indexOf(1)];
+    const y2 = values[INPUTS.indexOf(2)];
+    const a = (y2 - 2 * y1 + y0) / 2;
+    const b = y1 - y0 - a;
+    const c = y0;
+    const quadratic = [a,b,c].every(Number.isInteger) && values.every((value,index) => value === a * INPUTS[index] ** 2 + b * INPUTS[index] + c);
+    const degree = !quadratic ? 3 : a !== 0 ? 2 : b !== 0 ? 1 : 0;
+    return { values,a,b,c,degree,quadratic };
+  }
+
+  function quadraticProbePoolSignatures() {
+    const legacy = legacySignatures();
+    return [...BASE.seen.entries()]
+      .filter(([sig,ast]) => containsVariable(ast) && !legacy.has(sig))
+      .filter(([sig]) => features(taskFromSignature("P000",sig)).degree === 2)
+      .map(([sig]) => sig)
+      .sort();
+  }
+
+  function extraProbeSignatures() {
+    return new Set(quadraticProbePoolSignatures()
+      .filter(sig => (parseInt(fingerprint(sig),16) & 3) === 0));
+  }
+
+  function trainingProbeSignatures() {
+    return new Set([...legacySignatures(),...extraProbeSignatures()]);
+  }
+
+  function buildDataset(seed) {
+    const rng = random(seed);
+    const hiddenFactor = rng() < .5 ? 2 : 3;
+    const probeSignatures = trainingProbeSignatures();
+    const priorEvaluationSignatures = new Set(D12_EVALUATION_SIGNATURES);
+    const blocked = probeSignatures;
+    const positiveBySignature = new Map();
+    for (let cost = 1; cost <= 5; cost += 1) for (const inner of BASE.byCost[cost]) {
+      if (!containsVariable(inner)) continue;
+      const sig = signature(scale(hiddenFactor,inner),{});
+      if (!BASE.seen.has(sig) || blocked.has(sig)) continue;
+      if (!positiveBySignature.has(sig)) positiveBySignature.set(sig,inner);
+    }
+    const positiveSignatures = new Set(positiveBySignature.keys());
+    const controlSignatures = [...BASE.seen.entries()]
+      .filter(([sig,ast]) => containsVariable(ast) && !blocked.has(sig) && !positiveSignatures.has(sig))
+      .map(([sig]) => sig);
+    const degreeOf = sig => features(taskFromSignature("T00",sig)).degree;
+    const affinePositivePool = shuffled([...positiveSignatures].filter(sig => degreeOf(sig) === 1),rng);
+    const quadraticPositivePool = shuffled([...positiveSignatures].filter(sig => degreeOf(sig) === 2),rng);
+    const affineControlPool = shuffled(controlSignatures.filter(sig => degreeOf(sig) === 1),rng);
+    const quadraticControlPool = shuffled(controlSignatures.filter(sig => degreeOf(sig) === 2),rng);
+    const counterexampleSignature = signature(cubicCounterexample(),{});
+    if (affinePositivePool.length < 16 || quadraticPositivePool.length < 11 || affineControlPool.length < 8 || quadraticControlPool.length < 10) throw new Error("Zu wenige Aufgaben für D14.");
+    const discoverySignatures = affinePositivePool.slice(0,8);
+    const d7CalibrationSource = [...affinePositivePool.slice(8,16),...affineControlPool.slice(0,8)];
+    const d9CalibrationSource = [...d7CalibrationSource.slice(0,15),counterexampleSignature];
+    const d10CalibrationSource = [...d9CalibrationSource];
+    d10CalibrationSource[7] = quadraticPositivePool[10];
+    const calibrationOrder = shuffled([...d7CalibrationSource.keys()],rng);
+    const calibrationSignatures = calibrationOrder.map(index => d10CalibrationSource[index]);
+    const reservedForTest = new Set([...discoverySignatures,...calibrationSignatures,...priorEvaluationSignatures]);
+    const positiveTestSignatures = quadraticPositivePool.filter(sig => !reservedForTest.has(sig)).slice(0,EXPECTED.common.evaluationPositiveCount);
+    const controlTestSignatures = quadraticControlPool.filter(sig => !reservedForTest.has(sig)).slice(0,EXPECTED.common.evaluationControlCount);
+    if (positiveTestSignatures.length !== EXPECTED.common.evaluationPositiveCount || controlTestSignatures.length !== EXPECTED.common.evaluationControlCount) throw new Error("Zu wenige neue Evaluationsaufgaben für D14.");
+    const testSignatures = shuffled([...positiveTestSignatures,...controlTestSignatures],rng);
+    const discovery = discoverySignatures.map((sig,index) => taskFromSignature(`T${String(index + 1).padStart(2,"0")}`,sig));
+    const calibration = calibrationSignatures.map((sig,index) => taskFromSignature(`T${String(index + 9).padStart(2,"0")}`,sig));
+    const test = testSignatures.map((sig,index) => taskFromSignature(`T${String(index + 25).padStart(2,"0")}`,sig));
+    const allSignatures = [...discoverySignatures,...calibrationSignatures,...testSignatures];
+    const taskFingerprints = allSignatures.map(fingerprint);
+    const datasetFingerprint = fingerprint(`D:${[...discoverySignatures].sort().join("|")};C:${[...calibrationSignatures].sort().join("|")};T:${[...testSignatures].sort().join("|")}`);
+    const probeOverlap = allSignatures.filter(sig => probeSignatures.has(sig)).length;
+    const priorEvaluationOverlap = testSignatures.filter(sig => priorEvaluationSignatures.has(sig)).length;
+    if (new Set(allSignatures).size !== 44 || probeOverlap !== 0 || priorEvaluationOverlap !== 0) throw new Error("Der D14-Split ist nicht sauber.");
+    return {
+      hiddenFactor,discovery,calibration,test,testPositiveSignatures:positiveTestSignatures,
+      datasetFingerprint,probeOverlap,priorEvaluationOverlap,uniqueTaskCount:new Set(allSignatures).size,
+      discoverySequenceFingerprint:fingerprint(taskFingerprints.slice(0,8).join("|")),
+      testSequenceFingerprint:fingerprint(taskFingerprints.slice(24).join("|"))
+    };
+  }
+
+  function operatorCandidates() {
+    const identity = signature(x(),{});
+    return BASE.byCost[3]
+      .filter(ast => containsVariable(ast) && signature(ast,{}) !== identity)
+      .filter(ast => new Set(INPUTS.map(input => evalAst(ast,input,{}))).size > 1)
+      .sort((a,b) => key(a).localeCompare(key(b)));
+  }
+
+  function discoverOperator(data) {
+    const base = measure(data.discovery,BASE);
+    const candidates = operatorCandidates().map(definition => {
+      const enumeration = enumerate({ op:{ name:"op",definition } });
+      const measured = measure(data.discovery,enumeration);
+      return { definition,enumeration,measured,savings:base.work - measured.work };
+    });
+    candidates.sort((a,b) => b.savings - a.savings || a.definition.cost - b.definition.cost || key(a.definition).localeCompare(key(b.definition)));
+    const best = candidates[0];
+    return {
+      candidateCount:candidates.length,
+      trainingWork:sum(candidates.map(candidate => candidate.measured.work)),
+      base,
+      operator:best ? format(best.definition) : null,
+      candidate:best && best.savings > 0 ? best : null
+    };
+  }
+
+  function inferDivisor(definition) {
+    const outputs = INPUTS.map(input => evalAst(definition,input,{}));
+    const factor = evalAst(definition,1,{}) - evalAst(definition,0,{});
+    if (!Number.isInteger(factor) || factor === 0 || outputs.some((value,index) => value !== factor * INPUTS[index])) throw new Error("Der Operator ist keine reine ganzzahlige Skalierung.");
+    return Math.abs(factor);
+  }
+
+  function generateUtilityProbes(discovery) {
+    if (!discovery.candidate) throw new Error("Es wurde kein nutzbarer Operator gefunden.");
+    const legacy = legacySignatures();
+    const extra = extraProbeSignatures();
+    const signatures = [...legacy,...extra].sort();
+    const probes = signatures.map((sig,index) => {
+      const task = taskFromSignature(`P${String(index + 1).padStart(3,"0")}`,sig);
+      const base = searchStats(BASE,task);
+      const candidate = searchStats(discovery.candidate.enumeration,task);
+      return { id:task.id,signature:sig,partition:legacy.has(sig) ? "bisherig" : "zusätzlich",task,features:features(task),base,candidate,useful:candidate.work < base.work };
+    });
+    const legacyProbes = probes.filter(probe => probe.partition === "bisherig");
+    const extraProbes = probes.filter(probe => probe.partition === "zusätzlich");
+    const quadraticPool = quadraticProbePoolSignatures();
+    return {
+      probes,
+      probeFingerprint:fingerprint(probes.map(probe => `${probe.signature}:${Number(probe.useful)}`).join("|")),
+      probeSourceFingerprint:fingerprint(probes.map(probe => probe.signature).join("|")),
+      measurementFingerprint:fingerprint(probes.map(probe => `${probe.signature}:${probe.base.work}:${probe.candidate.work}`).join("|")),
+      quadraticPoolCount:quadraticPool.length,
+      quadraticPoolFingerprint:fingerprint(quadraticPool.join("|")),
+      extraProbeFingerprint:fingerprint([...extra].sort().join("|")),
+      legacyProbeFingerprint:fingerprint(legacyProbes.map(probe => `${probe.signature}:${Number(probe.useful)}`).join("|")),
+      legacyProbeCount:legacyProbes.length,
+      extraProbeCount:extraProbes.length,
+      legacyUsefulCount:sum(legacyProbes.map(probe => Number(probe.useful))),
+      extraUsefulCount:sum(extraProbes.map(probe => Number(probe.useful))),
+      usefulCount:sum(probes.map(probe => Number(probe.useful))),
+      baseSolved:sum(probes.map(probe => Number(probe.base.found))),
+      candidateSolved:sum(probes.map(probe => Number(probe.candidate.found))),
+      measurementWork:sum(probes.map(probe => probe.base.work + probe.candidate.work))
+    };
+  }
+
+  function legacyProbeSet(probeSet) {
+    return { probes:probeSet.probes.filter(probe => probe.partition === "bisherig") };
+  }
+
+  function atomDefinitions(divisor) {
+    return [
+      { id:"A",label:`a durch ${divisor} teilbar`,test:f => f.quadratic && f.a % divisor === 0 },
+      { id:"B",label:`b durch ${divisor} teilbar`,test:f => f.quadratic && f.b % divisor === 0 },
+      { id:"C",label:`c durch ${divisor} teilbar`,test:f => f.quadratic && f.c % divisor === 0 },
+      { id:"L",label:"Grad höchstens 1",test:f => f.degree <= 1 },
+      { id:"MA",label:`|a| mindestens ${divisor}`,test:f => f.quadratic && Math.abs(f.a) >= divisor },
+      { id:"MB",label:`|b| mindestens ${divisor}`,test:f => f.quadratic && Math.abs(f.b) >= divisor },
+      { id:"MC",label:`|c| mindestens ${divisor}`,test:f => f.quadratic && Math.abs(f.c) >= divisor },
+      { id:"N",label:"|c| ungleich |b|",test:f => f.quadratic && Math.abs(f.c) !== Math.abs(f.b) }
+    ];
+  }
+
+  function clausesFrom(atoms) {
+    const clauses = [];
+    for (let mask = 1; mask < 2 ** atoms.length; mask += 1) {
+      const members = atoms.filter((atom,index) => mask & (1 << index));
+      if (members.length <= 4) clauses.push({
+        id:members.map(atom => atom.id).join("&"),
+        label:members.map(atom => atom.label).join(" UND "),
+        atoms:members,
+        test:f => members.every(atom => atom.test(f))
+      });
+    }
+    return clauses.sort((a,b) => compareId(a.id,b.id));
+  }
+
+  function candidateRules(clauses) {
+    const rules = clauses.map(clause => [clause]);
+    for (let left = 0; left < clauses.length; left += 1) for (let right = left + 1; right < clauses.length; right += 1) rules.push([clauses[left],clauses[right]]);
+    return rules.map(parts => ({
+      id:parts.map(part => part.id).join("|"),
+      label:parts.map(part => `(${part.label})`).join(" ODER "),
+      clauses:parts,
+      atomCount:sum(parts.map(part => part.atoms.length)),
+      test:f => parts.some(part => part.test(f))
+    }));
+  }
+
+  function synthesizeUtilityRule(probeSet,divisor) {
+    const atoms = atomDefinitions(divisor);
+    const clauses = clausesFrom(atoms);
+    const rules = candidateRules(clauses);
+    const evaluated = rules.map(rule => ({
+      rule,
+      errors:sum(probeSet.probes.map(probe => Number(rule.test(probe.features) !== probe.useful)))
+    })).sort((left,right) => left.errors - right.errors || left.rule.atomCount - right.rule.atomCount || left.rule.clauses.length - right.rule.clauses.length || compareId(left.rule.id,right.rule.id));
+    const best = evaluated[0];
+    const zeroErrorRuleCount = evaluated.filter(item => item.errors === 0).length;
+    const bestComplexityCount = evaluated.filter(item => item.errors === best.errors && item.rule.atomCount === best.rule.atomCount && item.rule.clauses.length === best.rule.clauses.length).length;
+    return {
+      rule:{ ...best.rule,cost:RULE_WORK_PER_TASK },
+      errors:best.errors,
+      atoms,
+      clauses,
+      ruleCount:rules.length,
+      ruleEvaluations:rules.length * probeSet.probes.length,
+      zeroErrorRuleCount,
+      bestComplexityCount,
+      atomFingerprint:fingerprint(atoms.map(atom => atom.id).join("|"))
+    };
+  }
+
+  function evaluateRule(rule,tasks,candidateEnumeration) {
+    const rows = tasks.map(task => {
+      const enabled = rule.test(features(task));
+      const stats = searchStats(enabled ? candidateEnumeration : BASE,task);
+      return { task,enabled,stats };
+    });
+    return {
+      rows,
+      attempts:sum(rows.map(row => row.stats.attempts)),
+      work:sum(rows.map(row => row.stats.work)) + rule.cost * tasks.length,
+      solved:sum(rows.map(row => Number(row.stats.found))),
+      enabled:sum(rows.map(row => Number(row.enabled))),
+      checks:rule.cost ? tasks.length : 0
+    };
+  }
+
+  function compactArm(arm) { return { attempts:arm.attempts,work:arm.work,solved:arm.solved,enabled:arm.enabled || 0,checks:arm.checks || 0 }; }
+
+  function subset(arm,signatures,ruleCost) {
+    const allowed = new Set(signatures);
+    const rows = arm.rows.filter(row => allowed.has(targetSignature(row.task)));
+    return {
+      work:sum(rows.map(row => row.stats.work)) + ruleCost * rows.length,
+      solved:sum(rows.map(row => Number(row.stats.found))),
+      enabled:sum(rows.map(row => Number(row.enabled)))
+    };
+  }
+
+  function evaluateRun(index,data,discovery,probeSet,legacySynthesis,synthesis) {
+    const expectedRun = EXPECTED.runs[index];
+    const expectedFactor = EXPECTED.factors[expectedRun.hiddenFactor];
+    const basis = measure(data.test,BASE);
+    const always = evaluateRule({ id:"always",cost:0,test:() => true },data.test,discovery.candidate.enumeration);
+    const legacyGenerated = evaluateRule(legacySynthesis.rule,data.test,discovery.candidate.enumeration);
+    const generated = evaluateRule(synthesis.rule,data.test,discovery.candidate.enumeration);
+    const probeSignatures = new Set(probeSet.probes.map(probe => probe.signature));
+    const evaluationOverlap = data.test.filter(task => probeSignatures.has(targetSignature(task))).length;
+    const datasetOverlap = [...data.discovery,...data.calibration,...data.test].filter(task => probeSignatures.has(targetSignature(task))).length;
+    const assertions = {
+      seed:SEEDS[index] === expectedRun.seed && SEEDS[index] === parseInt(fingerprint(`${PROTOCOL}:${index}`),16),
+      factor:data.hiddenFactor === expectedRun.hiddenFactor,
+      dataset:data.datasetFingerprint === expectedRun.datasetFingerprint,
+      discoverySequence:data.discoverySequenceFingerprint === expectedRun.discoverySequenceFingerprint,
+      testSequence:data.testSequenceFingerprint === expectedRun.testSequenceFingerprint,
+      taskSplit:data.uniqueTaskCount === 44 && data.probeOverlap === 0,
+      priorEvaluationSet:D12_EVALUATION_SIGNATURES.length === EXPECTED.common.priorEvaluationCount && fingerprint([...D12_EVALUATION_SIGNATURES].sort().join("|")) === EXPECTED.common.priorEvaluationFingerprint,
+      priorEvaluationOverlap:data.priorEvaluationOverlap === 0,
+      operator:format(discovery.candidate.definition) === expectedFactor.operator,
+      divisor:inferDivisor(discovery.candidate.definition) === expectedFactor.divisor,
+      candidateCount:discovery.candidateCount === EXPECTED.common.candidateCount,
+      discoverySavings:discovery.candidate.savings === expectedRun.discoverySavings,
+      discoveryTrainingWork:discovery.trainingWork === expectedRun.discoveryTrainingWork,
+      probeCount:probeSet.probes.length === EXPECTED.common.probeCount,
+      probePartitions:probeSet.legacyProbeCount === EXPECTED.common.legacyProbeCount && probeSet.extraProbeCount === EXPECTED.common.extraProbeCount,
+      quadraticPool:probeSet.quadraticPoolCount === EXPECTED.common.quadraticPoolCount && probeSet.quadraticPoolFingerprint === EXPECTED.common.quadraticPoolFingerprint,
+      extraPartition:probeSet.extraProbeFingerprint === EXPECTED.common.extraProbeFingerprint,
+      probeSources:probeSet.probeSourceFingerprint === EXPECTED.common.probeSourceFingerprint,
+      uniqueProbes:new Set(probeSet.probes.map(probe => probe.signature)).size === EXPECTED.common.probeCount,
+      probeArmsSolved:probeSet.baseSolved === EXPECTED.common.probeCount && probeSet.candidateSolved === EXPECTED.common.probeCount,
+      usefulCount:probeSet.usefulCount === expectedFactor.usefulCount,
+      usefulPartitions:probeSet.legacyUsefulCount === expectedFactor.legacyUsefulCount && probeSet.extraUsefulCount === expectedFactor.extraUsefulCount,
+      probeFingerprint:probeSet.probeFingerprint === expectedFactor.probeFingerprint,
+      measurementFingerprint:probeSet.measurementFingerprint === expectedFactor.measurementFingerprint,
+      probeMeasurementWork:probeSet.measurementWork === expectedFactor.probeMeasurementWork,
+      evaluationOverlap:evaluationOverlap === 0,
+      datasetOverlap:datasetOverlap === 0,
+      atomFingerprint:synthesis.atomFingerprint === EXPECTED.common.atomFingerprint,
+      clauseCount:synthesis.clauses.length === EXPECTED.common.clauseCount,
+      ruleCount:synthesis.ruleCount === EXPECTED.common.ruleCount,
+      selectedRule:synthesis.rule.id === expectedFactor.selectedRuleId,
+      trainingErrors:synthesis.errors === expectedFactor.trainingErrors,
+      zeroErrorRuleCount:synthesis.zeroErrorRuleCount === expectedFactor.zeroErrorRuleCount,
+      bestComplexity:synthesis.bestComplexityCount === expectedFactor.bestComplexityCount,
+      ruleEvaluations:synthesis.ruleEvaluations === EXPECTED.common.ruleEvaluations,
+      legacyProbeFingerprint:probeSet.legacyProbeFingerprint === expectedFactor.legacyProbeFingerprint,
+      legacyRule:legacySynthesis.rule.id === expectedFactor.legacyRuleId,
+      legacySynthesis:legacySynthesis.errors === expectedFactor.legacyTrainingErrors && legacySynthesis.zeroErrorRuleCount === expectedFactor.legacyZeroErrorRuleCount && legacySynthesis.bestComplexityCount === expectedFactor.legacyBestComplexityCount,
+      legacyRuleEvaluations:legacySynthesis.ruleEvaluations === EXPECTED.common.legacyRuleEvaluations,
+      ruleBounds:synthesis.rule.clauses.length >= 1 && synthesis.rule.clauses.length <= 2 && synthesis.rule.clauses.every(clause => clause.atoms.length >= 1 && clause.atoms.length <= 4),
+      ruleCost:synthesis.rule.cost === RULE_WORK_PER_TASK && legacySynthesis.rule.cost === RULE_WORK_PER_TASK,
+      taskCount:data.test.length === 20,
+      evaluationBalance:data.testPositiveSignatures.length === EXPECTED.common.evaluationPositiveCount && data.test.length - data.testPositiveSignatures.length === EXPECTED.common.evaluationControlCount,
+      exactAccounting:generated.work === sum(generated.rows.map(row => row.stats.work)) + RULE_WORK_PER_TASK * data.test.length,
+      legacyAccounting:legacyGenerated.work === sum(legacyGenerated.rows.map(row => row.stats.work)) + RULE_WORK_PER_TASK * data.test.length
+    };
+    const protocolIntegrity = Object.values(assertions).every(Boolean);
+    return {
+      index:index + 1,seed:SEEDS[index],hiddenFactor:data.hiddenFactor,operator:format(discovery.candidate.definition),
+      divisor:inferDivisor(discovery.candidate.definition),legacyRuleId:legacySynthesis.rule.id,ruleId:synthesis.rule.id,
+      rule:synthesis.rule.label,trainingErrors:synthesis.errors,usefulCount:probeSet.usefulCount,
+      operatorDiscoveryWork:discovery.trainingWork,probeMeasurementWork:probeSet.measurementWork,
+      generationWork:discovery.trainingWork + probeSet.measurementWork,
+      ruleEvaluations:synthesis.ruleEvaluations,legacyRuleEvaluations:legacySynthesis.ruleEvaluations,
+      basis:compactArm(basis),always:compactArm(always),legacyGenerated:compactArm(legacyGenerated),generated:compactArm(generated),
+      saving:basis.work - generated.work,savingPct:(basis.work - generated.work) / basis.work,
+      improvement:legacyGenerated.work - generated.work,evaluationOverlap,datasetOverlap,
+      testSignatures:data.test.map(targetSignature),assertions,protocolIntegrity
+    };
+  }
+
+  function compactTotal(runs,key) {
+    return {
+      attempts:sum(runs.map(run => run[key].attempts)),
+      work:sum(runs.map(run => run[key].work)),
+      solved:sum(runs.map(run => run[key].solved)),
+      enabled:sum(runs.map(run => run[key].enabled)),
+      checks:sum(runs.map(run => run[key].checks))
+    };
+  }
+
+  function evaluateD14(runs) {
+    const evaluatedRuns = runs.map((run,index) => evaluateRun(index,run.data,run.discovery,run.probeSet,run.legacySynthesis,run.synthesis));
+    const basis = compactTotal(evaluatedRuns,"basis");
+    const always = compactTotal(evaluatedRuns,"always");
+    const legacyGenerated = compactTotal(evaluatedRuns,"legacyGenerated");
+    const generated = compactTotal(evaluatedRuns,"generated");
+    const testSlots = evaluatedRuns.flatMap(run => run.testSignatures);
+    const multiplicities = new Map();
+    for (const sig of testSlots) multiplicities.set(sig,(multiplicities.get(sig) || 0) + 1);
+    const uniqueTestSignatures = [...multiplicities.keys()].sort();
+    const pairOverlap = [];
+    for (let left = 0; left < evaluatedRuns.length; left += 1) for (let right = left + 1; right < evaluatedRuns.length; right += 1) {
+      const rightSet = new Set(evaluatedRuns[right].testSignatures);
+      pairOverlap.push(evaluatedRuns[left].testSignatures.filter(sig => rightSet.has(sig)).length);
+    }
+    const differingRuleRuns = evaluatedRuns.filter(run => run.ruleId !== run.legacyRuleId);
+    const saving = basis.work - generated.work;
+    const improvement = legacyGenerated.work - generated.work;
+    const assertions = {
+      seeds:SEEDS.length === 5 && SEEDS.every((seed,index) => seed === EXPECTED.runs[index].seed),
+      runCount:evaluatedRuns.length === 5,
+      perRunProtocol:evaluatedRuns.every(run => run.protocolIntegrity),
+      testSlotCount:testSlots.length === EXPECTED.common.totalEvaluationSlots,
+      testSlotFingerprint:fingerprint(testSlots.join("|")) === EXPECTED.common.testSlotFingerprint,
+      sortedTestSlotFingerprint:fingerprint([...testSlots].sort().join("|")) === EXPECTED.common.sortedTestSlotFingerprint,
+      testUnionFingerprint:fingerprint(uniqueTestSignatures.join("|")) === EXPECTED.common.testUnionFingerprint,
+      uniqueTestSignatures:uniqueTestSignatures.length === EXPECTED.common.uniqueTestSignatureCount,
+      repeatedTestSlots:testSlots.length - uniqueTestSignatures.length === EXPECTED.common.repeatedTestSlots,
+      maxTestMultiplicity:Math.max(...multiplicities.values()) === EXPECTED.common.maxTestMultiplicity,
+      pairOverlap:pairOverlap.join(",") === EXPECTED.common.pairOverlap.join(","),
+      discoveryTrainingWork:sum(evaluatedRuns.map(run => run.operatorDiscoveryWork)) === EXPECTED.common.discoveryTrainingWork,
+      probeMeasurementWork:sum(evaluatedRuns.map(run => run.probeMeasurementWork)) === EXPECTED.common.probeMeasurementWork,
+      generationWork:sum(evaluatedRuns.map(run => run.generationWork)) === EXPECTED.common.generationWork,
+      ruleEvaluations:sum(evaluatedRuns.map(run => run.ruleEvaluations)) === EXPECTED.common.ruleEvaluationsTotal,
+      legacyRuleEvaluations:sum(evaluatedRuns.map(run => run.legacyRuleEvaluations)) === EXPECTED.common.legacyRuleEvaluationsTotal,
+      solved:generated.solved === EXPECTED.common.totalEvaluationSlots,
+      saving:saving / basis.work >= .10,
+      belowBasisEveryRun:evaluatedRuns.every(run => run.generated.work < run.basis.work),
+      belowAlways:generated.work < always.work,
+      belowAlwaysEveryRun:evaluatedRuns.every(run => run.generated.work < run.always.work),
+      neverWorseThanLegacy:evaluatedRuns.every(run => run.generated.work <= run.legacyGenerated.work),
+      belowLegacyAggregate:generated.work < legacyGenerated.work,
+      strictWhenRulesDiffer:differingRuleRuns.every(run => run.generated.work < run.legacyGenerated.work),
+      differingRuleRun:differingRuleRuns.length >= 1
+    };
+    const outcomeKeys = new Set(["solved","saving","belowBasisEveryRun","belowAlways","belowAlwaysEveryRun","neverWorseThanLegacy","belowLegacyAggregate","strictWhenRulesDiffer","differingRuleRun"]);
+    const protocolIntegrity = Object.entries(assertions).filter(([key]) => !outcomeKeys.has(key)).every(([,value]) => value);
+    const publicRuns = evaluatedRuns.map(({ testSignatures,...run }) => run);
+    return {
+      protocol:PROTOCOL,seeds:[...SEEDS],runCount:publicRuns.length,evaluationSlots:testSlots.length,
+      uniqueTestSignatureCount:uniqueTestSignatures.length,repeatedTestSlots:testSlots.length - uniqueTestSignatures.length,
+      maxTestMultiplicity:Math.max(...multiplicities.values()),pairOverlap,
+      testSlotFingerprint:fingerprint(testSlots.join("|")),sortedTestSlotFingerprint:fingerprint([...testSlots].sort().join("|")),
+      testUnionFingerprint:fingerprint(uniqueTestSignatures.join("|")),
+      basis,always,legacyGenerated,generated,saving,savingPct:saving / basis.work,improvement,
+      operatorDiscoveryWork:sum(publicRuns.map(run => run.operatorDiscoveryWork)),
+      probeMeasurementWork:sum(publicRuns.map(run => run.probeMeasurementWork)),
+      generationWork:sum(publicRuns.map(run => run.generationWork)),
+      ruleEvaluations:sum(publicRuns.map(run => run.ruleEvaluations)),
+      legacyRuleEvaluations:sum(publicRuns.map(run => run.legacyRuleEvaluations)),
+      differingRuleRuns:differingRuleRuns.length,runs:publicRuns,assertions,protocolIntegrity,
+      passed:protocolIntegrity && [...outcomeKeys].every(key => assertions[key])
+    };
+  }
+
+  function initialState(guideId = "full") {
+    return { guideId,phase:"ready",runs:null,result:null,message:"Bereit. Das Protokoll ist festgehalten." };
+  }
+
+  function reducer(state,action) {
+    if (action.type === "guide") return { ...state,guideId:action.id };
+    if (action.type === "reset") return initialState(state.guideId);
+    if (state.result) return { ...state,message:"Für einen neuen interaktiven Lauf zuerst zurücksetzen." };
+    if (action.type === "discover") {
+      if (state.runs) return { ...state,message:"Die Operatoren wurden bereits gefunden." };
+      const runs = SEEDS.map(seed => {
+        const data = buildDataset(seed);
+        return { data,discovery:discoverOperator(data),probeSet:null,legacySynthesis:null,synthesis:null };
+      });
+      return { ...state,phase:"discovered",runs,message:"Die Operatoren für fünf Seeds wurden gefunden." };
+    }
+    if (action.type === "probe") {
+      if (!state.runs) return { ...state,message:"Zuerst müssen die Operatoren gefunden werden." };
+      if (state.runs[0].probeSet) return { ...state,message:"Die Proben wurden bereits erzeugt." };
+      const runs = state.runs.map(run => ({ ...run,probeSet:generateUtilityProbes(run.discovery) }));
+      return { ...state,phase:"probed",runs,message:"625 Probenmessungen wurden erzeugt." };
+    }
+    if (action.type === "synthesize") {
+      if (!state.runs || !state.runs[0].probeSet) return { ...state,message:"Zuerst müssen die Proben erzeugt werden." };
+      if (state.runs[0].synthesis) return { ...state,message:"Die Regeln wurden bereits gebaut." };
+      const runs = state.runs.map(run => {
+        const divisor = inferDivisor(run.discovery.candidate.definition);
+        return { ...run,legacySynthesis:synthesizeUtilityRule(legacyProbeSet(run.probeSet),divisor),synthesis:synthesizeUtilityRule(run.probeSet,divisor) };
+      });
+      return { ...state,phase:"synthesized",runs,message:"Die Regeln für fünf Seeds wurden gebaut." };
+    }
+    if (action.type === "evaluate") {
+      if (!state.runs || !state.runs[0].synthesis) return { ...state,message:"Zuerst müssen die Regeln gebaut werden." };
+      if (state.result) return { ...state,message:"Die Evaluation wurde bereits ausgeführt." };
+      const result = evaluateD14(state.runs);
+      return { ...state,phase:"evaluated",result,message:"Die festgehaltene Evaluation wurde ausgeführt." };
+    }
+    if (action.type === "all") {
+      let next = state;
+      for (const type of ["discover","probe","synthesize","evaluate"]) if (!next.result) next = reducer(next,{ type });
+      return next;
+    }
+    return state;
+  }
+
+  function runD14() {
+    let state = initialState();
+    for (const type of ["discover","probe","synthesize","evaluate"]) state = reducer(state,{ type });
+    return state.result;
+  }
+
+  const guides = {
+    full:{ title:"Gesamtlauf",description:"Finde fünf Operatoren, erzeuge die Proben, baue beide Regeln je Seed und öffne dann die festgehaltene Evaluation.",steps:[{label:"Neu starten",type:"reset"},{label:"Operatoren finden",type:"discover"},{label:"Proben erzeugen",type:"probe"},{label:"Regeln bauen",type:"synthesize"},{label:"Evaluieren",type:"evaluate"}] },
+    generation:{ title:"Regelerzeugung",description:"Betrachte denselben D13-Ablauf über fünf vorab abgeleitete Seeds.",steps:[{label:"Neu starten",type:"reset"},{label:"Operatoren finden",type:"discover"},{label:"Proben erzeugen",type:"probe"},{label:"Regeln bauen",type:"synthesize"}] },
+    evaluation:{ title:"Stabilitätsmessung",description:"Vergleiche gemeinsame Arbeit und jeden einzelnen Seed mit den festgelegten Schwellen.",steps:[{label:"Neu starten",type:"reset"},{label:"Alles ausführen",type:"all"}] }
+  };
+
+  return { SEEDS,EXPECTED,guides,initialState,reducer,runD14 };
+})();
+</script>
+
+<script id="recorded-results" type="application/json">null</script>
+<script>
+const recorded = JSON.parse(document.getElementById("recorded-results").textContent);
+let state = D14Experiment.initialState();
+if (recorded) state = { ...state,phase:"evaluated",result:recorded,message:"Der aufgezeichnete Lauf ist geladen." };
+
+function dispatch(action) { state = D14Experiment.reducer(state,action); render(); }
+function number(value) { return new Intl.NumberFormat("de-DE",{ maximumFractionDigits:1 }).format(value); }
+function percent(value) { return `${number(value * 100)} %`; }
+function escapeHtml(value) { return String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;"); }
+function card(label,value,detail = "") { return `<div class="card"><h3>${escapeHtml(label)}</h3><div class="value">${escapeHtml(value)}</div>${detail ? `<div class="small muted">${escapeHtml(detail)}</div>` : ""}</div>`; }
+function summary(values) {
+  const counts = new Map();
+  for (const value of values) counts.set(value,(counts.get(value) || 0) + 1);
+  return [...counts].map(([value,count]) => `${count}× ${value}`).join(", ");
+}
+
+function renderGuides() {
+  const tabs = document.getElementById("guideTabs");
+  tabs.innerHTML = Object.entries(D14Experiment.guides).map(([id,guide]) => `<button class="${state.guideId === id ? "active" : ""}" data-guide="${id}">${escapeHtml(guide.title)}</button>`).join("");
+  tabs.querySelectorAll("[data-guide]").forEach(button => button.onclick = () => dispatch({ type:"guide",id:button.dataset.guide }));
+  const guide = D14Experiment.guides[state.guideId];
+  document.getElementById("guideTitle").textContent = guide.title;
+  document.getElementById("guideDescription").textContent = guide.description;
+  document.getElementById("guideSteps").innerHTML = guide.steps.map(step => `<button data-action="${step.type}">${escapeHtml(step.label)}</button>`).join("");
+}
+
+function render() {
+  const phaseLabels = { ready:"bereit",discovered:"Operator gefunden",probed:"Proben erzeugt",synthesized:"Regel gebaut",evaluated:"evaluiert" };
+  document.getElementById("phaseValue").textContent = phaseLabels[state.phase];
+  const liveRuns = state.runs;
+  const resultRuns = state.result?.runs;
+  const operators = resultRuns ? resultRuns.map(run => run.operator) : liveRuns ? liveRuns.map(run => run.discovery.operator) : [];
+  const factors = resultRuns ? resultRuns.map(run => run.hiddenFactor) : liveRuns ? liveRuns.map(run => run.data.hiddenFactor) : [];
+  document.getElementById("operatorValue").textContent = operators.length ? summary(operators) : "offen";
+  document.getElementById("divisorValue").textContent = factors.length ? `Faktoren: ${summary(factors)}` : "Faktoren offen";
+  const measured = resultRuns ? resultRuns.length * 125 : liveRuns?.[0]?.probeSet ? liveRuns.length * 125 : 0;
+  const useful = resultRuns ? resultRuns.reduce((total,run) => total + run.usefulCount,0) : liveRuns?.[0]?.probeSet ? liveRuns.reduce((total,run) => total + run.probeSet.usefulCount,0) : null;
+  document.getElementById("probeValue").textContent = `${measured} / 625`;
+  document.getElementById("usefulValue").textContent = useful === null ? "Nutzen offen" : `${useful} Messungen mit Vorteil`;
+  const rules = resultRuns ? resultRuns.map(run => run.ruleId) : liveRuns?.[0]?.synthesis ? liveRuns.map(run => run.synthesis.rule.id) : [];
+  const errors = resultRuns ? resultRuns.reduce((total,run) => total + run.trainingErrors,0) : liveRuns?.[0]?.synthesis ? liveRuns.reduce((total,run) => total + run.synthesis.errors,0) : null;
+  document.getElementById("ruleValue").textContent = rules.length ? summary(rules) : "offen";
+  document.getElementById("fitValue").textContent = errors === null ? "Anpassung offen" : `${errors} Fehler über fünf Anpassungen`;
+  document.getElementById("message").textContent = state.message;
+  renderGuides();
+  renderDetails();
+  document.querySelectorAll("[data-action]").forEach(button => button.onclick = () => dispatch({ type:button.dataset.action }));
+}
+
+function renderDetails() {
+  const liveRuns = state.runs;
+  const result = state.result;
+  const synthesisPanel = document.getElementById("synthesisPanel");
+  const resultRuns = result?.runs;
+  const hasSynthesis = Boolean(resultRuns || liveRuns?.[0]?.synthesis);
+  synthesisPanel.hidden = !hasSynthesis;
+  if (hasSynthesis) {
+    const newRuleIds = resultRuns ? resultRuns.map(run => run.ruleId) : liveRuns.map(run => run.synthesis.rule.id);
+    const oldRuleIds = resultRuns ? resultRuns.map(run => run.legacyRuleId) : liveRuns.map(run => run.legacySynthesis.rule.id);
+    const differing = newRuleIds.filter((rule,index) => rule !== oldRuleIds[index]).length;
+    document.getElementById("synthesisGrid").innerHTML = [
+      card("Regeln aus 125 Proben",summary(newRuleIds)),
+      card("Regeln aus 73 Proben",summary(oldRuleIds)),
+      card("Abweichende Regelpaare",`${differing} / 5`),
+      card("Klauselraum","162"),
+      card("Regelraum","13.203"),
+      card("Regelkosten","44","je Evaluationsslot")
+    ].join("");
+  }
+
+  const evaluationPanel = document.getElementById("evaluationPanel");
+  evaluationPanel.hidden = !result;
+  if (result) {
+    document.getElementById("evaluationGrid").innerHTML = [
+      card("Basisarbeit",number(result.basis.work)),
+      card("Dauereinsatz",number(result.always.work)),
+      card("Regel aus 73 Proben",number(result.legacyGenerated.work)),
+      card("Erzeugte Regel",number(result.generated.work)),
+      card("Vorteil durch 52 Proben",number(result.improvement),"gemeinsam über fünf Seeds"),
+      card("Ersparnis",percent(result.savingPct),number(result.saving)),
+      card("Gelöst",`${result.generated.solved} / 100`),
+      card("Aktiviert",`${result.generated.enabled} / 100`),
+      card("Verschiedene Signaturen",`${result.uniqueTestSignatureCount} / 100`,`${result.repeatedTestSlots} wiederholte Slots zwischen Seeds`),
+      card("Abweichende Regelpaare",`${result.differingRuleRuns} / 5`),
+      card("Operator finden",number(result.operatorDiscoveryWork),"gemessene Sucharbeit"),
+      card("Proben beschriften",number(result.probeMeasurementWork),"gemessene Sucharbeit"),
+      card("Regelentscheidungen",number(result.ruleEvaluations),"Regel mal Probe")
+    ].join("");
+    const verdict = document.getElementById("verdict");
+    verdict.className = result.passed ? "good" : "bad";
+    verdict.textContent = result.passed ? "D14 besteht die vorab festgelegte Schwelle." : "D14 verfehlt die vorab festgelegte Schwelle.";
+    const recordedText = document.getElementById("recordedText");
+    recordedText.innerHTML = result.protocolCommit
+      ? `Das Protokoll wurde vor der Evaluation im Commit <a href="https://github.com/Aporia-Evo/ontoLogic/commit/${escapeHtml(result.protocolCommit)}">${escapeHtml(result.protocolCommit.slice(0,7))}</a> festgeschrieben.`
+      : "Dieser interaktive Lauf ist nicht als fester Ergebnislauf eingetragen.";
+  }
+
+  const runPanel = document.getElementById("runPanel");
+  runPanel.hidden = !liveRuns && !resultRuns;
+  if (!runPanel.hidden) {
+    const rows = resultRuns || liveRuns.map((run,index) => ({
+      seed:D14Experiment.SEEDS[index],hiddenFactor:run.data.hiddenFactor,operator:run.discovery.operator,
+      legacyRuleId:run.legacySynthesis?.rule.id || "offen",ruleId:run.synthesis?.rule.id || "offen"
+    }));
+    document.getElementById("runRows").innerHTML = rows.map(run => `<tr><td><code>${run.seed}</code></td><td>${run.hiddenFactor}</td><td>${escapeHtml(run.operator)}</td><td><code>${escapeHtml(run.legacyRuleId)}</code></td><td><code>${escapeHtml(run.ruleId)}</code></td><td class="number">${run.basis ? number(run.basis.work) : "offen"}</td><td class="number">${run.always ? number(run.always.work) : "offen"}</td><td class="number">${run.legacyGenerated ? number(run.legacyGenerated.work) : "offen"}</td><td class="number">${run.generated ? number(run.generated.work) : "offen"}</td><td class="number">${run.generated ? `${run.generated.solved} / 20` : "offen"}</td></tr>`).join("");
+  }
+}
+
+render();
+</script>
+</body>
+</html>
