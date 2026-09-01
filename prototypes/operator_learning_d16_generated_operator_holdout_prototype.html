@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>D16: Erzeugter Operator im Kubik-Holdout</title>
+<style>
+  :root { color-scheme:dark; --bg:#0d1117; --panel:#161b22; --line:#30363d; --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --good:#3fb950; --bad:#f85149; }
+  * { box-sizing:border-box; }
+  body { max-width:1240px; margin:0 auto; padding:32px 20px 64px; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,sans-serif; }
+  h1,h2,h3,p { margin-top:0; }
+  h1 { margin-bottom:8px; font-size:clamp(28px,5vw,46px); line-height:1.12; }
+  h2 { font-size:20px; }
+  h3 { margin-bottom:6px; font-size:15px; }
+  code { color:#d2a8ff; }
+  button { border:1px solid var(--line); border-radius:8px; padding:10px 14px; background:#21262d; color:var(--text); cursor:pointer; }
+  button:hover,button.active { border-color:var(--accent); color:var(--accent); }
+  button.primary { background:#1f6feb; border-color:#1f6feb; color:white; }
+  .intro { max-width:920px; color:var(--muted); font-size:18px; }
+  .question { margin-top:20px; padding:18px 20px; border:1px solid #1f6feb; border-radius:10px; background:#0b2740; font-size:20px; }
+  .notice,.message { padding:12px 14px; border:1px solid var(--line); border-radius:8px; background:#111820; }
+  .notice { margin-top:18px; }
+  .panel { margin-top:18px; padding:20px; border:1px solid var(--line); border-radius:10px; background:var(--panel); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(205px,1fr)); gap:12px; }
+  .card { padding:14px; border:1px solid var(--line); border-radius:8px; background:var(--bg); }
+  .card.good-card { border-color:var(--good); }
+  .card.bad-card { border-color:var(--bad); }
+  .value { font-size:21px; font-weight:700; overflow-wrap:anywhere; }
+  .small { font-size:14px; }
+  .muted { color:var(--muted); }
+  .good { color:var(--good); }
+  .bad { color:var(--bad); }
+  .tabs,.actions,.steps { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
+  .guide { display:grid; grid-template-columns:2fr 1fr; gap:24px; }
+  .message { margin-top:12px; }
+  .table-wrap { overflow:auto; max-height:620px; border:1px solid var(--line); border-radius:8px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th,td { padding:8px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+  th { position:sticky; top:0; z-index:1; background:#21262d; }
+  th.number,td.number { text-align:right; }
+  tr.selected td { background:rgba(88,166,255,.08); }
+  tr.useful td { background:rgba(63,185,80,.055); }
+  .status-line { margin:14px 0 0; font-weight:700; }
+  @media (max-width:760px) { .guide { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+  <h1>D16: Erzeugter Operator im Kubik-Holdout</h1>
+  <p class="intro">D16 lässt 14 neue einfache Operatoren zuerst auf 18 Kubiken gegeneinander antreten. Der dort günstigste Operator wird anschließend unverändert auf 19 getrennten Kubiken eingesetzt.</p>
+
+  <div class="question"><strong>Frage:</strong> Kann ein auf dem Discovery-Split ausgewählter Kosten-3-Operator auf ungesehenen Kubiken breit und kostenwirksam generalisieren?</div>
+
+  <div class="notice"><strong>Protokoll D16-v1.</strong> Die 37 Kubiken aus D15 werden allein über eine feste Fingerprint-Reihenfolge in 18 Discovery- und 19 Holdout-Aufgaben geteilt. Die 14 neuen Kandidaten sind semantisch verschiedene Ausdrücke der Kostenstufe 3. Discovery wählt die kleinste Gesamtarbeit im Dauereinsatz. Danach entscheiden mehr nützliche Aufgaben, eine geringere Konzentration und zuletzt der strukturelle Schlüssel. Discovery und Holdout werden getrennt versiegelt. Beide Stufen müssen alle Aufgaben lösen, mindestens 10 Prozent Gesamtarbeit einsparen, genügend Aufgaben verbessern und dürfen höchstens die Hälfte ihrer Bruttoersparnis aus einem Einzelfall beziehen.</div>
+
+  <section class="panel">
+    <h2>Vorab festgelegt</h2>
+    <div class="grid">
+      <div class="card"><h3>Neue Kandidaten</h3><div class="value">14</div><div class="small muted">Jeder Operator hat Kosten 3.</div></div>
+      <div class="card"><h3>Discovery</h3><div class="value">18</div><div class="small muted">Nur hier findet die Auswahl statt.</div></div>
+      <div class="card"><h3>Holdout</h3><div class="value">19</div><div class="small muted">Bleibt bis nach der Auswahl unberührt.</div></div>
+      <div class="card"><h3>Mindestnutzen</h3><div class="value">10 %</div><div class="small muted">Gesamtarbeit im Dauereinsatz.</div></div>
+      <div class="card"><h3>Mindestbreite</h3><div class="value">4 Aufgaben</div><div class="small muted">Discovery: 4 von 18, Holdout: mindestens 20 Prozent.</div></div>
+      <div class="card"><h3>Konzentrationsgrenze</h3><div class="value">50 %</div><div class="small muted">Anteil des größten Einzelbeitrags.</div></div>
+    </div>
+  </section>
+
+  <div class="tabs" id="guideTabs"></div>
+  <section class="panel guide">
+    <div><h2 id="guideTitle"></h2><p id="guideDescription" class="muted"></p></div>
+    <div><h3>Geführter Ablauf</h3><div class="steps" id="guideSteps"></div></div>
+  </section>
+
+  <div class="actions">
+    <button data-action="split">Split fixieren</button>
+    <button data-action="candidates">14 Kandidaten erzeugen</button>
+    <button class="primary" data-action="discover">Discovery auswerten</button>
+    <button data-action="holdout">Versiegelten Gewinner prüfen</button>
+    <button data-action="reset">Zurücksetzen</button>
+  </div>
+  <div class="message" id="message">Bereit. Die Ergebnisfelder sind leer.</div>
+
+  <section class="panel">
+    <h2>Aktueller Zustand</h2>
+    <div class="grid">
+      <div class="card"><h3>Phase</h3><div class="value" id="phaseValue">bereit</div></div>
+      <div class="card"><h3>Split</h3><div class="value" id="splitValue">offen</div><div class="small muted" id="splitDetail">37 Kubiken erwartet</div></div>
+      <div class="card"><h3>Kandidaten</h3><div class="value" id="candidateValue">0 / 14</div><div class="small muted" id="candidateDetail">noch nicht erzeugt</div></div>
+      <div class="card"><h3>Holdout</h3><div class="value" id="caseValue">0 / 19</div><div class="small muted" id="caseDetail">noch nicht ausgewertet</div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="protocolPanel" hidden>
+    <h2>Protokollzustand</h2>
+    <div class="grid" id="protocolGrid"></div>
+    <p id="protocolText" class="status-line"></p>
+  </section>
+
+  <section class="panel" id="resultPanel" hidden>
+    <h2>Ergebnis</h2>
+    <div class="grid" id="resultGrid"></div>
+    <p id="verdict" class="status-line"></p>
+  </section>
+
+  <section class="panel" id="scorePanel" hidden>
+    <h2>Discovery-Rangliste</h2>
+    <p class="small muted">Sortiert nach Gesamtarbeit, Nutzenbreite, Konzentration und strukturellem Schlüssel.</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Rang</th><th>Kandidat</th><th>Operator</th><th class="number">Basisarbeit</th><th class="number">Operatorarbeit</th><th class="number">Ersparnis</th><th class="number">Nützliche Aufgaben</th></tr></thead>
+      <tbody id="scoreRows"></tbody>
+    </table></div>
+  </section>
+
+  <section class="panel" id="casePanel" hidden>
+    <h2>Holdout-Aufgaben</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Fall</th><th>Koeffizienten a, b, c, d</th><th>Signatur</th><th class="number">Basisarbeit</th><th class="number">Operatorarbeit</th><th class="number">Beitrag</th><th>Nützlich</th></tr></thead>
+      <tbody id="caseRows"></tbody>
+    </table></div>
+  </section>
+
+<script>
+const D16Experiment = (() => {
+  "use strict";
+
+  const PROTOCOL = "D16-v1";
+  const INPUTS = Object.freeze([-3,-2,-1,0,1,2,3]);
+  const CONSTANTS = Object.freeze([-2,-1,0,1,2,3]);
+  const MAX_COST = 7;
+  const VALUE_LIMIT = 1_000_000;
+  const KNOWN_PRIOR_SIGNATURE = "-24,-6,0,0,0,6,24";
+  const SPLIT_SALT = "D16-v1";
+  const DISCOVERY_COUNT = 18;
+  const KNOWN_CONTROL_KEYS = Object.freeze(new Set(["add(x,x)","mul(c:3,x)"]));
+
+  const EXPECTED = Object.freeze({
+    protocol:PROTOCOL,
+    inputFingerprint:"83d7237a",
+    constantsFingerprint:"e1f1d8c0",
+    base:Object.freeze({
+      counts:Object.freeze([0,7,0,24,0,106,0,514]),
+      attempts:Object.freeze([0,7,0,105,0,672,0,4144]),
+      work:Object.freeze([0,0,0,735,0,9408,0,87024]),
+      seenCount:651,
+      seenFingerprint:"5cef22d5"
+    }),
+    family:Object.freeze({
+      fullCount:38,
+      fullFingerprint:"c7a2b263",
+      freshCount:37,
+      freshFingerprint:"f51e4963",
+      knownSignatureFingerprint:"a467b30b"
+    }),
+    split:Object.freeze({
+      discoveryCount:18,
+      holdoutCount:19,
+      saltFingerprint:"7e454f96",
+      discoveryFingerprint:"64be32c4",
+      holdoutFingerprint:"717bc686",
+      combinedFingerprint:"be5a0841"
+    }),
+    candidates:Object.freeze({ sourceCount:16,count:14,cost:3,keyFingerprint:"86e2661b",semanticFingerprint:"45c56374" }),
+    gates:Object.freeze({ minimumSavingShare:0.10,minimumDiscoveryUsefulCount:4,minimumHoldoutUsefulShare:0.20,maximumContributionShare:0.50 })
+  });
+
+  const V = () => ({ type:"var",cost:1 });
+  const C = value => ({ type:"const",value,cost:1 });
+  const B = (op,left,right) => {
+    if ((op === "add" || op === "mul") && format(left) > format(right)) [left,right] = [right,left];
+    return { type:"binary",op,left,right,cost:1 + left.cost + right.cost };
+  };
+  const Call = (name,arg) => ({ type:"call",name,arg,cost:1 + arg.cost });
+  const OPS = Object.freeze({
+    add:Object.freeze({ symbol:"+",fn:(a,b) => a + b,commutative:true }),
+    sub:Object.freeze({ symbol:"−",fn:(a,b) => a - b,commutative:false }),
+    mul:Object.freeze({ symbol:"×",fn:(a,b) => a * b,commutative:true })
+  });
+
+  function format(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return String(ast.value);
+    if (ast.type === "call") return `${ast.name}(${format(ast.arg)})`;
+    return `(${format(ast.left)} ${OPS[ast.op].symbol} ${format(ast.right)})`;
+  }
+
+  function key(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return `c:${ast.value}`;
+    if (ast.type === "call") return `call:${ast.name}(${key(ast.arg)})`;
+    return `${ast.op}(${key(ast.left)},${key(ast.right)})`;
+  }
+
+  function evalAst(ast,input,macros) {
+    if (ast.type === "var") return input;
+    if (ast.type === "const") return ast.value;
+    if (ast.type === "call") return evalAst(macros[ast.name].definition,evalAst(ast.arg,input,macros),{});
+    const value = OPS[ast.op].fn(evalAst(ast.left,input,macros),evalAst(ast.right,input,macros));
+    return Number.isFinite(value) && Math.abs(value) <= VALUE_LIMIT ? value : NaN;
+  }
+
+  function primitiveCount(ast,macros) {
+    if (ast.type === "var" || ast.type === "const") return 0;
+    if (ast.type === "binary") return 1 + primitiveCount(ast.left,macros) + primitiveCount(ast.right,macros);
+    return primitiveCount(ast.arg,macros) + primitiveCount(macros[ast.name].definition,{});
+  }
+
+  function signature(ast,macros = {}) {
+    const values = INPUTS.map(input => evalAst(ast,input,macros));
+    return values.some(Number.isNaN) ? null : values.join(",");
+  }
+
+  function fingerprint(text) {
+    let hash = 2166136261;
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash,16777619);
+    }
+    return (hash >>> 0).toString(16).padStart(8,"0");
+  }
+
+  function sum(values) { return values.reduce((total,value) => total + value,0); }
+  function sameArray(left,right) { return left.length === right.length && left.every((value,index) => value === right[index]); }
+
+  function enumerate(macros = {}) {
+    const byCost = Array.from({ length:MAX_COST + 1 },() => []);
+    const seen = new Map();
+    const attemptsByCost = Array(MAX_COST + 1).fill(0);
+    const workByCost = Array(MAX_COST + 1).fill(0);
+
+    function accept(cost,batch) {
+      batch.sort((left,right) => key(left).localeCompare(key(right)));
+      for (const ast of batch) {
+        const sig = signature(ast,macros);
+        if (sig === null) continue;
+        attemptsByCost[cost] += 1;
+        workByCost[cost] += primitiveCount(ast,macros) * INPUTS.length;
+        if (seen.has(sig)) continue;
+        seen.set(sig,ast);
+        byCost[cost].push(ast);
+      }
+    }
+
+    accept(1,[V(),...CONSTANTS.map(C)]);
+    for (let cost = 2; cost <= MAX_COST; cost += 1) {
+      const batch = [];
+      for (const name of Object.keys(macros).sort()) {
+        for (const arg of byCost[cost - 1]) batch.push(Call(name,arg));
+      }
+      for (let leftCost = 1; leftCost < cost; leftCost += 1) {
+        const rightCost = cost - 1 - leftCost;
+        if (rightCost < 1) continue;
+        for (const [op,spec] of Object.entries(OPS)) {
+          for (const left of byCost[leftCost]) {
+            for (const right of byCost[rightCost]) {
+              if (spec.commutative && key(left) > key(right)) continue;
+              batch.push(B(op,left,right));
+            }
+          }
+        }
+      }
+      accept(cost,batch);
+    }
+    return { byCost,seen,attemptsByCost,workByCost };
+  }
+
+  function enumerationSnapshot(enumeration) {
+    const sortedSignatures = [...enumeration.seen.keys()].sort();
+    return {
+      counts:enumeration.byCost.map(items => items.length),
+      attempts:[...enumeration.attemptsByCost],
+      work:[...enumeration.workByCost],
+      seenCount:enumeration.seen.size,
+      seenFingerprint:fingerprint(sortedSignatures.join("|"))
+    };
+  }
+
+  function snapshotMatches(actual,expected) {
+    return sameArray(actual.counts,expected.counts)
+      && sameArray(actual.attempts,expected.attempts)
+      && sameArray(actual.work,expected.work)
+      && actual.seenCount === expected.seenCount
+      && actual.seenFingerprint === expected.seenFingerprint;
+  }
+
+  function searchStats(enumeration,taskSignature) {
+    const solution = enumeration.seen.get(taskSignature);
+    if (!solution) return { found:false,attempts:sum(enumeration.attemptsByCost),work:sum(enumeration.workByCost) };
+    return {
+      found:true,
+      attempts:sum(enumeration.attemptsByCost.slice(0,solution.cost + 1)),
+      work:sum(enumeration.workByCost.slice(0,solution.cost + 1))
+    };
+  }
+
+  function detectExactIntegerCubic(values) {
+    if (!Array.isArray(values) || values.length !== INPUTS.length || values.some(value => !Number.isInteger(value))) return null;
+    const y = new Map(INPUTS.map((input,index) => [input,values[index]]));
+    const d = y.get(0);
+    const a = (y.get(2) - y.get(-2) - 2 * (y.get(1) - y.get(-1))) / 12;
+    const b = (y.get(1) + y.get(-1) - 2 * d) / 2;
+    const c = (y.get(1) - y.get(-1)) / 2 - a;
+    const coefficients = [a,b,c,d];
+    if (!coefficients.every(Number.isInteger) || a === 0) return null;
+    const exact = INPUTS.every((input,index) => a * input ** 3 + b * input ** 2 + c * input + d === values[index]);
+    return exact ? Object.freeze({ coefficients:Object.freeze(coefficients) }) : null;
+  }
+
+  const BASE = enumerate({});
+  const BASE_SNAPSHOT = Object.freeze(enumerationSnapshot(BASE));
+
+  function buildSplit() {
+    const full = [...BASE.seen.keys()].map(sig => {
+      const values = sig.split(",").map(Number);
+      const cubic = detectExactIntegerCubic(values);
+      return cubic ? { signature:sig,values:Object.freeze(values),coefficients:cubic.coefficients } : null;
+    }).filter(Boolean).sort((left,right) => left.signature.localeCompare(right.signature));
+    const fresh = full.filter(item => item.signature !== KNOWN_PRIOR_SIGNATURE);
+    const ranked = fresh.map(item => ({ item,rank:fingerprint(`${SPLIT_SALT}|${item.signature}`) }))
+      .sort((left,right) => left.rank.localeCompare(right.rank) || left.item.signature.localeCompare(right.item.signature));
+    const discovery = ranked.slice(0,DISCOVERY_COUNT).map(entry => Object.freeze({ ...entry.item,rank:entry.rank }));
+    const holdout = ranked.slice(DISCOVERY_COUNT).map(entry => Object.freeze({ ...entry.item,rank:entry.rank }));
+    const discoveryText = discovery.map(item => item.signature).join("|");
+    const holdoutText = holdout.map(item => item.signature).join("|");
+    return Object.freeze({
+      full:Object.freeze(full),fresh:Object.freeze(fresh),discovery:Object.freeze(discovery),holdout:Object.freeze(holdout),
+      fullFingerprint:fingerprint(full.map(item => item.signature).join("|")),
+      freshFingerprint:fingerprint(fresh.map(item => item.signature).join("|")),
+      discoveryFingerprint:fingerprint(discoveryText),
+      holdoutFingerprint:fingerprint(holdoutText),
+      combinedFingerprint:fingerprint(ranked.map(entry => `${entry.rank}:${entry.item.signature}`).join("|")),
+      knownPresent:full.some(item => item.signature === KNOWN_PRIOR_SIGNATURE),
+      overlap:discovery.filter(left => holdout.some(right => right.signature === left.signature)).length
+    });
+  }
+
+  function containsVariable(ast) {
+    if (ast.type === "var") return true;
+    if (ast.type === "const") return false;
+    if (ast.type === "call") return containsVariable(ast.arg);
+    return containsVariable(ast.left) || containsVariable(ast.right);
+  }
+
+  function generatedCost3Candidates() {
+    const identitySignature = signature(V(),{});
+    return BASE.byCost[3].filter(definition => {
+      const values = signature(definition,{}).split(",");
+      return containsVariable(definition)
+        && signature(definition,{}) !== identitySignature
+        && new Set(values).size > 1;
+    }).sort((left,right) => key(left).localeCompare(key(right)));
+  }
+
+  function buildCandidates() {
+    const definitions = generatedCost3Candidates()
+      .filter(definition => !KNOWN_CONTROL_KEYS.has(key(definition)));
+    return Object.freeze(definitions.map((definition,index) => Object.freeze({
+      id:`C${String(index + 1).padStart(2,"0")}`,
+      definition,
+      label:format(definition),
+      structuralKey:key(definition),
+      definitionSignature:signature(definition,{})
+    })));
+  }
+
+  function candidateFingerprints(candidates) {
+    return Object.freeze({
+      keys:fingerprint(candidates.map(candidate => candidate.structuralKey).join("|")),
+      semantics:fingerprint(candidates.map(candidate => candidate.definitionSignature).join("|"))
+    });
+  }
+
+  function protocolAssertions(split,candidates) {
+    return Object.freeze({
+      protocol:PROTOCOL === EXPECTED.protocol,
+      maxCost:MAX_COST === 7,
+      inputs:fingerprint(INPUTS.join("|")) === EXPECTED.inputFingerprint,
+      constants:fingerprint(CONSTANTS.join("|")) === EXPECTED.constantsFingerprint,
+      baseAccounting:snapshotMatches(BASE_SNAPSHOT,EXPECTED.base),
+      fullCubicCount:split.full.length === EXPECTED.family.fullCount,
+      fullCubicFingerprint:split.fullFingerprint === EXPECTED.family.fullFingerprint,
+      knownPriorPresent:split.knownPresent,
+      knownPriorFingerprint:fingerprint(KNOWN_PRIOR_SIGNATURE) === EXPECTED.family.knownSignatureFingerprint,
+      freshCubicCount:split.fresh.length === EXPECTED.family.freshCount,
+      freshCubicFingerprint:split.freshFingerprint === EXPECTED.family.freshFingerprint,
+      splitSalt:fingerprint(SPLIT_SALT) === EXPECTED.split.saltFingerprint,
+      discoveryCount:split.discovery.length === EXPECTED.split.discoveryCount,
+      holdoutCount:split.holdout.length === EXPECTED.split.holdoutCount,
+      discoveryFingerprint:split.discoveryFingerprint === EXPECTED.split.discoveryFingerprint,
+      holdoutFingerprint:split.holdoutFingerprint === EXPECTED.split.holdoutFingerprint,
+      combinedFingerprint:split.combinedFingerprint === EXPECTED.split.combinedFingerprint,
+      splitDisjoint:split.overlap === 0,
+      splitComplete:new Set([...split.discovery,...split.holdout].map(item => item.signature)).size === EXPECTED.family.freshCount,
+      generatedCandidateCount:generatedCost3Candidates().length === EXPECTED.candidates.sourceCount,
+      candidateCount:candidates.length === EXPECTED.candidates.count,
+      candidateCosts:candidates.every(candidate => candidate.definition.cost === EXPECTED.candidates.cost),
+      candidateStructuralOrder:candidates.every((candidate,index) => index === 0 || candidates[index - 1].structuralKey < candidate.structuralKey),
+      candidateUniqueSemantics:new Set(candidates.map(candidate => candidate.definitionSignature)).size === EXPECTED.candidates.count,
+      candidateKeyFingerprint:candidateFingerprints(candidates).keys === EXPECTED.candidates.keyFingerprint,
+      candidateSemanticFingerprint:candidateFingerprints(candidates).semantics === EXPECTED.candidates.semanticFingerprint
+    });
+  }
+
+  function measure(tasks,enumeration,prefix) {
+    const rows = tasks.map((task,index) => {
+      const base = searchStats(BASE,task.signature);
+      const candidate = searchStats(enumeration,task.signature);
+      const contribution = Math.max(0,base.work - candidate.work);
+      return Object.freeze({
+        id:`${prefix}-${String(index + 1).padStart(2,"0")}`,
+        signature:task.signature,coefficients:task.coefficients,
+        base:Object.freeze(base),candidate:Object.freeze(candidate),
+        useful:candidate.found && candidate.work < base.work,contribution
+      });
+    });
+    const baseWork = sum(rows.map(row => row.base.work));
+    const candidateWork = sum(rows.map(row => row.candidate.work));
+    const grossSaving = sum(rows.map(row => row.contribution));
+    const saving = baseWork - candidateWork;
+    const usefulCount = sum(rows.map(row => Number(row.useful)));
+    const largestContribution = Math.max(0,...rows.map(row => row.contribution));
+    return Object.freeze({
+      rows:Object.freeze(rows),baseWork,candidateWork,grossSaving,saving,
+      savingShare:baseWork === 0 ? 0 : saving / baseWork,
+      usefulCount,usefulShare:rows.length === 0 ? 0 : usefulCount / rows.length,
+      largestContribution,maximumContributionShare:grossSaving === 0 ? 0 : largestContribution / grossSaving,
+      baseSolved:sum(rows.map(row => Number(row.base.found))),
+      candidateSolved:sum(rows.map(row => Number(row.candidate.found)))
+    });
+  }
+
+  function discoverySealPayload(record) {
+    return JSON.stringify({
+      protocol:record.protocol,
+      protocolAssertions:record.protocolAssertions,
+      protocolIntegrity:record.protocolIntegrity,
+      split:record.split,
+      selection:record.selection,
+      gates:record.gates,
+      passed:record.passed
+    });
+  }
+
+  function evaluateDiscovery(split,candidates) {
+    const assertions = protocolAssertions(split,candidates);
+    const protocolIntegrity = Object.values(assertions).every(Boolean);
+    const scored = candidates.map(candidate => {
+      const enumeration = enumerate({ op:{ name:"op",definition:candidate.definition } });
+      const discovery = measure(split.discovery,enumeration,"D");
+      return { candidate,enumeration,discovery };
+    }).sort((left,right) => left.discovery.candidateWork - right.discovery.candidateWork
+      || right.discovery.usefulCount - left.discovery.usefulCount
+      || left.discovery.maximumContributionShare - right.discovery.maximumContributionShare
+      || left.candidate.structuralKey.localeCompare(right.candidate.structuralKey));
+    const winner = scored[0];
+    const gates = Object.freeze({
+      baseSolved:winner.discovery.baseSolved === split.discovery.length,
+      candidateSolved:winner.discovery.candidateSolved === split.discovery.length,
+      minimumTotalSaving:winner.discovery.savingShare >= EXPECTED.gates.minimumSavingShare,
+      minimumUsefulBreadth:winner.discovery.usefulCount >= EXPECTED.gates.minimumDiscoveryUsefulCount,
+      boundedContribution:winner.discovery.maximumContributionShare <= EXPECTED.gates.maximumContributionShare
+    });
+    const scores = Object.freeze(scored.map((entry,index) => Object.freeze({
+      rank:index + 1,id:entry.candidate.id,operator:entry.candidate.label,structuralKey:entry.candidate.structuralKey,
+      definitionSignature:entry.candidate.definitionSignature,
+      baseWork:entry.discovery.baseWork,candidateWork:entry.discovery.candidateWork,
+      saving:entry.discovery.saving,savingShare:entry.discovery.savingShare,
+      usefulCount:entry.discovery.usefulCount,maximumContributionShare:entry.discovery.maximumContributionShare,
+      candidateSolved:entry.discovery.candidateSolved
+    })));
+    const core = {
+      protocol:PROTOCOL,protocolAssertions:assertions,protocolIntegrity,
+      split:Object.freeze({
+        discoveryCount:split.discovery.length,holdoutCount:split.holdout.length,
+        discoveryFingerprint:split.discoveryFingerprint,holdoutFingerprint:split.holdoutFingerprint,
+        combinedFingerprint:split.combinedFingerprint
+      }),
+      selection:Object.freeze({
+        candidateId:winner.candidate.id,operator:winner.candidate.label,structuralKey:winner.candidate.structuralKey,
+        definitionSignature:winner.candidate.definitionSignature,
+        discovery:Object.freeze({
+          baseWork:winner.discovery.baseWork,candidateWork:winner.discovery.candidateWork,
+          saving:winner.discovery.saving,savingShare:winner.discovery.savingShare,
+          usefulCount:winner.discovery.usefulCount,baseSolved:winner.discovery.baseSolved,
+          candidateSolved:winner.discovery.candidateSolved,
+          grossSaving:winner.discovery.grossSaving,
+          largestContribution:winner.discovery.largestContribution,
+          maximumContributionShare:winner.discovery.maximumContributionShare,
+          rows:winner.discovery.rows
+        }),
+        scores
+      }),
+      gates,
+      passed:protocolIntegrity && Object.values(gates).every(Boolean)
+    };
+    return Object.freeze({ ...core,discoverySeal:fingerprint(discoverySealPayload(core)) });
+  }
+
+  function validateRecordedDiscovery(record,split,candidates) {
+    if (!record || record.protocol !== PROTOCOL || record.protocolIntegrity !== true) throw new Error("Ungültige Discovery-Aufzeichnung.");
+    if (record.passed !== true) throw new Error("Discovery hat die festgelegten Kriterien nicht erfüllt.");
+    if (!Object.values(protocolAssertions(split,candidates)).every(Boolean)) throw new Error("Das aktuelle Protokoll stimmt nicht.");
+    if (record.split.discoveryFingerprint !== split.discoveryFingerprint
+      || record.split.holdoutFingerprint !== split.holdoutFingerprint
+      || record.split.combinedFingerprint !== split.combinedFingerprint) throw new Error("Discovery-Aufzeichnung gehört zu einem anderen Split.");
+    if (record.discoverySeal !== fingerprint(discoverySealPayload(record))) throw new Error("Discovery-Siegel stimmt nicht.");
+    const winner = candidates.find(candidate => candidate.id === record.selection.candidateId
+      && candidate.structuralKey === record.selection.structuralKey
+      && candidate.definitionSignature === record.selection.definitionSignature);
+    if (!winner || record.selection.scores[0].id !== winner.id) throw new Error("Der versiegelte Gewinner ist nicht eindeutig.");
+    return winner;
+  }
+
+  function evaluateHoldout(recordedDiscovery,split,candidates) {
+    const winner = validateRecordedDiscovery(recordedDiscovery,split,candidates);
+    const enumeration = enumerate({ op:{ name:"op",definition:winner.definition } });
+    const holdout = measure(split.holdout,enumeration,"H");
+    const gates = Object.freeze({
+      baseSolved:holdout.baseSolved === split.holdout.length,
+      candidateSolved:holdout.candidateSolved === split.holdout.length,
+      minimumTotalSaving:holdout.savingShare >= EXPECTED.gates.minimumSavingShare,
+      minimumUsefulBreadth:holdout.usefulShare >= EXPECTED.gates.minimumHoldoutUsefulShare,
+      boundedContribution:holdout.maximumContributionShare <= EXPECTED.gates.maximumContributionShare
+    });
+    return Object.freeze({
+      protocol:PROTOCOL,
+      protocolIntegrity:true,
+      discoverySeal:recordedDiscovery.discoverySeal,
+      discoveryPassed:recordedDiscovery.passed,
+      selection:Object.freeze({
+        candidateId:winner.id,operator:winner.label,structuralKey:winner.structuralKey,
+        definitionSignature:winner.definitionSignature
+      }),
+      holdout:Object.freeze({ ...holdout,gates,passed:Object.values(gates).every(Boolean) }),
+      passed:recordedDiscovery.passed && Object.values(gates).every(Boolean)
+    });
+  }
+
+  function initialState(guideId = "question") {
+    return Object.freeze({ guideId,phase:"ready",split:null,candidates:null,discovery:null,result:null,message:"Bereit. Die Ergebnisfelder sind leer." });
+  }
+
+  function reducer(state,action) {
+    if (action.type === "guide") return Object.freeze({ ...state,guideId:action.id });
+    if (action.type === "reset") return initialState(state.guideId);
+    if (state.result) return Object.freeze({ ...state,message:"Für einen neuen interaktiven Lauf zuerst zurücksetzen." });
+    if (action.type === "split") {
+      if (state.split) return Object.freeze({ ...state,message:"Der Discovery-Holdout-Split ist bereits fixiert." });
+      return Object.freeze({ ...state,phase:"split",split:buildSplit(),message:"18 Discovery- und 19 Holdout-Kubiken wurden per Fingerprint-Reihenfolge fixiert." });
+    }
+    if (action.type === "candidates") {
+      if (!state.split) return Object.freeze({ ...state,message:"Zuerst muss der Split fixiert werden." });
+      if (state.candidates) return Object.freeze({ ...state,message:"Die 14 Kandidaten sind bereits erzeugt." });
+      return Object.freeze({ ...state,phase:"candidates",candidates:buildCandidates(),message:"14 semantisch verschiedene Kosten-3-Kandidaten wurden erzeugt." });
+    }
+    if (action.type === "discover") {
+      if (!state.split) return Object.freeze({ ...state,message:"Zuerst muss der Split fixiert werden." });
+      if (!state.candidates) return Object.freeze({ ...state,message:"Zuerst müssen die Kandidaten erzeugt werden." });
+      if (state.discovery) return Object.freeze({ ...state,message:"Discovery ist bereits versiegelt." });
+      const discovery = evaluateDiscovery(state.split,state.candidates);
+      return Object.freeze({ ...state,phase:"discovered",discovery,message:"Discovery wurde ausgewertet und versiegelt." });
+    }
+    if (action.type === "holdout") {
+      if (!state.discovery) return Object.freeze({ ...state,message:"Zuerst muss eine versiegelte Discovery-Aufzeichnung vorliegen." });
+      if (!state.discovery.passed) return Object.freeze({ ...state,message:"Discovery hat die Kriterien nicht erfüllt. Der Holdout bleibt versiegelt." });
+      const result = evaluateHoldout(state.discovery,buildSplit(),buildCandidates());
+      return Object.freeze({ ...state,phase:"evaluated",result,message:"Der versiegelte Gewinner wurde einmal auf dem Holdout geprüft." });
+    }
+    return state;
+  }
+
+  function runDiscovery() {
+    return evaluateDiscovery(buildSplit(),buildCandidates());
+  }
+
+  function runHoldout(recordedDiscovery) {
+    return evaluateHoldout(recordedDiscovery,buildSplit(),buildCandidates());
+  }
+
+  const guides = Object.freeze({
+    question:Object.freeze({
+      title:"Fragestellung",
+      description:"Fixiere zuerst Aufgabenteilung und Kandidatenraum. Discovery wird danach ausgewertet und versiegelt. Erst mit dieser Aufzeichnung wird der Holdout geöffnet.",
+      steps:Object.freeze([
+        Object.freeze({ label:"Split fixieren",type:"split" }),
+        Object.freeze({ label:"Kandidaten erzeugen",type:"candidates" }),
+        Object.freeze({ label:"Discovery auswerten",type:"discover" })
+      ])
+    }),
+    discovery:Object.freeze({
+      title:"Discovery-Auswahl",
+      description:"Nur die 18 Discovery-Aufgaben bestimmen den Sieger. Danach wird die Rangliste als eigener Datensatz versiegelt.",
+      steps:Object.freeze([
+        Object.freeze({ label:"Zurücksetzen",type:"reset" }),
+        Object.freeze({ label:"Split fixieren",type:"split" }),
+        Object.freeze({ label:"Kandidaten erzeugen",type:"candidates" })
+      ])
+    }),
+    holdout:Object.freeze({
+      title:"Holdout-Entscheidung",
+      description:"Der versiegelte Discovery-Gewinner wird unverändert auf 19 getrennten Kubiken geprüft.",
+      steps:Object.freeze([
+        Object.freeze({ label:"Discovery auswerten",type:"discover" }),
+        Object.freeze({ label:"Versiegelten Gewinner prüfen",type:"holdout" }),
+        Object.freeze({ label:"Zurücksetzen",type:"reset" })
+      ])
+    })
+  });
+
+  return Object.freeze({ EXPECTED,guides,initialState,reducer,runDiscovery,runHoldout });
+})();
+</script>
+
+<script id="recorded-discovery" type="application/json">null</script>
+<script id="recorded-results" type="application/json">null</script>
+
+<script>
+"use strict";
+
+const recordedDiscovery = JSON.parse(document.getElementById("recorded-discovery").textContent);
+const recordedResult = JSON.parse(document.getElementById("recorded-results").textContent);
+let state = D16Experiment.initialState();
+if (recordedDiscovery) state = Object.freeze({ ...state,phase:"discovered",discovery:recordedDiscovery,message:"Die versiegelte Discovery-Aufzeichnung ist geladen." });
+if (recordedResult) state = Object.freeze({ ...state,phase:"evaluated",result:recordedResult,message:"Der aufgezeichnete Holdout-Lauf ist geladen." });
+
+function dispatch(action) { state = D16Experiment.reducer(state,action); render(); }
+function number(value) { return new Intl.NumberFormat("de-DE",{ maximumFractionDigits:1 }).format(value); }
+function percent(value) { return `${number(value * 100)} %`; }
+function escapeHtml(value) {
+  return String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
+}
+function card(label,value,detail = "",tone = "") {
+  const toneClass = tone === "good" ? " good-card" : tone === "bad" ? " bad-card" : "";
+  return `<div class="card${toneClass}"><h3>${escapeHtml(label)}</h3><div class="value">${escapeHtml(value)}</div>${detail ? `<div class="small muted">${escapeHtml(detail)}</div>` : ""}</div>`;
+}
+
+function renderGuides() {
+  const tabs = document.getElementById("guideTabs");
+  tabs.innerHTML = Object.entries(D16Experiment.guides).map(([id,guide]) => `<button class="${state.guideId === id ? "active" : ""}" data-guide="${id}">${escapeHtml(guide.title)}</button>`).join("");
+  tabs.querySelectorAll("[data-guide]").forEach(button => { button.onclick = () => dispatch({ type:"guide",id:button.dataset.guide }); });
+  const guide = D16Experiment.guides[state.guideId];
+  document.getElementById("guideTitle").textContent = guide.title;
+  document.getElementById("guideDescription").textContent = guide.description;
+  document.getElementById("guideSteps").innerHTML = guide.steps.map(step => `<button data-action="${step.type}">${escapeHtml(step.label)}</button>`).join("");
+}
+
+function renderProtocol() {
+  const panel = document.getElementById("protocolPanel");
+  panel.hidden = !state.candidates && !state.discovery && !state.result;
+  if (panel.hidden) return;
+  const expected = D16Experiment.EXPECTED;
+  const assertions = state.discovery?.protocolAssertions;
+  document.getElementById("protocolGrid").innerHTML = [
+    card("Discovery",`${state.split?.discovery.length ?? expected.split.discoveryCount} / 18`,state.split?.discoveryFingerprint ?? expected.split.discoveryFingerprint),
+    card("Holdout",`${state.split?.holdout.length ?? expected.split.holdoutCount} / 19`,state.split?.holdoutFingerprint ?? expected.split.holdoutFingerprint),
+    card("Kandidaten",`${state.candidates?.length ?? expected.candidates.count} / 14`,`${expected.candidates.keyFingerprint} / ${expected.candidates.semanticFingerprint}`),
+    card("Kandidatenkosten","3","für jeden Operator"),
+    card("Basis-Enumerator",number(expected.base.seenCount),expected.base.seenFingerprint),
+    card("Überschneidung",String(state.split?.overlap ?? 0),"zwischen Discovery und Holdout")
+  ].join("");
+  const text = document.getElementById("protocolText");
+  if (!assertions) {
+    text.className = "status-line muted";
+    text.textContent = "Split und Kandidatenraum sind fixiert. Die Integritätsprüfung erfolgt zusammen mit der Auswertung.";
+  } else {
+    const failed = Object.entries(assertions).filter(([,value]) => !value).map(([key]) => key);
+    text.className = state.discovery.protocolIntegrity ? "status-line good" : "status-line bad";
+    text.textContent = state.discovery.protocolIntegrity ? "Alle Protokollwerte stimmen." : `Protokollabweichung bei: ${failed.join(", ")}`;
+  }
+}
+
+function renderResult() {
+  const discovery = state.discovery;
+  const result = state.result;
+  document.getElementById("resultPanel").hidden = !discovery;
+  document.getElementById("scorePanel").hidden = !discovery;
+  document.getElementById("casePanel").hidden = !result;
+  if (!discovery) return;
+  const selection = discovery.selection;
+  const holdout = result?.holdout;
+  const cards = [
+    card("Ausgewählter Operator",selection.operator,selection.candidateId),
+    card("Discovery-Ersparnis",percent(selection.discovery.savingShare),number(selection.discovery.saving),discovery.gates.minimumTotalSaving ? "good" : "bad"),
+    card("Nützliche Discovery-Aufgaben",`${selection.discovery.usefulCount} / 18`,percent(selection.discovery.usefulCount / 18),discovery.gates.minimumUsefulBreadth ? "good" : "bad")
+  ];
+  if (holdout) cards.push(
+    card("Holdout-Ersparnis",percent(holdout.savingShare),number(holdout.saving),holdout.gates.minimumTotalSaving ? "good" : "bad"),
+    card("Nützliche Holdout-Aufgaben",`${holdout.usefulCount} / 19`,percent(holdout.usefulShare),holdout.gates.minimumUsefulBreadth ? "good" : "bad"),
+    card("Größter Holdout-Einzelanteil",percent(holdout.maximumContributionShare),number(holdout.largestContribution),holdout.gates.boundedContribution ? "good" : "bad")
+  );
+  document.getElementById("resultGrid").innerHTML = cards.join("");
+  const verdict = document.getElementById("verdict");
+  const passed = result ? result.passed : discovery.passed;
+  verdict.className = passed ? "status-line good" : "status-line bad";
+  verdict.textContent = result
+    ? result.passed
+      ? "D16 beantwortet die Frage mit Ja: Der Discovery-Gewinner trägt unverändert auf dem Holdout."
+      : "D16 beantwortet die Frage mit Nein: Beide versiegelten Stufen erfüllen gemeinsam die Kriterien nicht."
+    : discovery.passed
+      ? "Discovery ist bestanden und versiegelt. Der Holdout ist bereit für den getrennten Lauf."
+      : "Discovery ist versiegelt und erfüllt die festgelegten Kriterien nicht.";
+  document.getElementById("scoreRows").innerHTML = selection.scores.map(score => `<tr class="${score.rank === 1 ? "selected" : ""}"><td>${score.rank}</td><td><code>${escapeHtml(score.id)}</code></td><td><code>${escapeHtml(score.operator)}</code></td><td class="number">${escapeHtml(number(score.baseWork))}</td><td class="number">${escapeHtml(number(score.candidateWork))}</td><td class="number">${escapeHtml(number(score.saving))}</td><td class="number">${score.usefulCount} / 18</td></tr>`).join("");
+  if (holdout) document.getElementById("caseRows").innerHTML = holdout.rows.map(row => `<tr class="${row.useful ? "useful" : ""}"><td><code>${escapeHtml(row.id)}</code></td><td><code>${escapeHtml(row.coefficients.join(","))}</code></td><td><code>${escapeHtml(row.signature)}</code></td><td class="number">${escapeHtml(number(row.base.work))}</td><td class="number">${escapeHtml(number(row.candidate.work))}</td><td class="number">${escapeHtml(number(row.contribution))}</td><td>${row.useful ? "ja" : "nein"}</td></tr>`).join("");
+}
+
+function render() {
+  const phaseLabels = { ready:"bereit",split:"Split fixiert",candidates:"Kandidaten erzeugt",discovered:"Discovery versiegelt",evaluated:"Holdout ausgewertet" };
+  document.getElementById("phaseValue").textContent = phaseLabels[state.phase];
+  const splitReady = Boolean(state.split || state.discovery || state.result);
+  const candidatesReady = Boolean(state.candidates || state.discovery || state.result);
+  document.getElementById("splitValue").textContent = splitReady ? "18 + 19" : "offen";
+  document.getElementById("splitDetail").textContent = splitReady ? "Discovery und Holdout sind fest getrennt" : "37 Kubiken erwartet";
+  document.getElementById("candidateValue").textContent = candidatesReady ? "14 / 14" : "0 / 14";
+  document.getElementById("candidateDetail").textContent = candidatesReady ? "Kosten 3, semantisch verschieden" : "noch nicht erzeugt";
+  document.getElementById("caseValue").textContent = state.result ? `${state.result.holdout.rows.length} / 19` : "0 / 19";
+  document.getElementById("caseDetail").textContent = state.result ? `${state.result.holdout.usefulCount} Aufgaben mit Vorteil` : "noch nicht ausgewertet";
+  document.getElementById("message").textContent = state.message;
+  renderGuides();
+  renderProtocol();
+  renderResult();
+  document.querySelectorAll("[data-action]").forEach(button => { button.onclick = () => dispatch({ type:button.dataset.action }); });
+}
+
+render();
+</script>
+</body>
+</html>
