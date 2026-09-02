@@ -1,0 +1,941 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>D19: Holdout-Vierer-Screens</title>
+<style>
+  :root { color-scheme:dark; --bg:#0d1117; --panel:#161b22; --line:#30363d; --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --good:#3fb950; --bad:#f85149; }
+  * { box-sizing:border-box; }
+  body { max-width:1180px; margin:0 auto; padding:32px 20px 64px; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,sans-serif; }
+  h1,h2,h3,p { margin-top:0; }
+  h1 { margin-bottom:8px; font-size:clamp(28px,5vw,46px); line-height:1.12; }
+  h2 { font-size:20px; }
+  h3 { margin-bottom:6px; font-size:15px; }
+  code { color:#d2a8ff; }
+  button { border:1px solid var(--line); border-radius:8px; padding:10px 14px; background:#21262d; color:var(--text); cursor:pointer; }
+  button:hover,button.active { border-color:var(--accent); color:var(--accent); }
+  button.primary { background:#1f6feb; border-color:#1f6feb; color:white; }
+  .intro { max-width:930px; color:var(--muted); font-size:18px; }
+  .question { margin-top:20px; padding:18px 20px; border:1px solid #1f6feb; border-radius:10px; background:#0b2740; font-size:20px; }
+  .notice,.message { padding:12px 14px; border:1px solid var(--line); border-radius:8px; background:#111820; }
+  .notice { margin-top:18px; }
+  .panel { margin-top:18px; padding:20px; border:1px solid var(--line); border-radius:10px; background:var(--panel); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; }
+  .card { padding:14px; border:1px solid var(--line); border-radius:8px; background:var(--bg); }
+  .card.good-card { border-color:var(--good); }
+  .card.bad-card { border-color:var(--bad); }
+  .value { font-size:21px; font-weight:700; overflow-wrap:anywhere; }
+  .small { font-size:14px; }
+  .muted { color:var(--muted); }
+  .good { color:var(--good); }
+  .bad { color:var(--bad); }
+  .tabs,.actions,.steps { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
+  .guide { display:grid; grid-template-columns:2fr 1fr; gap:24px; }
+  .message { margin-top:12px; }
+  .table-wrap { overflow:auto; border:1px solid var(--line); border-radius:8px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th,td { padding:8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+  th { background:#21262d; }
+  th.number,td.number { text-align:right; }
+  .status-line { margin:14px 0 0; font-weight:700; }
+  @media (max-width:760px) { .guide { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+  <h1>D19: Holdout-Vierer-Screens</h1>
+  <p class="intro">D18 war im Discovery-Satz stabil. D19 wendet denselben vollständigen Census auf die 19 festen Holdout-Aufgaben aus D16 an.</p>
+
+  <div class="question"><strong>Frage:</strong> Bleibt <code>mul(x,x)</code> bei allen 3.876 Holdout-Screens in den Top 2, gewinnt danach das Rennen und halbiert weiterhin die Erzeugungsarbeit?</div>
+
+  <div class="notice"><strong>Protokoll D19-v1.</strong> Aufgaben, Kandidaten, Rangregel und D16-Holdout-Anker bleiben fest. Die 3.876 Indexkombinationen werden lexikografisch erzeugt. Eine einzige Messmatrix mit 14 mal 19 Werten versorgt alle Screens. Jeder Screen besteht nur, wenn <code>C08</code> die Top 2 erreicht, im Rennen gewinnt, exakt dem D16-Holdout-Ergebnis entspricht, die Leistungsschwellen erfüllt und mindestens 50 Prozent der vollständigen Holdout-Validierungsarbeit spart.</div>
+
+  <section class="panel">
+    <h2>Vorab festgelegt</h2>
+    <div class="grid">
+      <div class="card"><h3>Holdout</h3><div class="value">19 Aufgaben</div><div class="small muted">Unverändert aus D16.</div></div>
+      <div class="card"><h3>Kandidaten</h3><div class="value">14 Operatoren</div><div class="small muted">Unverändert aus D17.</div></div>
+      <div class="card"><h3>Messmatrix</h3><div class="value">14 × 19</div><div class="small muted">Jeder Wert wird einmal berechnet.</div></div>
+      <div class="card"><h3>Vierer-Screens</h3><div class="value">3.876</div><div class="small muted">Alle Kombinationen der Indizes 0 bis 18.</div></div>
+      <div class="card"><h3>Arbeitsziel</h3><div class="value">mindestens 50 %</div><div class="small muted">Gegenüber der vollständigen Holdout-Validierung.</div></div>
+    </div>
+  </section>
+
+  <div class="tabs" id="guideTabs"></div>
+  <section class="panel guide">
+    <div><h2 id="guideTitle"></h2><p id="guideDescription" class="muted"></p></div>
+    <div><h3>Geführter Ablauf</h3><div class="steps" id="guideSteps"></div></div>
+  </section>
+
+  <div class="actions">
+    <button data-action="prepare">Messmatrix vorbereiten</button>
+    <button class="primary" data-action="census">Alle Screens auswerten</button>
+    <button data-action="reset">Zurücksetzen</button>
+  </div>
+  <div class="message" id="message">Bereit. Die Auswertung ist offen.</div>
+
+  <section class="panel">
+    <h2>Aktueller Zustand</h2>
+    <div class="grid">
+      <div class="card"><h3>Phase</h3><div class="value" id="phaseValue">bereit</div></div>
+      <div class="card"><h3>Aufgaben</h3><div class="value" id="taskValue">0 / 19</div></div>
+      <div class="card"><h3>Kandidaten</h3><div class="value" id="candidateValue">0 / 14</div></div>
+      <div class="card"><h3>Messwerte</h3><div class="value" id="cellValue">0 / 266</div></div>
+      <div class="card"><h3>Screens</h3><div class="value" id="screenValue">0 / 3.876</div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="protocolPanel" hidden>
+    <h2>Protokollzustand</h2>
+    <div class="grid" id="protocolGrid"></div>
+    <p id="protocolText" class="status-line"></p>
+  </section>
+
+  <section class="panel" id="resultPanel" hidden>
+    <h2>Gesamtergebnis</h2>
+    <div class="grid" id="resultGrid"></div>
+    <p id="verdict" class="status-line"></p>
+  </section>
+
+  <section class="panel" id="failurePanel" hidden>
+    <h2>Erste abweichende Screens</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Screen</th><th>Indizes</th><th>Top 2</th><th>Gewinner</th><th>Abweichung</th><th class="number">Ersparnis</th></tr></thead>
+      <tbody id="failureRows"></tbody>
+    </table></div>
+  </section>
+
+<script>
+const D19Experiment = (() => {
+  "use strict";
+
+  const PROTOCOL = "D19-v1";
+  const INPUTS = Object.freeze([-3,-2,-1,0,1,2,3]);
+  const CONSTANTS = Object.freeze([-2,-1,0,1,2,3]);
+  const MAX_COST = 7;
+  const VALUE_LIMIT = 1_000_000;
+  const KNOWN_PRIOR_SIGNATURE = "-24,-6,0,0,0,6,24";
+  const D16_SPLIT_SALT = "D16-v1";
+  const DISCOVERY_COUNT = 18;
+  const HOLDOUT_COUNT = 19;
+  const SCREEN_SIZE = 4;
+  const TOP_COUNT = 2;
+  const FAILURE_EXAMPLE_LIMIT = 5;
+  const KNOWN_CONTROL_KEYS = Object.freeze(new Set(["add(x,x)","mul(c:3,x)"]));
+  const D16_WINNER = Object.freeze({ candidateId:"C08",operator:"(x × x)",structuralKey:"mul(x,x)",definitionSignature:"9,4,1,0,1,4,9" });
+  const D16_HOLDOUT_REFERENCE = Object.freeze({
+    candidateId:"C08",
+    resultCommit:"a15ab1c46eb0124738771aa3f8b8dabcf8106aaa",
+    discoverySeal:"580acdca",
+    baseWork:1_759_149,
+    candidateWork:1_006_453,
+    saving:752_696,
+    savingShare:0.4278750691385437,
+    usefulCount:19,
+    usefulShare:1,
+    grossSaving:752_696,
+    largestContribution:41_384,
+    maximumContributionShare:0.05498102819730675,
+    baseSolved:19,
+    candidateSolved:19,
+    rowFingerprint:"d2d47349"
+  });
+
+  const EXPECTED = Object.freeze({
+    protocol:PROTOCOL,
+    inputFingerprint:"83d7237a",
+    constantsFingerprint:"e1f1d8c0",
+    base:Object.freeze({
+      counts:Object.freeze([0,7,0,24,0,106,0,514]),
+      attempts:Object.freeze([0,7,0,105,0,672,0,4144]),
+      work:Object.freeze([0,0,0,735,0,9408,0,87024]),
+      seenCount:651,
+      seenFingerprint:"5cef22d5"
+    }),
+    family:Object.freeze({
+      fullCount:38,
+      fullFingerprint:"c7a2b263",
+      freshCount:37,
+      freshFingerprint:"f51e4963",
+      knownSignatureFingerprint:"a467b30b"
+    }),
+    d16Split:Object.freeze({
+      discoveryCount:18,
+      holdoutCount:19,
+      saltFingerprint:"7e454f96",
+      discoveryFingerprint:"64be32c4",
+      holdoutFingerprint:"717bc686",
+      combinedFingerprint:"be5a0841"
+    }),
+    candidates:Object.freeze({ sourceCount:16,count:14,cost:3,keyFingerprint:"86e2661b",semanticFingerprint:"45c56374",identityFingerprint:"ac812b3a" }),
+    tasks:Object.freeze({ rosterFingerprint:"eef5e588" }),
+    matrix:Object.freeze({ rows:14,columns:19,cells:266,layoutFingerprint:"7267ce21" }),
+    screens:Object.freeze({
+      size:4,
+      count:3876,
+      ledgerFingerprint:"f9f02033",
+      partitionFingerprint:"208e7bfb",
+      screenSignatureFingerprint:"f1beea5b",
+      raceSignatureFingerprint:"59fe1be7",
+      incidenceCount:15_504,
+      incidencePerTask:816
+    }),
+    d16:Object.freeze({ winner:D16_WINNER,holdoutReference:D16_HOLDOUT_REFERENCE }),
+    gates:Object.freeze({ topCount:2,minimumSavingShare:0.10,minimumUsefulCount:4,maximumContributionShare:0.50,minimumWorkReductionShare:0.50 }),
+    failureExampleLimit:FAILURE_EXAMPLE_LIMIT
+  });
+
+  const V = () => ({ type:"var",cost:1 });
+  const C = value => ({ type:"const",value,cost:1 });
+  const B = (op,left,right) => {
+    if ((op === "add" || op === "mul") && format(left) > format(right)) [left,right] = [right,left];
+    return { type:"binary",op,left,right,cost:1 + left.cost + right.cost };
+  };
+  const Call = (name,arg) => ({ type:"call",name,arg,cost:1 + arg.cost });
+  const OPS = Object.freeze({
+    add:Object.freeze({ symbol:"+",fn:(a,b) => a + b,commutative:true }),
+    sub:Object.freeze({ symbol:"−",fn:(a,b) => a - b,commutative:false }),
+    mul:Object.freeze({ symbol:"×",fn:(a,b) => a * b,commutative:true })
+  });
+
+  function format(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return String(ast.value);
+    if (ast.type === "call") return `${ast.name}(${format(ast.arg)})`;
+    return `(${format(ast.left)} ${OPS[ast.op].symbol} ${format(ast.right)})`;
+  }
+
+  function key(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return `c:${ast.value}`;
+    if (ast.type === "call") return `call:${ast.name}(${key(ast.arg)})`;
+    return `${ast.op}(${key(ast.left)},${key(ast.right)})`;
+  }
+
+  function evalAst(ast,input,macros) {
+    if (ast.type === "var") return input;
+    if (ast.type === "const") return ast.value;
+    if (ast.type === "call") return evalAst(macros[ast.name].definition,evalAst(ast.arg,input,macros),{});
+    const value = OPS[ast.op].fn(evalAst(ast.left,input,macros),evalAst(ast.right,input,macros));
+    return Number.isFinite(value) && Math.abs(value) <= VALUE_LIMIT ? value : NaN;
+  }
+
+  function primitiveCount(ast,macros) {
+    if (ast.type === "var" || ast.type === "const") return 0;
+    if (ast.type === "binary") return 1 + primitiveCount(ast.left,macros) + primitiveCount(ast.right,macros);
+    return primitiveCount(ast.arg,macros) + primitiveCount(macros[ast.name].definition,{});
+  }
+
+  function signature(ast,macros = {}) {
+    const values = INPUTS.map(input => evalAst(ast,input,macros));
+    return values.some(Number.isNaN) ? null : values.join(",");
+  }
+
+  function fingerprint(text) {
+    let hash = 2166136261;
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash,16777619);
+    }
+    return (hash >>> 0).toString(16).padStart(8,"0");
+  }
+
+  function sum(values) { return values.reduce((total,value) => total + value,0); }
+  function sameArray(left,right) { return left.length === right.length && left.every((value,index) => value === right[index]); }
+  function median(values) {
+    const sorted = [...values].sort((left,right) => left - right);
+    const middle = sorted.length / 2;
+    return sorted.length % 2 ? sorted[Math.floor(middle)] : (sorted[middle - 1] + sorted[middle]) / 2;
+  }
+
+  function enumerate(macros = {}) {
+    const byCost = Array.from({ length:MAX_COST + 1 },() => []);
+    const seen = new Map();
+    const attemptsByCost = Array(MAX_COST + 1).fill(0);
+    const workByCost = Array(MAX_COST + 1).fill(0);
+
+    function accept(cost,batch) {
+      batch.sort((left,right) => key(left).localeCompare(key(right)));
+      for (const ast of batch) {
+        const sig = signature(ast,macros);
+        if (sig === null) continue;
+        attemptsByCost[cost] += 1;
+        workByCost[cost] += primitiveCount(ast,macros) * INPUTS.length;
+        if (seen.has(sig)) continue;
+        seen.set(sig,ast);
+        byCost[cost].push(ast);
+      }
+    }
+
+    accept(1,[V(),...CONSTANTS.map(C)]);
+    for (let cost = 2; cost <= MAX_COST; cost += 1) {
+      const batch = [];
+      for (const name of Object.keys(macros).sort()) {
+        for (const arg of byCost[cost - 1]) batch.push(Call(name,arg));
+      }
+      for (let leftCost = 1; leftCost < cost; leftCost += 1) {
+        const rightCost = cost - 1 - leftCost;
+        if (rightCost < 1) continue;
+        for (const [op,spec] of Object.entries(OPS)) {
+          for (const left of byCost[leftCost]) {
+            for (const right of byCost[rightCost]) {
+              if (spec.commutative && key(left) > key(right)) continue;
+              batch.push(B(op,left,right));
+            }
+          }
+        }
+      }
+      accept(cost,batch);
+    }
+    return { byCost,seen,attemptsByCost,workByCost };
+  }
+
+  function enumerationSnapshot(enumeration) {
+    const sortedSignatures = [...enumeration.seen.keys()].sort();
+    return {
+      counts:enumeration.byCost.map(items => items.length),
+      attempts:[...enumeration.attemptsByCost],
+      work:[...enumeration.workByCost],
+      seenCount:enumeration.seen.size,
+      seenFingerprint:fingerprint(sortedSignatures.join("|"))
+    };
+  }
+
+  function snapshotMatches(actual,expected) {
+    return sameArray(actual.counts,expected.counts)
+      && sameArray(actual.attempts,expected.attempts)
+      && sameArray(actual.work,expected.work)
+      && actual.seenCount === expected.seenCount
+      && actual.seenFingerprint === expected.seenFingerprint;
+  }
+
+  function searchStats(enumeration,taskSignature) {
+    const solution = enumeration.seen.get(taskSignature);
+    if (!solution) return Object.freeze({ found:false,attempts:sum(enumeration.attemptsByCost),work:sum(enumeration.workByCost) });
+    return Object.freeze({
+      found:true,
+      attempts:sum(enumeration.attemptsByCost.slice(0,solution.cost + 1)),
+      work:sum(enumeration.workByCost.slice(0,solution.cost + 1))
+    });
+  }
+
+  function detectExactIntegerCubic(values) {
+    if (!Array.isArray(values) || values.length !== INPUTS.length || values.some(value => !Number.isInteger(value))) return null;
+    const y = new Map(INPUTS.map((input,index) => [input,values[index]]));
+    const d = y.get(0);
+    const a = (y.get(2) - y.get(-2) - 2 * (y.get(1) - y.get(-1))) / 12;
+    const b = (y.get(1) + y.get(-1) - 2 * d) / 2;
+    const c = (y.get(1) - y.get(-1)) / 2 - a;
+    const coefficients = [a,b,c,d];
+    if (!coefficients.every(Number.isInteger) || a === 0) return null;
+    const exact = INPUTS.every((input,index) => a * input ** 3 + b * input ** 2 + c * input + d === values[index]);
+    return exact ? Object.freeze({ coefficients:Object.freeze(coefficients) }) : null;
+  }
+
+  const BASE = enumerate({});
+  const BASE_SNAPSHOT = Object.freeze(enumerationSnapshot(BASE));
+
+  function buildD16Split() {
+    const full = [...BASE.seen.keys()].map(sig => {
+      const values = sig.split(",").map(Number);
+      const cubic = detectExactIntegerCubic(values);
+      return cubic ? { signature:sig,values:Object.freeze(values),coefficients:cubic.coefficients } : null;
+    }).filter(Boolean).sort((left,right) => left.signature.localeCompare(right.signature));
+    const fresh = full.filter(item => item.signature !== KNOWN_PRIOR_SIGNATURE);
+    const ranked = fresh.map(item => ({ item,rank:fingerprint(`${D16_SPLIT_SALT}|${item.signature}`) }))
+      .sort((left,right) => left.rank.localeCompare(right.rank) || left.item.signature.localeCompare(right.item.signature));
+    const discovery = ranked.slice(0,DISCOVERY_COUNT).map(entry => Object.freeze({ ...entry.item,rank:entry.rank }));
+    const holdout = ranked.slice(DISCOVERY_COUNT).map((entry,index) => Object.freeze({
+      id:`H${String(index).padStart(2,"0")}`,
+      ...entry.item,
+      rank:entry.rank
+    }));
+    return Object.freeze({
+      full:Object.freeze(full),fresh:Object.freeze(fresh),discovery:Object.freeze(discovery),holdout:Object.freeze(holdout),
+      fullFingerprint:fingerprint(full.map(item => item.signature).join("|")),
+      freshFingerprint:fingerprint(fresh.map(item => item.signature).join("|")),
+      discoveryFingerprint:fingerprint(discovery.map(item => item.signature).join("|")),
+      holdoutFingerprint:fingerprint(holdout.map(item => item.signature).join("|")),
+      combinedFingerprint:fingerprint(ranked.map(entry => `${entry.rank}:${entry.item.signature}`).join("|")),
+      knownPresent:full.some(item => item.signature === KNOWN_PRIOR_SIGNATURE),
+      overlap:discovery.filter(left => holdout.some(right => right.signature === left.signature)).length
+    });
+  }
+
+  function containsVariable(ast) {
+    if (ast.type === "var") return true;
+    if (ast.type === "const") return false;
+    if (ast.type === "call") return containsVariable(ast.arg);
+    return containsVariable(ast.left) || containsVariable(ast.right);
+  }
+
+  function generatedCost3Candidates() {
+    const identitySignature = signature(V(),{});
+    return BASE.byCost[3].filter(definition => {
+      const values = signature(definition,{}).split(",");
+      return containsVariable(definition)
+        && signature(definition,{}) !== identitySignature
+        && new Set(values).size > 1;
+    }).sort((left,right) => key(left).localeCompare(key(right)));
+  }
+
+  function buildCandidates() {
+    const definitions = generatedCost3Candidates().filter(definition => !KNOWN_CONTROL_KEYS.has(key(definition)));
+    return Object.freeze(definitions.map((definition,index) => Object.freeze({
+      id:`C${String(index + 1).padStart(2,"0")}`,
+      definition,
+      label:format(definition),
+      structuralKey:key(definition),
+      definitionSignature:signature(definition,{})
+    })));
+  }
+
+  function candidateFingerprints(candidates) {
+    return Object.freeze({
+      keys:fingerprint(candidates.map(candidate => candidate.structuralKey).join("|")),
+      semantics:fingerprint(candidates.map(candidate => candidate.definitionSignature).join("|")),
+      identities:fingerprint(candidates.map(candidate => `${candidate.id}:${candidate.structuralKey}:${candidate.definitionSignature}`).join("|"))
+    });
+  }
+
+  function buildScreenCombinations(tasks) {
+    const combinations = [];
+    for (let first = 0; first < tasks.length - 3; first += 1) {
+      for (let second = first + 1; second < tasks.length - 2; second += 1) {
+        for (let third = second + 1; third < tasks.length - 1; third += 1) {
+          for (let fourth = third + 1; fourth < tasks.length; fourth += 1) {
+            const indices = Object.freeze([first,second,third,fourth]);
+            combinations.push(Object.freeze({
+              id:`S-${String(combinations.length + 1).padStart(4,"0")}`,
+              indices,
+              taskIds:Object.freeze(indices.map(index => tasks[index].id))
+            }));
+          }
+        }
+      }
+    }
+    return Object.freeze(combinations);
+  }
+
+  function buildMeasurementMatrix(tasks,candidates) {
+    const base = Object.freeze(tasks.map((task,index) => Object.freeze({
+      taskId:task.id,
+      taskIndex:index,
+      signature:task.signature,
+      stats:searchStats(BASE,task.signature)
+    })));
+    const rows = Object.freeze(candidates.map(candidate => {
+      const enumeration = enumerate({ op:{ name:"op",definition:candidate.definition } });
+      const cells = Object.freeze(tasks.map((task,index) => {
+        const stats = searchStats(enumeration,task.signature);
+        const baseStats = base[index].stats;
+        const contribution = Math.max(0,baseStats.work - stats.work);
+        return Object.freeze({
+          taskId:task.id,
+          taskIndex:index,
+          found:stats.found,
+          attempts:stats.attempts,
+          work:stats.work,
+          useful:stats.found && stats.work < baseStats.work,
+          contribution
+        });
+      }));
+      return Object.freeze({
+        candidateId:candidate.id,
+        operator:candidate.label,
+        structuralKey:candidate.structuralKey,
+        definitionSignature:candidate.definitionSignature,
+        cells
+      });
+    }));
+    const layout = rows.flatMap(row => row.cells.map(cell => `${row.candidateId}@${cell.taskId}`)).join("|");
+    const contents = [
+      ...base.map(cell => `B@${cell.taskId}:${Number(cell.stats.found)}:${cell.stats.attempts}:${cell.stats.work}`),
+      ...rows.flatMap(row => row.cells.map(cell => `${row.candidateId}@${cell.taskId}:${Number(cell.found)}:${cell.attempts}:${cell.work}:${Number(cell.useful)}:${cell.contribution}`))
+    ].join("|");
+    const baseValidationWork = sum(base.map(cell => cell.stats.work));
+    const candidateValidationWork = sum(rows.flatMap(row => row.cells.map(cell => cell.work)));
+    return Object.freeze({
+      base,
+      rows,
+      rowCount:rows.length,
+      columnCount:tasks.length,
+      cellCount:sum(rows.map(row => row.cells.length)),
+      layoutFingerprint:fingerprint(layout),
+      measurementFingerprint:fingerprint(contents),
+      baseValidationWork,
+      candidateValidationWork,
+      fullRaceWork:baseValidationWork + candidateValidationWork
+    });
+  }
+
+  function summarizeRow(row,base,indices) {
+    const cells = indices.map(index => row.cells[index]);
+    const baseCells = indices.map(index => base[index].stats);
+    const baseWork = sum(baseCells.map(cell => cell.work));
+    const candidateWork = sum(cells.map(cell => cell.work));
+    const grossSaving = sum(cells.map(cell => cell.contribution));
+    const largestContribution = Math.max(0,...cells.map(cell => cell.contribution));
+    const usefulCount = cells.filter(cell => cell.useful).length;
+    return Object.freeze({
+      candidateId:row.candidateId,
+      operator:row.operator,
+      structuralKey:row.structuralKey,
+      definitionSignature:row.definitionSignature,
+      baseWork,
+      candidateWork,
+      saving:baseWork - candidateWork,
+      savingShare:baseWork > 0 ? (baseWork - candidateWork) / baseWork : 0,
+      usefulCount,
+      usefulShare:cells.length > 0 ? usefulCount / cells.length : 0,
+      grossSaving,
+      largestContribution,
+      maximumContributionShare:grossSaving > 0 ? largestContribution / grossSaving : 0,
+      baseSolved:sum(baseCells.map(cell => Number(cell.found))),
+      candidateSolved:sum(cells.map(cell => Number(cell.found)))
+    });
+  }
+
+  function compareScores(left,right) {
+    return left.candidateWork - right.candidateWork
+      || right.usefulCount - left.usefulCount
+      || left.maximumContributionShare - right.maximumContributionShare
+      || left.structuralKey.localeCompare(right.structuralKey);
+  }
+
+  function exactD16HoldoutReference(score) {
+    return score.candidateId === D16_WINNER.candidateId
+      && score.operator === D16_WINNER.operator
+      && score.structuralKey === D16_WINNER.structuralKey
+      && score.definitionSignature === D16_WINNER.definitionSignature
+      && score.baseWork === D16_HOLDOUT_REFERENCE.baseWork
+      && score.candidateWork === D16_HOLDOUT_REFERENCE.candidateWork
+      && score.saving === D16_HOLDOUT_REFERENCE.saving
+      && score.savingShare === D16_HOLDOUT_REFERENCE.savingShare
+      && score.usefulCount === D16_HOLDOUT_REFERENCE.usefulCount
+      && score.usefulShare === D16_HOLDOUT_REFERENCE.usefulShare
+      && score.grossSaving === D16_HOLDOUT_REFERENCE.grossSaving
+      && score.largestContribution === D16_HOLDOUT_REFERENCE.largestContribution
+      && score.maximumContributionShare === D16_HOLDOUT_REFERENCE.maximumContributionShare
+      && score.baseSolved === D16_HOLDOUT_REFERENCE.baseSolved
+      && score.candidateSolved === D16_HOLDOUT_REFERENCE.candidateSolved;
+  }
+
+  function screenOutcome(matrix,indices,allIndices,fullScores) {
+    const selected = new Set(indices);
+    const raceIndices = allIndices.filter(index => !selected.has(index));
+    const screenScores = matrix.rows.map(row => summarizeRow(row,matrix.base,indices)).sort(compareScores);
+    const topTwo = screenScores.slice(0,TOP_COUNT);
+    const finalistScores = topTwo.map(score => fullScores.get(score.candidateId)).sort(compareScores);
+    const winner = finalistScores[0];
+    const screenBaseWork = sum(indices.map(index => matrix.base[index].stats.work));
+    const fullBaseWork = sum(matrix.base.map(cell => cell.stats.work));
+    const raceBaseWork = fullBaseWork - screenBaseWork;
+    const screenCandidateWork = sum(matrix.rows.flatMap(row => indices.map(index => row.cells[index].work)));
+    const raceCandidateWork = sum(topTwo.flatMap(score => {
+      const row = matrix.rows.find(item => item.candidateId === score.candidateId);
+      return raceIndices.map(index => row.cells[index].work);
+    }));
+    const stagedGenerationWork = screenBaseWork + raceBaseWork + screenCandidateWork + raceCandidateWork;
+    return Object.freeze({
+      topTwo:Object.freeze(topTwo),
+      winner,
+      screenBaseWork,
+      raceBaseWork,
+      screenCandidateWork,
+      raceCandidateWork,
+      stagedGenerationWork
+    });
+  }
+
+  function protocolAssertions(split,candidates,combinations,matrix) {
+    const prints = candidateFingerprints(candidates);
+    const tasks = split.holdout;
+    const taskRoster = tasks.map(task => `${task.id}:${task.signature}`).join("|");
+    const ledger = combinations.map(screen => screen.taskIds.join(",")).join("|");
+    const allIndices = Array.from({ length:tasks.length },(_,index) => index);
+    const partitions = combinations.map(screen => {
+      const selected = new Set(screen.indices);
+      const raceIds = allIndices.filter(index => !selected.has(index)).map(index => tasks[index].id);
+      return `S:${screen.taskIds.join(",")};R:${raceIds.join(",")}`;
+    }).join("|");
+    const screenSignatures = combinations.map(screen => screen.indices.map(index => tasks[index].signature).join("&")).join("|");
+    const raceSignatures = combinations.map(screen => {
+      const selected = new Set(screen.indices);
+      return allIndices.filter(index => !selected.has(index)).map(index => tasks[index].signature).join("&");
+    }).join("|");
+    const fullScores = matrix.rows.map(row => summarizeRow(row,matrix.base,allIndices)).sort(compareScores);
+    const c08ReferenceScore = fullScores.find(score => score.candidateId === D16_WINNER.candidateId);
+    const fullRaceAccounting = sum(matrix.base.map(cell => cell.stats.work)) + sum(fullScores.map(score => score.candidateWork));
+    const c08Row = matrix.rows.find(row => row.candidateId === D16_WINNER.candidateId);
+    const c08RowFingerprint = fingerprint(c08Row.cells.map((cell,index) => {
+      const base = matrix.base[index];
+      return `${cell.taskId}:${base.signature}:${Number(base.stats.found)}:${base.stats.attempts}:${base.stats.work}:${Number(cell.found)}:${cell.attempts}:${cell.work}:${Number(cell.useful)}:${cell.contribution}`;
+    }).join("|"));
+    const incidences = Array(tasks.length).fill(0);
+    for (const screen of combinations) for (const index of screen.indices) incidences[index] += 1;
+    return Object.freeze({
+      protocol:PROTOCOL === EXPECTED.protocol,
+      maxCost:MAX_COST === 7,
+      inputs:fingerprint(INPUTS.join("|")) === EXPECTED.inputFingerprint,
+      constants:fingerprint(CONSTANTS.join("|")) === EXPECTED.constantsFingerprint,
+      baseAccounting:snapshotMatches(BASE_SNAPSHOT,EXPECTED.base),
+      fullCubicCount:split.full.length === EXPECTED.family.fullCount,
+      fullCubicFingerprint:split.fullFingerprint === EXPECTED.family.fullFingerprint,
+      knownPriorPresent:split.knownPresent,
+      knownPriorFingerprint:fingerprint(KNOWN_PRIOR_SIGNATURE) === EXPECTED.family.knownSignatureFingerprint,
+      freshCubicCount:split.fresh.length === EXPECTED.family.freshCount,
+      freshCubicFingerprint:split.freshFingerprint === EXPECTED.family.freshFingerprint,
+      d16SplitSalt:fingerprint(D16_SPLIT_SALT) === EXPECTED.d16Split.saltFingerprint,
+      discoveryCount:split.discovery.length === EXPECTED.d16Split.discoveryCount,
+      holdoutCount:split.holdout.length === EXPECTED.d16Split.holdoutCount,
+      discoveryFingerprint:split.discoveryFingerprint === EXPECTED.d16Split.discoveryFingerprint,
+      holdoutFingerprint:split.holdoutFingerprint === EXPECTED.d16Split.holdoutFingerprint,
+      combinedFingerprint:split.combinedFingerprint === EXPECTED.d16Split.combinedFingerprint,
+      splitDisjoint:split.overlap === 0,
+      taskRoster:fingerprint(taskRoster) === EXPECTED.tasks.rosterFingerprint,
+      generatedCandidateCount:generatedCost3Candidates().length === EXPECTED.candidates.sourceCount,
+      candidateCount:candidates.length === EXPECTED.candidates.count,
+      candidateCosts:candidates.every(candidate => candidate.definition.cost === EXPECTED.candidates.cost),
+      candidateStructuralOrder:candidates.every((candidate,index) => index === 0 || candidates[index - 1].structuralKey < candidate.structuralKey),
+      candidateUniqueSemantics:new Set(candidates.map(candidate => candidate.definitionSignature)).size === EXPECTED.candidates.count,
+      candidateKeyFingerprint:prints.keys === EXPECTED.candidates.keyFingerprint,
+      candidateSemanticFingerprint:prints.semantics === EXPECTED.candidates.semanticFingerprint,
+      candidateIdentityFingerprint:prints.identities === EXPECTED.candidates.identityFingerprint,
+      matrixRows:matrix.rowCount === EXPECTED.matrix.rows,
+      matrixColumns:matrix.columnCount === EXPECTED.matrix.columns,
+      matrixCells:matrix.cellCount === EXPECTED.matrix.cells,
+      matrixLayout:matrix.layoutFingerprint === EXPECTED.matrix.layoutFingerprint,
+      fullRaceWorkFormula:matrix.fullRaceWork === matrix.baseValidationWork + matrix.candidateValidationWork,
+      fullRaceAccounting:fullRaceAccounting === matrix.fullRaceWork,
+      matrixTaskOrder:matrix.base.every((cell,index) => cell.taskIndex === index && cell.taskId === tasks[index].id),
+      matrixCandidateOrder:matrix.rows.every((row,index) => row.candidateId === candidates[index].id),
+      screenSize:combinations.every(screen => screen.indices.length === EXPECTED.screens.size),
+      screenCount:combinations.length === EXPECTED.screens.count,
+      screenLedger:fingerprint(ledger) === EXPECTED.screens.ledgerFingerprint,
+      screenPartitions:fingerprint(partitions) === EXPECTED.screens.partitionFingerprint,
+      screenSignatures:fingerprint(screenSignatures) === EXPECTED.screens.screenSignatureFingerprint,
+      raceSignatures:fingerprint(raceSignatures) === EXPECTED.screens.raceSignatureFingerprint,
+      screenBounds:sameArray(combinations[0].indices,[0,1,2,3])
+        && sameArray(combinations[combinations.length - 1].indices,[15,16,17,18]),
+      screenIndices:combinations.every(screen => screen.indices.every((index,position) => Number.isInteger(index)
+        && index >= 0 && index < HOLDOUT_COUNT && (position === 0 || screen.indices[position - 1] < index))),
+      screenUniqueness:new Set(combinations.map(screen => screen.indices.join(","))).size === EXPECTED.screens.count,
+      screenIncidences:sum(incidences) === EXPECTED.screens.incidenceCount
+        && incidences.every(count => count === EXPECTED.screens.incidencePerTask),
+      d16ReferenceSource:D16_HOLDOUT_REFERENCE.resultCommit === "a15ab1c46eb0124738771aa3f8b8dabcf8106aaa"
+        && D16_HOLDOUT_REFERENCE.discoverySeal === "580acdca",
+      fixedThresholds:EXPECTED.gates.minimumSavingShare === 0.10
+        && EXPECTED.gates.minimumUsefulCount === 4
+        && EXPECTED.gates.maximumContributionShare === 0.50
+        && EXPECTED.gates.minimumWorkReductionShare === 0.50,
+      d16HoldoutReference:exactD16HoldoutReference(c08ReferenceScore),
+      d16HoldoutRow:c08RowFingerprint === D16_HOLDOUT_REFERENCE.rowFingerprint
+    });
+  }
+
+  function buildPrepared() {
+    const split = buildD16Split();
+    const candidates = buildCandidates();
+    const combinations = buildScreenCombinations(split.holdout);
+    const matrix = buildMeasurementMatrix(split.holdout,candidates);
+    const assertions = protocolAssertions(split,candidates,combinations,matrix);
+    const protocolIntegrity = Object.values(assertions).every(Boolean);
+    if (!protocolIntegrity) throw new Error("Das D19-Protokoll stimmt nicht mit den festgelegten Werten überein.");
+    return Object.freeze({ split,candidates,combinations,matrix,assertions,protocolIntegrity });
+  }
+
+  function performanceGates(score,totalTasks) {
+    return Object.freeze({
+      baseSolvedAllTasks:score.baseSolved === totalTasks,
+      winnerSolvedAllTasks:score.candidateSolved === totalTasks,
+      minimumTotalSaving:10 * score.saving >= score.baseWork,
+      minimumUsefulBreadth:score.usefulCount >= EXPECTED.gates.minimumUsefulCount,
+      boundedContribution:2 * score.largestContribution <= score.grossSaving
+    });
+  }
+
+  function runCensus(prepared = null) {
+    const fixed = prepared || buildPrepared();
+    if (!fixed.protocolIntegrity || !Object.values(fixed.assertions).every(Boolean)) throw new Error("Die vorbereitete D19-Matrix ist ungültig.");
+    const { split,candidates,combinations,matrix } = fixed;
+    const allIndices = Object.freeze(Array.from({ length:split.holdout.length },(_,index) => index));
+    const fullScores = new Map(matrix.rows.map(row => [row.candidateId,summarizeRow(row,matrix.base,allIndices)]));
+    const counters = {
+      c08InTopTwo:0,
+      c08Winner:0,
+      exactD16HoldoutReference:0,
+      generationWorkHalved:0,
+      performancePassed:0,
+      screensPassed:0
+    };
+    const pairCounts = new Map();
+    const outcomeTokens = [];
+    const gateTokens = [];
+    const gatePassCounts = {};
+    const failureExamples = [];
+    const stagedGenerationWorks = [];
+    let selectedCandidateSlots = 0;
+    let minimumStagedGenerationWork = Infinity;
+    let maximumStagedGenerationWork = 0;
+    let minimumWorkReductionShare = Infinity;
+    let maximumWorkReductionShare = -Infinity;
+
+    for (const screen of combinations) {
+      const outcome = screenOutcome(matrix,screen.indices,allIndices,fullScores);
+      const { topTwo,winner,stagedGenerationWork } = outcome;
+      const workReduction = matrix.fullRaceWork - stagedGenerationWork;
+      const workReductionShare = workReduction / matrix.fullRaceWork;
+      const performance = performanceGates(winner,allIndices.length);
+      const gates = Object.freeze({
+        c08InTopTwo:topTwo.some(score => score.candidateId === D16_WINNER.candidateId),
+        distinctTopTwo:new Set(topTwo.map(score => score.candidateId)).size === TOP_COUNT,
+        c08Winner:winner.candidateId === D16_WINNER.candidateId,
+        exactD16HoldoutReference:exactD16HoldoutReference(winner),
+        generationWorkHalved:2 * stagedGenerationWork <= matrix.fullRaceWork,
+        ...performance
+      });
+      const passed = Object.values(gates).every(Boolean);
+      for (const [name,value] of Object.entries(gates)) gatePassCounts[name] = (gatePassCounts[name] || 0) + Number(value);
+      counters.c08InTopTwo += Number(gates.c08InTopTwo);
+      counters.c08Winner += Number(gates.c08Winner);
+      counters.exactD16HoldoutReference += Number(gates.exactD16HoldoutReference);
+      counters.generationWorkHalved += Number(gates.generationWorkHalved);
+      counters.performancePassed += Number(Object.values(performance).every(Boolean));
+      counters.screensPassed += Number(passed);
+      selectedCandidateSlots += topTwo.length;
+      stagedGenerationWorks.push(stagedGenerationWork);
+      minimumStagedGenerationWork = Math.min(minimumStagedGenerationWork,stagedGenerationWork);
+      maximumStagedGenerationWork = Math.max(maximumStagedGenerationWork,stagedGenerationWork);
+      minimumWorkReductionShare = Math.min(minimumWorkReductionShare,workReductionShare);
+      maximumWorkReductionShare = Math.max(maximumWorkReductionShare,workReductionShare);
+      const topTwoIds = topTwo.map(score => score.candidateId);
+      const pairKey = topTwoIds.join(",");
+      pairCounts.set(pairKey,(pairCounts.get(pairKey) || 0) + 1);
+      const gateBits = Object.values(gates).map(Boolean).map(Number).join("");
+      const screenKey = screen.taskIds.join(",");
+      outcomeTokens.push(`${screenKey};top=${topTwoIds.join(",")};winner=${winner.candidateId};work=${stagedGenerationWork};bits=${gateBits}`);
+      gateTokens.push(`${screenKey};bits=${gateBits}`);
+      if (!passed && failureExamples.length < FAILURE_EXAMPLE_LIMIT) {
+        failureExamples.push(Object.freeze({
+          screenId:screen.id,
+          indices:screen.indices,
+          taskIds:screen.taskIds,
+          topTwo:Object.freeze(topTwoIds),
+          winner:winner.candidateId,
+          failedGates:Object.freeze(Object.entries(gates).filter(([,value]) => !value).map(([name]) => name)),
+          stagedGenerationWork,
+          workReductionShare
+        }));
+      }
+    }
+
+    const pairLedger = [...pairCounts.entries()].sort(([left],[right]) => left.localeCompare(right)).map(([pair,count]) => `${pair}:${count}`).join("|");
+    const totalScreens = combinations.length;
+    const gates = Object.freeze({
+      protocolIntegrity:fixed.protocolIntegrity,
+      allScreensEnumerated:totalScreens === EXPECTED.screens.count && outcomeTokens.length === EXPECTED.screens.count,
+      allTopTwoSlotsCounted:selectedCandidateSlots === TOP_COUNT * EXPECTED.screens.count,
+      c08AlwaysInTopTwo:counters.c08InTopTwo === totalScreens,
+      c08AlwaysWinner:counters.c08Winner === totalScreens,
+      exactHoldoutReferenceEveryTime:counters.exactD16HoldoutReference === totalScreens,
+      workHalvedEveryTime:counters.generationWorkHalved === totalScreens,
+      performancePassedEveryTime:counters.performancePassed === totalScreens,
+      everyScreenPassed:counters.screensPassed === totalScreens,
+      failureExamplesBounded:failureExamples.length <= EXPECTED.failureExampleLimit
+    });
+    return Object.freeze({
+      protocol:PROTOCOL,
+      protocolAssertions:fixed.assertions,
+      protocolIntegrity:fixed.protocolIntegrity,
+      design:Object.freeze({
+        taskCount:split.holdout.length,
+        candidateCount:candidates.length,
+        matrixCellCount:matrix.cellCount,
+        matrixLayoutFingerprint:matrix.layoutFingerprint,
+        measurementFingerprint:matrix.measurementFingerprint,
+        baseValidationWork:matrix.baseValidationWork,
+        candidateValidationWork:matrix.candidateValidationWork,
+        fullRaceWork:matrix.fullRaceWork,
+        d16ResultCommit:D16_HOLDOUT_REFERENCE.resultCommit,
+        d16DiscoverySeal:D16_HOLDOUT_REFERENCE.discoverySeal,
+        screenSize:SCREEN_SIZE,
+        screenCount:totalScreens,
+        screenLedgerFingerprint:EXPECTED.screens.ledgerFingerprint
+      }),
+      census:Object.freeze({
+        outcomeFingerprint:fingerprint(outcomeTokens.join("|")),
+        gateFingerprint:fingerprint(gateTokens.join("|")),
+        topTwoPairFingerprint:fingerprint(pairLedger),
+        distinctTopTwoPairs:pairCounts.size,
+        selectedCandidateSlots,
+        counters:Object.freeze(counters),
+        gatePassCounts:Object.freeze(gatePassCounts),
+        failedScreens:totalScreens - counters.screensPassed,
+        minimumStagedGenerationWork,
+        medianStagedGenerationWork:median(stagedGenerationWorks),
+        maximumStagedGenerationWork,
+        minimumWorkReductionShare,
+        maximumWorkReductionShare,
+        failureExamples:Object.freeze(failureExamples)
+      }),
+      gates,
+      passed:Object.values(gates).every(Boolean)
+    });
+  }
+
+  function initialState(guideId = "question") {
+    return Object.freeze({ guideId,phase:"ready",prepared:null,result:null,message:"Bereit. Die Auswertung ist offen." });
+  }
+
+  function reducer(state,action) {
+    if (action.type === "guide") return Object.freeze({ ...state,guideId:action.id });
+    if (action.type === "reset") return initialState(state.guideId);
+    if (state.result) return Object.freeze({ ...state,message:"Für einen neuen interaktiven Lauf zuerst zurücksetzen." });
+    if (action.type === "prepare") {
+      if (state.prepared) return Object.freeze({ ...state,message:"Die Messmatrix ist bereits vorbereitet." });
+      const prepared = buildPrepared();
+      return Object.freeze({ ...state,phase:"prepared",prepared,message:"Die 266 Messwerte und 3.876 Screens sind vorbereitet." });
+    }
+    if (action.type === "census") {
+      const prepared = state.prepared || buildPrepared();
+      const result = runCensus(prepared);
+      return Object.freeze({ ...state,phase:"evaluated",prepared,result,message:"Alle 3.876 Holdout-Screens sind ausgewertet." });
+    }
+    return state;
+  }
+
+  const guides = Object.freeze({
+    question:Object.freeze({
+      title:"Fragestellung",
+      description:"Fixiere zuerst die 19 D16-Holdout-Aufgaben. Danach wird jede Vierergruppe mit derselben D17-Regel geprüft.",
+      steps:Object.freeze([
+        Object.freeze({ label:"Zurücksetzen",type:"reset" }),
+        Object.freeze({ label:"Messmatrix vorbereiten",type:"prepare" })
+      ])
+    }),
+    matrix:Object.freeze({
+      title:"Eine gemeinsame Messmatrix",
+      description:"Alle 14 Kandidaten werden einmal auf allen 19 Holdout-Aufgaben gemessen. Die Screens lesen anschließend nur noch diese festen Werte.",
+      steps:Object.freeze([
+        Object.freeze({ label:"Zurücksetzen",type:"reset" }),
+        Object.freeze({ label:"Messmatrix vorbereiten",type:"prepare" })
+      ])
+    }),
+    census:Object.freeze({
+      title:"Vollständiger Holdout-Census",
+      description:"Die 3.876 Screens laufen in lexikografischer Reihenfolge. Gespeichert werden Zähler, Fingerprints und bis zu fünf konkrete Abweichungen.",
+      steps:Object.freeze([
+        Object.freeze({ label:"Zurücksetzen",type:"reset" }),
+        Object.freeze({ label:"Messmatrix vorbereiten",type:"prepare" }),
+        Object.freeze({ label:"Alle Screens auswerten",type:"census" })
+      ])
+    })
+  });
+
+  return Object.freeze({ EXPECTED,guides,initialState,reducer,runCensus });
+})();
+</script>
+
+<script id="recorded-results" type="application/json">null</script>
+
+<script>
+"use strict";
+
+const recordedResult = JSON.parse(document.getElementById("recorded-results").textContent);
+let state = D19Experiment.initialState();
+if (recordedResult) state = Object.freeze({ ...state,phase:"evaluated",result:recordedResult,message:"Das aufgezeichnete Ergebnis ist geladen." });
+
+const escapeHtml = value => String(value).replace(/[&<>"']/g,char => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" })[char]);
+const integer = value => new Intl.NumberFormat("de-DE").format(value);
+const percent = value => new Intl.NumberFormat("de-DE",{ style:"percent",minimumFractionDigits:2,maximumFractionDigits:2 }).format(value);
+const card = (title,value,detail,className = "") => `<div class="card ${className}"><h3>${escapeHtml(title)}</h3><div class="value">${escapeHtml(value)}</div><div class="small muted">${escapeHtml(detail)}</div></div>`;
+
+function dispatch(action) {
+  state = D19Experiment.reducer(state,action);
+  render();
+}
+
+function renderGuides() {
+  const tabs = document.getElementById("guideTabs");
+  tabs.innerHTML = Object.entries(D19Experiment.guides).map(([id,guide]) => `<button class="${state.guideId === id ? "active" : ""}" data-guide="${id}">${escapeHtml(guide.title)}</button>`).join("");
+  tabs.querySelectorAll("[data-guide]").forEach(button => { button.onclick = () => dispatch({ type:"guide",id:button.dataset.guide }); });
+  const guide = D19Experiment.guides[state.guideId];
+  document.getElementById("guideTitle").textContent = guide.title;
+  document.getElementById("guideDescription").textContent = guide.description;
+  document.getElementById("guideSteps").innerHTML = guide.steps.map(step => `<button data-action="${step.type}">${escapeHtml(step.label)}</button>`).join("");
+}
+
+function renderProtocol() {
+  const panel = document.getElementById("protocolPanel");
+  const result = state.result;
+  const prepared = state.prepared;
+  panel.hidden = !prepared && !result;
+  if (panel.hidden) return;
+  const expected = D19Experiment.EXPECTED;
+  document.getElementById("protocolGrid").innerHTML = [
+    card("Holdout",`${expected.d16Split.holdoutCount} Aufgaben`,expected.d16Split.holdoutFingerprint),
+    card("Kandidaten",`${expected.candidates.count} Operatoren`,expected.candidates.identityFingerprint),
+    card("Messmatrix",`${expected.matrix.cells} Werte`,result?.design.measurementFingerprint || prepared?.matrix.measurementFingerprint || "offen"),
+    card("Vierer-Screens",integer(expected.screens.count),expected.screens.ledgerFingerprint),
+    card("Volles Rennen",result ? integer(result.design.fullRaceWork) : prepared ? integer(prepared.matrix.fullRaceWork) : "offen","Basis plus 266 Kandidatenwerte"),
+    card("Ergebnis-Fingerprint",result?.census.outcomeFingerprint || "offen","kompakte Gesamtaufzeichnung")
+  ].join("");
+  const assertions = result?.protocolAssertions || prepared?.assertions;
+  const protocolOk = assertions && Object.values(assertions).every(Boolean);
+  const text = document.getElementById("protocolText");
+  text.textContent = protocolOk ? "Die festgelegten Protokollwerte stimmen." : "Mindestens ein Protokollwert weicht ab.";
+  text.className = `status-line ${protocolOk ? "good" : "bad"}`;
+}
+
+function renderResult() {
+  const panel = document.getElementById("resultPanel");
+  const failurePanel = document.getElementById("failurePanel");
+  panel.hidden = !state.result;
+  failurePanel.hidden = !state.result || state.result.census.failureExamples.length === 0;
+  if (!state.result) return;
+  const result = state.result;
+  const total = result.design.screenCount;
+  const counters = result.census.counters;
+  document.getElementById("resultGrid").innerHTML = [
+    card("C08 in den Top 2",`${integer(counters.c08InTopTwo)} / ${integer(total)}`,percent(counters.c08InTopTwo / total),result.gates.c08AlwaysInTopTwo ? "good-card" : "bad-card"),
+    card("C08 als Endgewinner",`${integer(counters.c08Winner)} / ${integer(total)}`,percent(counters.c08Winner / total),result.gates.c08AlwaysWinner ? "good-card" : "bad-card"),
+    card("Halbierte Arbeit",`${integer(counters.generationWorkHalved)} / ${integer(total)}`,`schlechtester Wert: ${percent(result.census.minimumWorkReductionShare)}`,result.gates.workHalvedEveryTime ? "good-card" : "bad-card"),
+    card("Bestandene Screens",`${integer(counters.screensPassed)} / ${integer(total)}`,result.census.outcomeFingerprint,result.gates.everyScreenPassed ? "good-card" : "bad-card"),
+    card("Gesamturteil",result.passed ? "bestanden" : "nicht bestanden",`${result.census.distinctTopTwoPairs} verschiedene Top-2-Paare`,result.passed ? "good-card" : "bad-card")
+  ].join("");
+  const verdict = document.getElementById("verdict");
+  verdict.textContent = result.passed
+    ? "Die Auswahlregel bleibt über alle 3.876 Holdout-Screens stabil."
+    : "Mindestens ein Holdout-Screen verletzt ein festgelegtes D19-Kriterium.";
+  verdict.className = `status-line ${result.passed ? "good" : "bad"}`;
+  document.getElementById("failureRows").innerHTML = result.census.failureExamples.map(example => `<tr><td>${escapeHtml(example.screenId)}</td><td>${escapeHtml(example.indices.join(", "))}</td><td>${escapeHtml(example.topTwo.join(", "))}</td><td>${escapeHtml(example.winner)}</td><td>${escapeHtml(example.failedGates.join(", "))}</td><td class="number">${percent(example.workReductionShare)}</td></tr>`).join("");
+}
+
+function renderState() {
+  const phaseLabels = { ready:"bereit",prepared:"vorbereitet",evaluated:"ausgewertet" };
+  const ready = Boolean(state.prepared || state.result);
+  document.getElementById("phaseValue").textContent = phaseLabels[state.phase];
+  document.getElementById("taskValue").textContent = ready ? "19 / 19" : "0 / 19";
+  document.getElementById("candidateValue").textContent = ready ? "14 / 14" : "0 / 14";
+  document.getElementById("cellValue").textContent = ready ? "266 / 266" : "0 / 266";
+  document.getElementById("screenValue").textContent = state.result ? "3.876 / 3.876" : ready ? "0 / 3.876" : "0 / 3.876";
+  document.getElementById("message").textContent = state.message;
+}
+
+function bindActions() {
+  document.querySelectorAll("[data-action]").forEach(button => { button.onclick = () => dispatch({ type:button.dataset.action }); });
+}
+
+function render() {
+  renderGuides();
+  renderProtocol();
+  renderResult();
+  renderState();
+  bindActions();
+}
+
+render();
+</script>
+</body>
+</html>
