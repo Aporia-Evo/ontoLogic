@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>D21: Lösungstiefe gegen Sucharbeit</title>
+<style>
+  :root { color-scheme:dark; --bg:#0d1117; --panel:#161b22; --line:#30363d; --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --good:#3fb950; --bad:#f85149; }
+  * { box-sizing:border-box; }
+  body { max-width:1180px; margin:0 auto; padding:32px 20px 64px; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,sans-serif; }
+  h1,h2,h3,p { margin-top:0; }
+  h1 { margin-bottom:8px; font-size:clamp(28px,5vw,44px); line-height:1.12; }
+  h2 { margin-bottom:14px; font-size:21px; }
+  h3 { margin-bottom:4px; font-size:14px; color:var(--muted); font-weight:600; }
+  code { color:#d2a8ff; }
+  button { border:1px solid var(--line); border-radius:8px; padding:9px 13px; background:#21262d; color:var(--text); font:inherit; cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  button:disabled { cursor:not-allowed; opacity:.5; }
+  .intro,.muted { color:var(--muted); }
+  .intro { max-width:850px; margin-bottom:20px; }
+  .notice,.panel { border:1px solid var(--line); border-radius:12px; background:var(--panel); }
+  .notice { padding:14px 16px; margin-bottom:18px; }
+  .panel { padding:18px; margin-top:16px; }
+  .controls,.tabs,.steps { display:flex; flex-wrap:wrap; gap:8px; }
+  .tabs { margin-bottom:14px; }
+  .tabs button.active { border-color:var(--accent); color:var(--accent); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; }
+  .card { min-height:92px; padding:13px; border:1px solid var(--line); border-radius:9px; background:#0d1117; }
+  .card.good { border-color:var(--good); }
+  .card.bad { border-color:var(--bad); }
+  .value { font-size:23px; font-weight:700; }
+  .small { font-size:13px; }
+  .status { margin:14px 0 0; padding:11px 13px; border-radius:8px; background:#0d1117; }
+  .status.good { color:var(--good); }
+  .status.bad { color:var(--bad); }
+  .table-wrap { overflow:auto; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th,td { padding:9px 10px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+  th { color:var(--muted); font-weight:600; }
+  .number { text-align:right; font-variant-numeric:tabular-nums; }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+  <h1>D21: Lösungstiefe gegen Sucharbeit</h1>
+  <p class="intro">D21 prüft eine einzige Ursache des D20-Ergebnisses: Findet C08 die 20 festen Aufgaben auf einer niedrigeren Kostenstufe, benötigt die Suche dafür aber mehr Versuche und mehr gemessene Arbeit?</p>
+  <div class="notice"><strong>Protokoll D21-v1.</strong> Dieselben 20 Aufgaben und dieselbe Suchgrenze wie in D20. Verglichen werden nur die Basissuche und C08. Arbeit bedeutet hier gezählte Primitive-Auswertungen aller vollständig erzeugten Kostenstufen bis zum ersten Fund.</div>
+
+  <section class="panel">
+    <h2>Aktueller Zustand</h2>
+    <div class="grid" id="stateGrid"></div>
+    <p class="status" id="message"></p>
+  </section>
+
+  <section class="panel">
+    <h2>Freies Ausprobieren</h2>
+    <div class="controls">
+      <button data-action="reset">Zurücksetzen</button>
+      <button data-action="inspect">Protokoll prüfen</button>
+      <button data-action="measure" id="measureButton">BASE und C08 messen</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Geführte Ansichten</h2>
+    <div class="tabs" id="guideTabs"></div>
+    <h3 id="guideTitle"></h3>
+    <p class="muted" id="guideDescription"></p>
+    <div class="steps" id="guideSteps"></div>
+  </section>
+
+  <section class="panel" id="protocolPanel" hidden>
+    <h2>Festes Protokoll</h2>
+    <div class="grid" id="protocolGrid"></div>
+    <p class="status" id="protocolStatus"></p>
+  </section>
+
+  <section class="panel" id="resultPanel" hidden>
+    <h2>Diagnose</h2>
+    <div class="grid" id="resultGrid"></div>
+    <p class="status" id="verdict"></p>
+  </section>
+
+  <section class="panel" id="layerPanel" hidden>
+    <h2>Arbeit je Kostenstufe</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Stufe</th><th class="number">BASE Ausdrücke</th><th class="number">C08 Ausdrücke</th><th class="number">BASE Versuche</th><th class="number">C08 Versuche</th><th class="number">BASE Arbeit</th><th class="number">C08 Arbeit</th></tr></thead>
+      <tbody id="layerRows"></tbody>
+    </table></div>
+  </section>
+
+  <section class="panel" id="taskPanel" hidden>
+    <h2>Alle 20 Aufgaben</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Aufgabe</th><th>Ziel</th><th>BASE Programm</th><th>C08 Programm</th><th class="number">BASE Stufe</th><th class="number">C08 Stufe</th><th class="number">BASE Versuche</th><th class="number">C08 Versuche</th><th class="number">BASE Arbeit</th><th class="number">C08 Arbeit</th><th class="number">Differenz</th></tr></thead>
+      <tbody id="taskRows"></tbody>
+    </table></div>
+  </section>
+
+<script>
+const D21Experiment = (() => {
+  "use strict";
+
+  const PROTOCOL = "D21-v1";
+  const TASK_RANK_PROTOCOL = "D20-v1";
+  const INPUTS = Object.freeze([-3,-2,-1,0,1,2,3]);
+  const CONSTANTS = Object.freeze([-2,-1,0,1,2,3]);
+  const MAX_COST = 9;
+  const VALUE_LIMIT = 1_000_000;
+  const ARMS = Object.freeze(["BASE","C08"]);
+
+  const TASKS = Object.freeze([
+    Object.freeze({ id:"Q00",a:2,d:-1,rank:"10908470",signature:"-55,-17,-3,-1,1,15,53" }),
+    Object.freeze({ id:"Q01",a:-3,d:-2,rank:"2701f894",signature:"79,22,1,-2,-5,-26,-83" }),
+    Object.freeze({ id:"Q02",a:-3,d:0,rank:"368bd82c",signature:"81,24,3,0,-3,-24,-81" }),
+    Object.freeze({ id:"Q03",a:2,d:-3,rank:"36c02f63",signature:"-57,-19,-5,-3,-1,13,51" }),
+    Object.freeze({ id:"Q04",a:-2,d:-1,rank:"399e8944",signature:"53,15,1,-1,-3,-17,-55" }),
+    Object.freeze({ id:"Q05",a:-3,d:3,rank:"42d833a7",signature:"84,27,6,3,0,-21,-78" }),
+    Object.freeze({ id:"Q06",a:-2,d:1,rank:"4564ab1f",signature:"55,17,3,1,-1,-15,-53" }),
+    Object.freeze({ id:"Q07",a:-2,d:3,rank:"462074a0",signature:"57,19,5,3,1,-13,-51" }),
+    Object.freeze({ id:"Q08",a:-3,d:-1,rank:"4c4c99fc",signature:"80,23,2,-1,-4,-25,-82" }),
+    Object.freeze({ id:"Q09",a:-3,d:-3,rank:"51e37ff9",signature:"78,21,0,-3,-6,-27,-84" }),
+    Object.freeze({ id:"Q10",a:3,d:1,rank:"55ad47a7",signature:"-80,-23,-2,1,4,25,82" }),
+    Object.freeze({ id:"Q11",a:2,d:3,rank:"56e205c0",signature:"-51,-13,1,3,5,19,57" }),
+    Object.freeze({ id:"Q12",a:2,d:-2,rank:"7e5ae117",signature:"-56,-18,-4,-2,0,14,52" }),
+    Object.freeze({ id:"Q13",a:-2,d:2,rank:"890388e5",signature:"56,18,4,2,0,-14,-52" }),
+    Object.freeze({ id:"Q14",a:3,d:3,rank:"99f8f315",signature:"-78,-21,0,3,6,27,84" }),
+    Object.freeze({ id:"Q15",a:-3,d:1,rank:"9fcf9653",signature:"82,25,4,1,-2,-23,-80" }),
+    Object.freeze({ id:"Q16",a:-2,d:-3,rank:"a08ff103",signature:"51,13,-1,-3,-5,-19,-57" }),
+    Object.freeze({ id:"Q17",a:3,d:-3,rank:"da72d697",signature:"-84,-27,-6,-3,0,21,78" }),
+    Object.freeze({ id:"Q18",a:3,d:-2,rank:"df717766",signature:"-83,-26,-5,-2,1,22,79" }),
+    Object.freeze({ id:"Q19",a:3,d:2,rank:"e174398d",signature:"-79,-22,-1,2,5,26,83" })
+  ]);
+
+  const C08 = Object.freeze({
+    candidateId:"C08",
+    operator:"(x × x)",
+    structuralKey:"mul(x,x)",
+    definitionSignature:"9,4,1,0,1,4,9",
+    cost:3
+  });
+
+  const EXPECTED = Object.freeze({
+    protocol:PROTOCOL,
+    taskRankProtocol:TASK_RANK_PROTOCOL,
+    inputFingerprint:"83d7237a",
+    constantsFingerprint:"e1f1d8c0",
+    taskCount:20,
+    taskRosterFingerprint:"ca101679",
+    taskSignatureFingerprint:"8d0f57b7",
+    selectedFingerprint:"c7adbb43",
+    baseSnapshot:Object.freeze({
+      counts:Object.freeze([0,7,0,24,0,106,0,514,0,2721]),
+      attempts:Object.freeze([0,7,0,105,0,672,0,4144,0,24568]),
+      work:Object.freeze([0,0,0,735,0,9408,0,87024,0,687904]),
+      seenCount:3372,
+      seenFingerprint:"476c4a69"
+    }),
+    d20:Object.freeze({
+      protocolCommit:"312dcb5ac4d45abe37fc39893b254846d10bcc18",
+      resultCommit:"796c3c20a6b5f2477e6007757c4500b820dd8c16",
+      measurementFingerprint:"21a500d4",
+      c08FullScore:Object.freeze({
+        baseWork:15_701_420,
+        c08Work:19_780_880,
+        workSaving:-4_079_460,
+        workSavingShare:-0.2598147173949872,
+        usefulCount:0,
+        grossSaving:0,
+        largestContribution:0,
+        baseSolved:20,
+        c08Solved:20
+      })
+    })
+  });
+
+  const V = () => ({ type:"var",cost:1 });
+  const C = value => ({ type:"const",value,cost:1 });
+  const OPS = Object.freeze({
+    add:Object.freeze({ symbol:"+",fn:(a,b) => a + b,commutative:true }),
+    sub:Object.freeze({ symbol:"−",fn:(a,b) => a - b,commutative:false }),
+    mul:Object.freeze({ symbol:"×",fn:(a,b) => a * b,commutative:true })
+  });
+
+  function B(op,left,right) {
+    if ((op === "add" || op === "mul") && format(left) > format(right)) [left,right] = [right,left];
+    return { type:"binary",op,left,right,cost:1 + left.cost + right.cost };
+  }
+
+  const Call = (name,arg) => ({ type:"call",name,arg,cost:1 + arg.cost });
+
+  function format(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return String(ast.value);
+    if (ast.type === "call") return `${ast.name}(${format(ast.arg)})`;
+    return `(${format(ast.left)} ${OPS[ast.op].symbol} ${format(ast.right)})`;
+  }
+
+  function key(ast) {
+    if (ast.type === "var") return "x";
+    if (ast.type === "const") return `c:${ast.value}`;
+    if (ast.type === "call") return `call:${ast.name}(${key(ast.arg)})`;
+    return `${ast.op}(${key(ast.left)},${key(ast.right)})`;
+  }
+
+  function evalAst(ast,input,macros) {
+    if (ast.type === "var") return input;
+    if (ast.type === "const") return ast.value;
+    if (ast.type === "call") return evalAst(macros[ast.name].definition,evalAst(ast.arg,input,macros),{});
+    const value = OPS[ast.op].fn(evalAst(ast.left,input,macros),evalAst(ast.right,input,macros));
+    return Number.isFinite(value) && Math.abs(value) <= VALUE_LIMIT ? value : NaN;
+  }
+
+  function primitiveCount(ast,macros) {
+    if (ast.type === "var" || ast.type === "const") return 0;
+    if (ast.type === "binary") return 1 + primitiveCount(ast.left,macros) + primitiveCount(ast.right,macros);
+    return primitiveCount(ast.arg,macros) + primitiveCount(macros[ast.name].definition,{});
+  }
+
+  function signature(ast,macros = {}) {
+    const values = INPUTS.map(input => evalAst(ast,input,macros));
+    return values.some(Number.isNaN) ? null : values.join(",");
+  }
+
+  function fingerprint(text) {
+    let hash = 2166136261;
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash,16777619);
+    }
+    return (hash >>> 0).toString(16).padStart(8,"0");
+  }
+
+  const sum = values => values.reduce((total,value) => total + value,0);
+  const sameArray = (left,right) => left.length === right.length && left.every((value,index) => value === right[index]);
+  const cumulative = values => values.map((_,index) => sum(values.slice(0,index + 1)));
+
+  function enumerate(macros = {}) {
+    const byCost = Array.from({ length:MAX_COST + 1 },() => []);
+    const seen = new Map();
+    const attemptsByCost = Array(MAX_COST + 1).fill(0);
+    const workByCost = Array(MAX_COST + 1).fill(0);
+
+    function accept(cost,batch) {
+      batch.sort((left,right) => key(left).localeCompare(key(right)));
+      for (const ast of batch) {
+        const sig = signature(ast,macros);
+        if (sig === null) continue;
+        attemptsByCost[cost] += 1;
+        workByCost[cost] += primitiveCount(ast,macros) * INPUTS.length;
+        if (seen.has(sig)) continue;
+        seen.set(sig,ast);
+        byCost[cost].push(ast);
+      }
+    }
+
+    accept(1,[V(),...CONSTANTS.map(C)]);
+    for (let cost = 2; cost <= MAX_COST; cost += 1) {
+      const batch = [];
+      for (const name of Object.keys(macros).sort()) {
+        for (const arg of byCost[cost - 1]) batch.push(Call(name,arg));
+      }
+      for (let leftCost = 1; leftCost < cost; leftCost += 1) {
+        const rightCost = cost - 1 - leftCost;
+        if (rightCost < 1) continue;
+        for (const [op,spec] of Object.entries(OPS)) {
+          for (const left of byCost[leftCost]) {
+            for (const right of byCost[rightCost]) {
+              if (spec.commutative && key(left) > key(right)) continue;
+              batch.push(B(op,left,right));
+            }
+          }
+        }
+      }
+      accept(cost,batch);
+    }
+    return { byCost,seen,attemptsByCost,workByCost };
+  }
+
+  function enumerationSnapshot(enumeration) {
+    const counts = enumeration.byCost.map(items => items.length);
+    const attempts = [...enumeration.attemptsByCost];
+    const work = [...enumeration.workByCost];
+    const sortedSignatures = [...enumeration.seen.keys()].sort();
+    const raw = `${counts.join(",")}|${attempts.join(",")}|${work.join(",")}|${enumeration.seen.size}|${fingerprint(sortedSignatures.join("|"))}`;
+    return Object.freeze({
+      counts:Object.freeze(counts),
+      attempts:Object.freeze(attempts),
+      work:Object.freeze(work),
+      cumulativeAttempts:Object.freeze(cumulative(attempts)),
+      cumulativeWork:Object.freeze(cumulative(work)),
+      seenCount:enumeration.seen.size,
+      seenFingerprint:fingerprint(sortedSignatures.join("|")),
+      snapshotFingerprint:fingerprint(raw)
+    });
+  }
+
+  function snapshotMatches(actual,expected) {
+    return sameArray(actual.counts,expected.counts)
+      && sameArray(actual.attempts,expected.attempts)
+      && sameArray(actual.work,expected.work)
+      && actual.seenCount === expected.seenCount
+      && actual.seenFingerprint === expected.seenFingerprint;
+  }
+
+  function searchStats(enumeration,taskSignature) {
+    const solution = enumeration.seen.get(taskSignature);
+    if (!solution) return Object.freeze({ found:false,solutionCost:null,attempts:sum(enumeration.attemptsByCost),work:sum(enumeration.workByCost),program:null });
+    return Object.freeze({
+      found:true,
+      solutionCost:solution.cost,
+      attempts:sum(enumeration.attemptsByCost.slice(0,solution.cost + 1)),
+      work:sum(enumeration.workByCost.slice(0,solution.cost + 1)),
+      program:format(solution)
+    });
+  }
+
+  const C08_DEFINITION = Object.freeze(B("mul",V(),V()));
+
+  function protocolAssertions() {
+    const roster = TASKS.map(task => `${task.id}:${task.signature}`).join("|");
+    return Object.freeze({
+      protocol:PROTOCOL === EXPECTED.protocol,
+      taskRankProtocol:TASK_RANK_PROTOCOL === EXPECTED.taskRankProtocol,
+      maxCost:MAX_COST === 9,
+      inputs:fingerprint(INPUTS.join("|")) === EXPECTED.inputFingerprint,
+      constants:fingerprint(CONSTANTS.join("|")) === EXPECTED.constantsFingerprint,
+      twoArms:sameArray(ARMS,["BASE","C08"]),
+      taskCount:TASKS.length === EXPECTED.taskCount,
+      taskIds:TASKS.every((task,index) => task.id === `Q${String(index).padStart(2,"0")}`),
+      taskFormula:TASKS.every(task => task.signature === INPUTS.map(input => task.a * input ** 3 + task.d).join(",")),
+      taskRanks:TASKS.every(task => task.rank === fingerprint(`${TASK_RANK_PROTOCOL}|${task.signature}`)),
+      taskRoster:fingerprint(roster) === EXPECTED.taskRosterFingerprint,
+      taskSignatures:fingerprint(TASKS.map(task => task.signature).join("|")) === EXPECTED.taskSignatureFingerprint,
+      selectedTasks:fingerprint(TASKS.map(task => `${task.rank}:${task.signature}`).join("|")) === EXPECTED.selectedFingerprint,
+      c08Id:C08.candidateId === "C08",
+      c08Operator:C08.operator === format(C08_DEFINITION),
+      c08Key:C08.structuralKey === key(C08_DEFINITION),
+      c08Signature:C08.definitionSignature === signature(C08_DEFINITION,{}),
+      c08Cost:C08.cost === C08_DEFINITION.cost,
+      d20ProtocolCommit:/^[0-9a-f]{40}$/.test(EXPECTED.d20.protocolCommit),
+      d20ResultCommit:/^[0-9a-f]{40}$/.test(EXPECTED.d20.resultCommit),
+      d20MeasurementFingerprint:EXPECTED.d20.measurementFingerprint === "21a500d4"
+    });
+  }
+
+  function summarizeRows(rows) {
+    const both = rows.filter(row => row.base.found && row.c08.found);
+    const baseWork = sum(rows.map(row => row.base.work));
+    const c08Work = sum(rows.map(row => row.c08.work));
+    const grossSavings = rows.map(row => Math.max(0,row.workSaving));
+    return Object.freeze({
+      taskCount:rows.length,
+      baseSolved:rows.filter(row => row.base.found).length,
+      c08Solved:rows.filter(row => row.c08.found).length,
+      bothSolved:both.length,
+      baseSolutionCost:sum(both.map(row => row.base.solutionCost)),
+      c08SolutionCost:sum(both.map(row => row.c08.solutionCost)),
+      solutionCostSaving:sum(both.map(row => row.solutionCostSaving)),
+      depthImproved:both.filter(row => row.solutionCostSaving > 0).length,
+      depthEqual:both.filter(row => row.solutionCostSaving === 0).length,
+      depthWorse:both.filter(row => row.solutionCostSaving < 0).length,
+      baseAttempts:sum(rows.map(row => row.base.attempts)),
+      c08Attempts:sum(rows.map(row => row.c08.attempts)),
+      attemptSaving:sum(rows.map(row => row.attemptSaving)),
+      attemptsImproved:rows.filter(row => row.attemptSaving > 0).length,
+      attemptsEqual:rows.filter(row => row.attemptSaving === 0).length,
+      attemptsWorse:rows.filter(row => row.attemptSaving < 0).length,
+      baseWork,
+      c08Work,
+      workSaving:baseWork - c08Work,
+      workSavingShare:baseWork > 0 ? (baseWork - c08Work) / baseWork : 0,
+      workImproved:rows.filter(row => row.workSaving > 0).length,
+      workEqual:rows.filter(row => row.workSaving === 0).length,
+      workWorse:rows.filter(row => row.workSaving < 0).length,
+      usefulCount:rows.filter(row => row.c08.found && row.c08.work < row.base.work).length,
+      grossSaving:sum(grossSavings),
+      largestContribution:Math.max(0,...grossSavings),
+      shorterButMoreWork:rows.filter(row => row.shorterButMoreWork).length,
+      shorterButMoreAttempts:rows.filter(row => row.shorterButMoreAttempts).length,
+      rowFingerprint:fingerprint(rows.map(row => `${row.taskId}:${Number(row.base.found)}:${row.base.solutionCost}:${row.base.attempts}:${row.base.work}:${Number(row.c08.found)}:${row.c08.solutionCost}:${row.c08.attempts}:${row.c08.work}`).join("|"))
+    });
+  }
+
+  function deriveDiagnosis(summary) {
+    const depthBenefit = summary.solutionCostSaving > 0 && summary.depthImproved > 0 && summary.depthWorse === 0;
+    const searchPenalty = summary.c08Work > summary.baseWork;
+    const attemptPenalty = summary.c08Attempts > summary.baseAttempts;
+    const taskLevelConsistency = summary.shorterButMoreWork === summary.depthImproved;
+    const attemptLevelConsistency = summary.shorterButMoreAttempts === summary.depthImproved;
+    const hypothesisSupported = depthBenefit && searchPenalty && attemptPenalty && taskLevelConsistency && attemptLevelConsistency;
+    return Object.freeze({
+      depthBenefit,
+      searchPenalty,
+      attemptPenalty,
+      taskLevelConsistency,
+      attemptLevelConsistency,
+      hypothesisSupported,
+      code:hypothesisSupported ? "shorter-solutions-search-overhead-dominates" : "mixed-result"
+    });
+  }
+
+  function runDiagnostic(protocolCommit = null) {
+    const assertions = protocolAssertions();
+    const protocolIntegrity = Object.values(assertions).every(Boolean);
+    if (!protocolIntegrity) throw new Error("Das feste D21-Protokoll ist ungültig.");
+
+    const baseEnumeration = enumerate({});
+    const c08Enumeration = enumerate({ op:{ name:"op",definition:C08_DEFINITION } });
+    const snapshots = Object.freeze({
+      base:enumerationSnapshot(baseEnumeration),
+      c08:enumerationSnapshot(c08Enumeration)
+    });
+    const rows = Object.freeze(TASKS.map(task => {
+      const base = searchStats(baseEnumeration,task.signature);
+      const c08 = searchStats(c08Enumeration,task.signature);
+      const solutionCostSaving = base.found && c08.found ? base.solutionCost - c08.solutionCost : null;
+      const attemptSaving = base.attempts - c08.attempts;
+      const workSaving = base.work - c08.work;
+      return Object.freeze({
+        taskId:task.id,a:task.a,d:task.d,rank:task.rank,signature:task.signature,
+        base,c08,solutionCostSaving,attemptSaving,workSaving,
+        shorterButMoreWork:solutionCostSaving > 0 && workSaving < 0,
+        shorterButMoreAttempts:solutionCostSaving > 0 && attemptSaving < 0
+      });
+    }));
+    const summary = summarizeRows(rows);
+    const diagnosis = deriveDiagnosis(summary);
+    const d20 = EXPECTED.d20.c08FullScore;
+    const validity = Object.freeze({
+      protocolIntegrity,
+      rowCount:rows.length === EXPECTED.taskCount,
+      rowOrder:rows.every((row,index) => row.taskId === TASKS[index].id && row.signature === TASKS[index].signature),
+      uniqueTasks:new Set(rows.map(row => row.taskId)).size === EXPECTED.taskCount,
+      allFound:summary.baseSolved === EXPECTED.taskCount && summary.c08Solved === EXPECTED.taskCount,
+      rowDeltas:rows.every(row => row.solutionCostSaving === row.base.solutionCost - row.c08.solutionCost
+        && row.attemptSaving === row.base.attempts - row.c08.attempts
+        && row.workSaving === row.base.work - row.c08.work),
+      rowAccounting:rows.every(row => row.base.work === snapshots.base.cumulativeWork[row.base.solutionCost]
+        && row.base.attempts === snapshots.base.cumulativeAttempts[row.base.solutionCost]
+        && row.c08.work === snapshots.c08.cumulativeWork[row.c08.solutionCost]
+        && row.c08.attempts === snapshots.c08.cumulativeAttempts[row.c08.solutionCost]),
+      snapshotShape:[snapshots.base,snapshots.c08].every(snapshot => snapshot.counts.length === MAX_COST + 1
+        && snapshot.attempts.length === MAX_COST + 1
+        && snapshot.work.length === MAX_COST + 1),
+      baseSnapshot:snapshotMatches(snapshots.base,EXPECTED.baseSnapshot),
+      summaryArithmetic:summary.solutionCostSaving === summary.baseSolutionCost - summary.c08SolutionCost
+        && summary.attemptSaving === summary.baseAttempts - summary.c08Attempts
+        && summary.workSaving === summary.baseWork - summary.c08Work,
+      d20Aggregate:summary.baseWork === d20.baseWork
+        && summary.c08Work === d20.c08Work
+        && summary.workSaving === d20.workSaving
+        && summary.workSavingShare === d20.workSavingShare
+        && summary.usefulCount === d20.usefulCount
+        && summary.grossSaving === d20.grossSaving
+        && summary.largestContribution === d20.largestContribution
+        && summary.baseSolved === d20.baseSolved
+        && summary.c08Solved === d20.c08Solved,
+      diagnosisDerived:diagnosis.depthBenefit === (summary.solutionCostSaving > 0 && summary.depthImproved > 0 && summary.depthWorse === 0)
+        && diagnosis.searchPenalty === (summary.c08Work > summary.baseWork)
+        && diagnosis.attemptPenalty === (summary.c08Attempts > summary.baseAttempts)
+        && diagnosis.taskLevelConsistency === (summary.shorterButMoreWork === summary.depthImproved)
+        && diagnosis.attemptLevelConsistency === (summary.shorterButMoreAttempts === summary.depthImproved)
+        && diagnosis.hypothesisSupported === (diagnosis.depthBenefit && diagnosis.searchPenalty && diagnosis.attemptPenalty && diagnosis.taskLevelConsistency && diagnosis.attemptLevelConsistency)
+        && diagnosis.code === (diagnosis.hypothesisSupported ? "shorter-solutions-search-overhead-dominates" : "mixed-result")
+    });
+    const resultFingerprint = fingerprint(`${summary.rowFingerprint}|${snapshots.base.snapshotFingerprint}|${snapshots.c08.snapshotFingerprint}|${diagnosis.code}`);
+    return Object.freeze({
+      protocol:PROTOCOL,
+      protocolCommit,
+      protocolAssertions:assertions,
+      protocolIntegrity,
+      provenance:Object.freeze({
+        d20ProtocolCommit:EXPECTED.d20.protocolCommit,
+        d20ResultCommit:EXPECTED.d20.resultCommit,
+        d20MeasurementFingerprint:EXPECTED.d20.measurementFingerprint,
+        taskRosterFingerprint:EXPECTED.taskRosterFingerprint
+      }),
+      operator:C08,
+      snapshots,
+      rows,
+      summary,
+      diagnosis,
+      validity,
+      resultFingerprint,
+      passed:Object.values(validity).every(Boolean)
+    });
+  }
+
+  function initialState(guideId = "question") {
+    return Object.freeze({ guideId,guideStep:0,phase:"ready",assertions:null,result:null,message:"Bereit. Das Protokoll ist fest, die Diagnose ist offen." });
+  }
+
+  function reducer(state,action) {
+    if (action.type === "guide") return initialState(action.id);
+    if (action.type === "reset") return initialState(state.guideId);
+    if (action.type === "inspect") {
+      const assertions = protocolAssertions();
+      return Object.freeze({ ...state,phase:"checked",assertions,message:"Die festen D21-Werte wurden geprüft." });
+    }
+    if (action.type === "measure" && action.result) {
+      return Object.freeze({ ...state,phase:"measured",assertions:action.result.protocolAssertions,result:action.result,message:"BASE und C08 wurden auf allen 20 Aufgaben gemessen." });
+    }
+    return state;
+  }
+
+  const guides = Object.freeze({
+    question:Object.freeze({
+      title:"Die eine Frage",
+      description:"Prüfe zuerst, ob Aufgaben, Operator und D20-Bezug unverändert sind.",
+      steps:Object.freeze([{ label:"Protokoll prüfen",type:"inspect" }])
+    }),
+    layers:Object.freeze({
+      title:"Wo wächst die Suche?",
+      description:"Die Kostenstufen zeigen getrennt, wie viele Ausdrücke, Versuche und Primitive-Auswertungen beide Arme erzeugen.",
+      steps:Object.freeze([{ label:"Protokoll prüfen",type:"inspect" },{ label:"Beide Arme messen",type:"measure" }])
+    }),
+    diagnosis:Object.freeze({
+      title:"Was erklärt D20?",
+      description:"Die Aufgabenzeilen prüfen, ob eine niedrigere Lösungsstufe regelmäßig mit höherer Sucharbeit zusammenfällt.",
+      steps:Object.freeze([{ label:"Beide Arme messen",type:"measure" }])
+    })
+  });
+
+  return Object.freeze({ EXPECTED,TASKS,C08,guides,initialState,reducer,protocolAssertions,runDiagnostic });
+})();
+</script>
+
+<script id="recorded-results" type="application/json">null</script>
+
+<script>
+"use strict";
+
+const recordedResult = JSON.parse(document.getElementById("recorded-results").textContent);
+let state = D21Experiment.initialState();
+if (recordedResult) state = Object.freeze({ ...state,phase:"measured",assertions:recordedResult.protocolAssertions,result:recordedResult,message:"Das aufgezeichnete D21-Ergebnis ist geladen." });
+
+const escapeHtml = value => String(value).replace(/[&<>"']/g,char => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" })[char]);
+const integer = value => new Intl.NumberFormat("de-DE").format(value);
+const percent = value => new Intl.NumberFormat("de-DE",{ style:"percent",minimumFractionDigits:2,maximumFractionDigits:2 }).format(value);
+const card = (title,value,detail,className = "") => `<div class="card ${className}"><h3>${escapeHtml(title)}</h3><div class="value">${escapeHtml(value)}</div><div class="small muted">${escapeHtml(detail)}</div></div>`;
+
+function dispatch(action) {
+  if (action.type === "measure") {
+    const result = recordedResult || state.result || D21Experiment.runDiagnostic();
+    state = D21Experiment.reducer(state,{ type:"measure",result });
+  } else {
+    state = D21Experiment.reducer(state,action);
+  }
+  if (action.guided) state = Object.freeze({ ...state,guideStep:state.guideStep + 1 });
+  render();
+}
+
+function renderGuides() {
+  const tabs = document.getElementById("guideTabs");
+  tabs.innerHTML = Object.entries(D21Experiment.guides).map(([id,guide]) => `<button class="${state.guideId === id ? "active" : ""}" data-guide="${id}">${escapeHtml(guide.title)}</button>`).join("");
+  tabs.querySelectorAll("[data-guide]").forEach(button => { button.onclick = () => dispatch({ type:"guide",id:button.dataset.guide }); });
+  const guide = D21Experiment.guides[state.guideId];
+  document.getElementById("guideTitle").textContent = guide.title;
+  document.getElementById("guideDescription").textContent = guide.description;
+  const step = guide.steps[state.guideStep];
+  document.getElementById("guideSteps").innerHTML = step
+    ? `<button data-action="${step.type}" data-guided="true">${escapeHtml(step.label)}</button>`
+    : `<span class="small muted">Ansicht vollständig durchlaufen.</span>`;
+}
+
+function renderState() {
+  const phases = { ready:"bereit",checked:"geprüft",measured:"gemessen" };
+  document.getElementById("stateGrid").innerHTML = [
+    card("Phase",phases[state.phase],state.message),
+    card("Aufgaben","20",D21Experiment.EXPECTED.taskRosterFingerprint),
+    card("Vergleich","BASE / C08","zwei feste Sucharme"),
+    card("Ergebnis",state.result ? (state.result.passed ? "gültig" : "ungültig") : "offen",state.result?.resultFingerprint || "noch nicht gemessen",state.result ? (state.result.passed ? "good" : "bad") : "")
+  ].join("");
+  document.getElementById("message").textContent = state.message;
+  document.getElementById("measureButton").disabled = false;
+}
+
+function renderProtocol() {
+  const panel = document.getElementById("protocolPanel");
+  const assertions = state.assertions || state.result?.protocolAssertions;
+  panel.hidden = !assertions;
+  if (!assertions) return;
+  const ok = Object.values(assertions).every(Boolean);
+  document.getElementById("protocolGrid").innerHTML = [
+    card("Protokoll",D21Experiment.EXPECTED.protocol,D21Experiment.EXPECTED.taskRankProtocol),
+    card("Aufgaben","20 / 20",D21Experiment.EXPECTED.taskRosterFingerprint),
+    card("Operator","C08",D21Experiment.C08.structuralKey),
+    card("Suchgrenze","Kostenstufe 9","identische Zählweise"),
+    card("D20 Protokoll",D21Experiment.EXPECTED.d20.protocolCommit.slice(0,12),"fester Ausgangspunkt"),
+    card("D20 Messung",D21Experiment.EXPECTED.d20.measurementFingerprint,D21Experiment.EXPECTED.d20.resultCommit.slice(0,12)),
+    card("D21 Protokoll",state.result?.protocolCommit ? state.result.protocolCommit.slice(0,12) : "offen","Commit des offiziellen Laufs")
+  ].join("");
+  const status = document.getElementById("protocolStatus");
+  const failed = Object.entries(assertions).filter(([,value]) => !value).map(([name]) => name);
+  status.textContent = ok ? "Alle festen Protokollwerte stimmen." : `Abweichende Protokollwerte: ${failed.join(", ")}`;
+  status.className = `status ${ok ? "good" : "bad"}`;
+}
+
+function renderResult() {
+  const result = state.result;
+  document.getElementById("resultPanel").hidden = !result;
+  document.getElementById("layerPanel").hidden = !result;
+  document.getElementById("taskPanel").hidden = !result;
+  if (!result) return;
+  const summary = result.summary;
+  document.getElementById("resultGrid").innerHTML = [
+    card("Niedrigere Stufe",`${summary.depthImproved} / ${summary.taskCount}`,`${integer(summary.solutionCostSaving)} Kostenpunkte gespart`,summary.depthImproved > 0 ? "good" : "bad"),
+    card("Arbeitsdifferenz",integer(summary.workSaving),"BASE minus C08",summary.workSaving >= 0 ? "good" : "bad"),
+    card("Versuchsdifferenz",integer(summary.attemptSaving),"BASE minus C08",summary.attemptSaving >= 0 ? "good" : "bad"),
+    card("Beides zugleich",`${summary.shorterButMoreWork} / ${summary.taskCount}`,"kürzere Lösung bei höherer Arbeit",summary.shorterButMoreWork > 0 ? "bad" : "good"),
+    card("D20 reproduziert",result.validity.d20Aggregate ? "ja" : "nein",percent(summary.workSavingShare),result.validity.d20Aggregate ? "good" : "bad"),
+    card("Messung",result.passed ? "gültig" : "ungültig",result.resultFingerprint,result.passed ? "good" : "bad")
+  ].join("");
+  const verdict = document.getElementById("verdict");
+  const failedValidity = Object.entries(result.validity).filter(([,value]) => !value).map(([name]) => name);
+  verdict.textContent = !result.passed
+    ? `Ungültige Prüfungen: ${failedValidity.join(", ")}`
+    : result.diagnosis.hypothesisSupported
+      ? "C08 verkürzt die Lösungen. Die zusätzliche Suchmenge überwiegt diesen Vorteil in der D20-Zählung."
+      : "Die Messwerte ergeben kein einheitliches Bild aus kürzeren Lösungen und höherer Sucharbeit.";
+  verdict.className = `status ${result.passed ? "good" : "bad"}`;
+
+  document.getElementById("layerRows").innerHTML = result.snapshots.base.counts.map((_,cost) => `<tr><td>${cost}</td><td class="number">${integer(result.snapshots.base.counts[cost])}</td><td class="number">${integer(result.snapshots.c08.counts[cost])}</td><td class="number">${integer(result.snapshots.base.attempts[cost])}</td><td class="number">${integer(result.snapshots.c08.attempts[cost])}</td><td class="number">${integer(result.snapshots.base.work[cost])}</td><td class="number">${integer(result.snapshots.c08.work[cost])}</td></tr>`).join("");
+  document.getElementById("taskRows").innerHTML = result.rows.map(row => `<tr><td>${escapeHtml(row.taskId)}</td><td>${escapeHtml(`${row.a}·x³ ${row.d < 0 ? "−" : "+"} ${Math.abs(row.d)}`)}</td><td>${escapeHtml(row.base.program)}</td><td>${escapeHtml(row.c08.program)}</td><td class="number">${row.base.solutionCost}</td><td class="number">${row.c08.solutionCost}</td><td class="number">${integer(row.base.attempts)}</td><td class="number">${integer(row.c08.attempts)}</td><td class="number">${integer(row.base.work)}</td><td class="number">${integer(row.c08.work)}</td><td class="number">${integer(row.workSaving)}</td></tr>`).join("");
+}
+
+function bindActions() {
+  document.querySelectorAll("[data-action]").forEach(button => { button.onclick = () => dispatch({ type:button.dataset.action,guided:button.dataset.guided === "true" }); });
+}
+
+function render() {
+  renderGuides();
+  renderState();
+  renderProtocol();
+  renderResult();
+  bindActions();
+}
+
+render();
+</script>
+</body>
+</html>
