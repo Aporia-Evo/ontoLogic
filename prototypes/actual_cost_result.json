@@ -1,0 +1,1078 @@
+{
+  "protocol": "actual-cost-v1",
+  "date": "2026-09-05T05:46:54.000Z",
+  "environment": {
+    "node": "v24.19.0",
+    "platform": "linux",
+    "arch": "x64"
+  },
+  "sources": [
+    {
+      "file": "operator_learning_d16_generated_operator_holdout_prototype.html",
+      "sha256": "2886f552ff4f219162b08d44574a1f613f058895d895a9c80674240a352b290a"
+    },
+    {
+      "file": "operator_learning_d21_depth_vs_search_work_diagnostic_prototype.html",
+      "sha256": "8f46bf663e50d285af236a2bc6286f84189cbc51afdf64a166212e6b087e820b"
+    }
+  ],
+  "accounting": "One shared fresh cost-9 table per evaluation arm; full cost-7 D16 discovery charged once per round. Timings include instrumentation. Known D20 tasks; retrospective engineering measurement.",
+  "checks": "3 evaluator cases; original discovery seal; all tasks found; counters and returned programs identical across 3 rounds",
+  "selected": {
+    "id": "C08",
+    "key": "mul(x,x)"
+  },
+  "summary": {
+    "learning": {
+      "primitiveEvaluations": 2031526,
+      "signatureEvaluations": 94327,
+      "sortComparisons": 278746,
+      "medianWallMs": 281.6570680000001,
+      "medianCpuMs": 333.731
+    },
+    "baseline": {
+      "primitiveEvaluations": 785071,
+      "signatureEvaluations": 29496,
+      "sortComparisons": 75391,
+      "medianWallMs": 90.69465100000025,
+      "medianCpuMs": 98.563
+    },
+    "learned": {
+      "primitiveEvaluations": 3902549,
+      "signatureEvaluations": 118577,
+      "sortComparisons": 310833,
+      "medianWallMs": 484.109106,
+      "medianCpuMs": 586.726
+    },
+    "total": {
+      "primitiveEvaluations": 5934075,
+      "signatureEvaluations": 212904,
+      "sortComparisons": 589579,
+      "medianWallMs": 789.623754,
+      "medianCpuMs": 956.6669999999999
+    },
+    "totalToBaselinePrimitiveRatio": 7.55864756181288,
+    "totalToBaselineMedianWallRatio": 8.706398285826115,
+    "blockAmortizedByPrimitives": false,
+    "blockAmortizedByMedianWall": false
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "order": [
+        "baseline",
+        "learned"
+      ],
+      "selected": {
+        "id": "C08",
+        "key": "mul(x,x)"
+      },
+      "discoverySeal": "580acdca",
+      "trainingTasks": 18,
+      "learning": {
+        "primitiveEvaluations": 2031526,
+        "signatureEvaluations": 94327,
+        "sortComparisons": 278746,
+        "wallMs": 305.514648,
+        "cpuMs": 369.941
+      },
+      "baseline": {
+        "value": {
+          "rows": [
+            {
+              "taskId": "Q00",
+              "signature": "-55,-17,-3,-1,1,15,53",
+              "found": true,
+              "cost": 9,
+              "program": "(((x + x) × (x × x)) + -1)"
+            },
+            {
+              "taskId": "Q01",
+              "signature": "79,22,1,-2,-5,-26,-83",
+              "found": true,
+              "cost": 9,
+              "program": "(-2 − ((3 × x) × (x × x)))"
+            },
+            {
+              "taskId": "Q02",
+              "signature": "81,24,3,0,-3,-24,-81",
+              "found": true,
+              "cost": 9,
+              "program": "(((-1 + -2) × (x × x)) × x)"
+            },
+            {
+              "taskId": "Q03",
+              "signature": "-57,-19,-5,-3,-1,13,51",
+              "found": true,
+              "cost": 9,
+              "program": "(((x + x) × (x × x)) − 3)"
+            },
+            {
+              "taskId": "Q04",
+              "signature": "53,15,1,-1,-3,-17,-55",
+              "found": true,
+              "cost": 9,
+              "program": "(((-2 × x) × (x × x)) + -1)"
+            },
+            {
+              "taskId": "Q05",
+              "signature": "84,27,6,3,0,-21,-78",
+              "found": true,
+              "cost": 9,
+              "program": "((1 − ((x × x) × x)) × 3)"
+            },
+            {
+              "taskId": "Q06",
+              "signature": "55,17,3,1,-1,-15,-53",
+              "found": true,
+              "cost": 9,
+              "program": "(((-2 × x) × (x × x)) + 1)"
+            },
+            {
+              "taskId": "Q07",
+              "signature": "57,19,5,3,1,-13,-51",
+              "found": true,
+              "cost": 9,
+              "program": "(((-2 × x) × (x × x)) + 3)"
+            },
+            {
+              "taskId": "Q08",
+              "signature": "80,23,2,-1,-4,-25,-82",
+              "found": true,
+              "cost": 9,
+              "program": "(-1 − ((3 × x) × (x × x)))"
+            },
+            {
+              "taskId": "Q09",
+              "signature": "78,21,0,-3,-6,-27,-84",
+              "found": true,
+              "cost": 9,
+              "program": "((-1 − ((x × x) × x)) × 3)"
+            },
+            {
+              "taskId": "Q10",
+              "signature": "-80,-23,-2,1,4,25,82",
+              "found": true,
+              "cost": 9,
+              "program": "(((3 × x) × (x × x)) + 1)"
+            },
+            {
+              "taskId": "Q11",
+              "signature": "-51,-13,1,3,5,19,57",
+              "found": true,
+              "cost": 9,
+              "program": "(((x + x) × (x × x)) + 3)"
+            },
+            {
+              "taskId": "Q12",
+              "signature": "-56,-18,-4,-2,0,14,52",
+              "found": true,
+              "cost": 9,
+              "program": "(((x + x) × (x × x)) + -2)"
+            },
+            {
+              "taskId": "Q13",
+              "signature": "56,18,4,2,0,-14,-52",
+              "found": true,
+              "cost": 9,
+              "program": "(((-2 × x) × (x × x)) + 2)"
+            },
+            {
+              "taskId": "Q14",
+              "signature": "-78,-21,0,3,6,27,84",
+              "found": true,
+              "cost": 9,
+              "program": "(((3 × x) × (x × x)) + 3)"
+            },
+            {
+              "taskId": "Q15",
+              "signature": "82,25,4,1,-2,-23,-80",
+              "found": true,
+              "cost": 9,
+              "program": "(1 − ((3 × x) × (x × x)))"
+            },
+            {
+              "taskId": "Q16",
+              "signature": "51,13,-1,-3,-5,-19,-57",
+              "found": true,
+              "cost": 9,
+              "program": "(((-2 × x) × (x × x)) − 3)"
+            },
+            {
+              "taskId": "Q17",
+              "signature": "-84,-27,-6,-3,0,21,78",
+              "found": true,
+              "cost": 9,
+              "program": "((((x × x) × x) + -1) × 3)"
+            },
+            {
+              "taskId": "Q18",
+              "signature": "-83,-26,-5,-2,1,22,79",
+              "found": true,
+              "cost": 9,
+              "program": "(((3 × x) × (x × x)) + -2)"
+            },
+            {
+              "taskId": "Q19",
+              "signature": "-79,-22,-1,2,5,26,83",
+              "found": true,
+              "cost": 9,
+              "program": "(((3 × x) × (x × x)) + 2)"
+            }
+          ],
+          "tableSize": 3372,
+          "tablesBuilt": 1,
+          "lookups": 20
+        },
+        "stats": {
+          "primitiveEvaluations": 785071,
+          "signatureEvaluations": 29496,
+          "sortComparisons": 75391,
+          "wallMs": 94.99091000000004,
+          "cpuMs": 150.817
+        }
+      },
+      "learned": {
+        "value": {
+          "rows": [
+            {
+              "taskId": "Q00",
+              "signature": "-55,-17,-3,-1,1,15,53",
+              "found": true,
+              "cost": 8,
+              "program": "(((x + x) × op(x)) + -1)"
+            },
+            {
+              "taskId": "Q01",
+              "signature": "79,22,1,-2,-5,-26,-83",
+              "found": true,
+              "cost": 8,
+              "program": "(-2 − ((3 × op(x)) × x))"
+            },
+            {
+              "taskId": "Q02",
+              "signature": "81,24,3,0,-3,-24,-81",
+              "found": true,
+              "cost": 8,
+              "program": "((-1 + -2) × (op(x) × x))"
+            },
+            {
+              "taskId": "Q03",
+              "signature": "-57,-19,-5,-3,-1,13,51",
+              "found": true,
+              "cost": 8,
+              "program": "(((x + x) × op(x)) − 3)"
+            },
+            {
+              "taskId": "Q04",
+              "signature": "53,15,1,-1,-3,-17,-55",
+              "found": true,
+              "cost": 8,
+              "program": "(((-2 × op(x)) × x) + -1)"
+            },
+            {
+              "taskId": "Q05",
+              "signature": "84,27,6,3,0,-21,-78",
+              "found": true,
+              "cost": 8,
+              "program": "((1 − (op(x) × x)) × 3)"
+            },
+            {
+              "taskId": "Q06",
+              "signature": "55,17,3,1,-1,-15,-53",
+              "found": true,
+              "cost": 8,
+              "program": "(((-2 × op(x)) × x) + 1)"
+            },
+            {
+              "taskId": "Q07",
+              "signature": "57,19,5,3,1,-13,-51",
+              "found": true,
+              "cost": 8,
+              "program": "(((-2 × op(x)) × x) + 3)"
+            },
+            {
+              "taskId": "Q08",
+              "signature": "80,23,2,-1,-4,-25,-82",
+              "found": true,
+              "cost": 8,
+              "program": "(-1 − ((3 × op(x)) × x))"
+            },
+            {
+              "taskId": "Q09",
+              "signature": "78,21,0,-3,-6,-27,-84",
+              "found": true,
+              "cost": 8,
+              "program": "((-1 − (op(x) × x)) × 3)"
+            },
+            {
+              "taskId": "Q10",
+              "signature": "-80,-23,-2,1,4,25,82",
+              "found": true,
+              "cost": 8,
+              "program": "(((3 × op(x)) × x) + 1)"
+            },
+            {
+              "taskId": "Q11",
+              "signature": "-51,-13,1,3,5,19,57",
+              "found": true,
+              "cost": 8,
+              "program": "(((x + x) × op(x)) + 3)"
+            },
+            {
+              "taskId": "Q12",
+              "signature": "-56,-18,-4,-2,0,14,52",
+              "found": true,
+              "cost": 8,
+              "program": "(((x + x) × op(x)) + -2)"
+            },
+            {
+              "taskId": "Q13",
+              "signature": "56,18,4,2,0,-14,-52",
+              "found": true,
+              "cost": 8,
+              "program": "(((-2 × op(x)) × x) + 2)"
+            },
+            {
+              "taskId": "Q14",
+              "signature": "-78,-21,0,3,6,27,84",
+              "found": true,
+              "cost": 8,
+              "program": "(((3 × op(x)) × x) + 3)"
+            },
+            {
+              "taskId": "Q15",
+              "signature": "82,25,4,1,-2,-23,-80",
+              "found": true,
+              "cost": 8,
+              "program": "(1 − ((3 × op(x)) × x))"
+            },
+            {
+              "taskId": "Q16",
+              "signature": "51,13,-1,-3,-5,-19,-57",
+              "found": true,
+              "cost": 8,
+              "program": "(((-2 × op(x)) × x) − 3)"
+            },
+            {
+              "taskId": "Q17",
+              "signature": "-84,-27,-6,-3,0,21,78",
+              "found": true,
+              "cost": 8,
+              "program": "(((op(x) × x) + -1) × 3)"
+            },
+            {
+              "taskId": "Q18",
+              "signature": "-83,-26,-5,-2,1,22,79",
+              "found": true,
+              "cost": 8,
+              "program": "(((3 × op(x)) × x) + -2)"
+            },
+            {
+              "taskId": "Q19",
+              "signature": "-79,-22,-1,2,5,26,83",
+              "found": true,
+              "cost": 8,
+              "program": "(((3 × op(x)) × x) + 2)"
+            }
+          ],
+          "tableSize": 29707,
+          "tablesBuilt": 1,
+          "lookups": 20
+        },
+        "stats": {
+          "primitiveEvaluations": 3902549,
+          "signatureEvaluations": 118577,
+          "sortComparisons": 310833,
+          "wallMs": 484.109106,
+          "cpuMs": 586.726
+        }
+      },
+      "total": {
+        "primitiveEvaluations": 5934075,
+        "signatureEvaluations": 212904,
+        "sortComparisons": 589579,
+        "wallMs": 789.623754,
+        "cpuMs": 956.6669999999999
+      }
+    },
+    {
+      "round": 2,
+      "order": [
+        "learned",
+        "baseline"
+      ],
+      "selected": {
+        "id": "C08",
+        "key": "mul(x,x)"
+      },
+      "discoverySeal": "580acdca",
+      "trainingTasks": 18,
+      "learning": {
+        "primitiveEvaluations": 2031526,
+        "signatureEvaluations": 94327,
+        "sortComparisons": 278746,
+        "wallMs": 281.6570680000001,
+        "cpuMs": 333.731
+      },
+      "baseline": {
+        "value": {
+          "rows": [
+            {
+              "taskId": "Q00",
+              "signature": "-55,-17,-3,-1,1,15,53",
+              "found": true,
+              "cost": 9,
+              "program": "(((x + x) × (x × x)) + -1)"
+            },
+            {
+              "taskId": "Q01",
+              "signature": "79,22,1,-2,-5,-26,-83",
+              "found": true,
+              "cost": 9,
+              "program": "(-2 − ((3 × x) × (x × x)))"
+            },
+            {
+              "taskId": "Q02",
+              "signature": "81,24,3,0,-3,-24,-81",
+              "found": true,
+              "cost": 9,
+              "program": "(((-1 + -2) × (x × x)) × x)"
+            },
+            {
+              "taskId": "Q03",
+              "signature": "-57,-19,-5,-3,-1,13,51",
+              "found": true,
+              "cost": 9,
+              "program": "(((x + x) × (x × x)) − 3)"
+            },
+            {
+              "taskId": "Q04",
+              "signature": "53,15,1,-1,-3,-17,-55",
+              "found": true,
+              "cost": 9,
+              "program": "(((-2 × x) × (x × x)) + -1)"
+            },
+            {
+              "taskId": "Q05",
+              "signature": "84,27,6,3,0,-21,-78",
+              "found": true,
+              "cost": 9,
+              "program": "((1 − ((x × x) × x)) × 3)"
+            },
+            {
+              "taskId": "Q06",
+              "signature": "55,17,3,1,-1,-15,-53",
+              "found": true,
+              "cost": 9,
+              "program": "(((-2 × x) × (x × x)) + 1)"
+            },
+            {
+              "taskId": "Q07",
+              "signature": "57,19,5,3,1,-13,-51",
+              "found": true,
+              "cost": 9,
+              "program": "(((-2 × x) × (x × x)) + 3)"
+            },
+            {
+              "taskId": "Q08",
+              "signature": "80,23,2,-1,-4,-25,-82",
+              "found": true,
+              "cost": 9,
+              "program": "(-1 − ((3 × x) × (x × x)))"
+            },
+            {
+              "taskId": "Q09",
+              "signature": "78,21,0,-3,-6,-27,-84",
+              "found": true,
+              "cost": 9,
+              "program": "((-1 − ((x × x) × x)) × 3)"
+            },
+            {
+              "taskId": "Q10",
+              "signature": "-80,-23,-2,1,4,25,82",
+              "found": true,
+              "cost": 9,
+              "program": "(((3 × x) × (x × x)) + 1)"
+            },
+            {
+              "taskId": "Q11",
+              "signature": "-51,-13,1,3,5,19,57",
+              "found": true,
+              "cost": 9,
+              "program": "(((x + x) × (x × x)) + 3)"
+            },
+            {
+              "taskId": "Q12",
+              "signature": "-56,-18,-4,-2,0,14,52",
+              "found": true,
+              "cost": 9,
+              "program": "(((x + x) × (x × x)) + -2)"
+            },
+            {
+              "taskId": "Q13",
+              "signature": "56,18,4,2,0,-14,-52",
+              "found": true,
+              "cost": 9,
+              "program": "(((-2 × x) × (x × x)) + 2)"
+            },
+            {
+              "taskId": "Q14",
+              "signature": "-78,-21,0,3,6,27,84",
+              "found": true,
+              "cost": 9,
+              "program": "(((3 × x) × (x × x)) + 3)"
+            },
+            {
+              "taskId": "Q15",
+              "signature": "82,25,4,1,-2,-23,-80",
+              "found": true,
+              "cost": 9,
+              "program": "(1 − ((3 × x) × (x × x)))"
+            },
+            {
+              "taskId": "Q16",
+              "signature": "51,13,-1,-3,-5,-19,-57",
+              "found": true,
+              "cost": 9,
+              "program": "(((-2 × x) × (x × x)) − 3)"
+            },
+            {
+              "taskId": "Q17",
+              "signature": "-84,-27,-6,-3,0,21,78",
+              "found": true,
+              "cost": 9,
+              "program": "((((x × x) × x) + -1) × 3)"
+            },
+            {
+              "taskId": "Q18",
+              "signature": "-83,-26,-5,-2,1,22,79",
+              "found": true,
+              "cost": 9,
+              "program": "(((3 × x) × (x × x)) + -2)"
+            },
+            {
+              "taskId": "Q19",
+              "signature": "-79,-22,-1,2,5,26,83",
+              "found": true,
+              "cost": 9,
+              "program": "(((3 × x) × (x × x)) + 2)"
+            }
+          ],
+          "tableSize": 3372,
+          "tablesBuilt": 1,
+          "lookups": 20
+        },
+        "stats": {
+          "primitiveEvaluations": 785071,
+          "signatureEvaluations": 29496,
+          "sortComparisons": 75391,
+          "wallMs": 90.31337099999996,
+          "cpuMs": 94.525
+        }
+      },
+      "learned": {
+        "value": {
+          "rows": [
+            {
+              "taskId": "Q00",
+              "signature": "-55,-17,-3,-1,1,15,53",
+              "found": true,
+              "cost": 8,
+              "program": "(((x + x) × op(x)) + -1)"
+            },
+            {
+              "taskId": "Q01",
+              "signature": "79,22,1,-2,-5,-26,-83",
+              "found": true,
+              "cost": 8,
+              "program": "(-2 − ((3 × op(x)) × x))"
+            },
+            {
+              "taskId": "Q02",
+              "signature": "81,24,3,0,-3,-24,-81",
+              "found": true,
+              "cost": 8,
+              "program": "((-1 + -2) × (op(x) × x))"
+            },
+            {
+              "taskId": "Q03",
+              "signature": "-57,-19,-5,-3,-1,13,51",
+              "found": true,
+              "cost": 8,
+              "program": "(((x + x) × op(x)) − 3)"
+            },
+            {
+              "taskId": "Q04",
+              "signature": "53,15,1,-1,-3,-17,-55",
+              "found": true,
+              "cost": 8,
+              "program": "(((-2 × op(x)) × x) + -1)"
+            },
+            {
+              "taskId": "Q05",
+              "signature": "84,27,6,3,0,-21,-78",
+              "found": true,
+              "cost": 8,
+              "program": "((1 − (op(x) × x)) × 3)"
+            },
+            {
+              "taskId": "Q06",
+              "signature": "55,17,3,1,-1,-15,-53",
+              "found": true,
+              "cost": 8,
+              "program": "(((-2 × op(x)) × x) + 1)"
+            },
+            {
+              "taskId": "Q07",
+              "signature": "57,19,5,3,1,-13,-51",
+              "found": true,
+              "cost": 8,
+              "program": "(((-2 × op(x)) × x) + 3)"
+            },
+            {
+              "taskId": "Q08",
+              "signature": "80,23,2,-1,-4,-25,-82",
+              "found": true,
+              "cost": 8,
+              "program": "(-1 − ((3 × op(x)) × x))"
+            },
+            {
+              "taskId": "Q09",
+              "signature": "78,21,0,-3,-6,-27,-84",
+              "found": true,
+              "cost": 8,
+              "program": "((-1 − (op(x) × x)) × 3)"
+            },
+            {
+              "taskId": "Q10",
+              "signature": "-80,-23,-2,1,4,25,82",
+              "found": true,
+              "cost": 8,
+              "program": "(((3 × op(x)) × x) + 1)"
+            },
+            {
+              "taskId": "Q11",
+              "signature": "-51,-13,1,3,5,19,57",
+              "found": true,
+              "cost": 8,
+              "program": "(((x + x) × op(x)) + 3)"
+            },
+            {
+              "taskId": "Q12",
+              "signature": "-56,-18,-4,-2,0,14,52",
+              "found": true,
+              "cost": 8,
+              "program": "(((x + x) × op(x)) + -2)"
+            },
+            {
+              "taskId": "Q13",
+              "signature": "56,18,4,2,0,-14,-52",
+              "found": true,
+              "cost": 8,
+              "program": "(((-2 × op(x)) × x) + 2)"
+            },
+            {
+              "taskId": "Q14",
+              "signature": "-78,-21,0,3,6,27,84",
+              "found": true,
+              "cost": 8,
+              "program": "(((3 × op(x)) × x) + 3)"
+            },
+            {
+              "taskId": "Q15",
+              "signature": "82,25,4,1,-2,-23,-80",
+              "found": true,
+              "cost": 8,
+              "program": "(1 − ((3 × op(x)) × x))"
+            },
+            {
+              "taskId": "Q16",
+              "signature": "51,13,-1,-3,-5,-19,-57",
+              "found": true,
+              "cost": 8,
+              "program": "(((-2 × op(x)) × x) − 3)"
+            },
+            {
+              "taskId": "Q17",
+              "signature": "-84,-27,-6,-3,0,21,78",
+              "found": true,
+              "cost": 8,
+              "program": "(((op(x) × x) + -1) × 3)"
+            },
+            {
+              "taskId": "Q18",
+              "signature": "-83,-26,-5,-2,1,22,79",
+              "found": true,
+              "cost": 8,
+              "program": "(((3 × op(x)) × x) + -2)"
+            },
+            {
+              "taskId": "Q19",
+              "signature": "-79,-22,-1,2,5,26,83",
+              "found": true,
+              "cost": 8,
+              "program": "(((3 × op(x)) × x) + 2)"
+            }
+          ],
+          "tableSize": 29707,
+          "tablesBuilt": 1,
+          "lookups": 20
+        },
+        "stats": {
+          "primitiveEvaluations": 3902549,
+          "signatureEvaluations": 118577,
+          "sortComparisons": 310833,
+          "wallMs": 641.0945550000001,
+          "cpuMs": 775.987
+        }
+      },
+      "total": {
+        "primitiveEvaluations": 5934075,
+        "signatureEvaluations": 212904,
+        "sortComparisons": 589579,
+        "wallMs": 922.7516230000002,
+        "cpuMs": 1109.7179999999998
+      }
+    },
+    {
+      "round": 3,
+      "order": [
+        "baseline",
+        "learned"
+      ],
+      "selected": {
+        "id": "C08",
+        "key": "mul(x,x)"
+      },
+      "discoverySeal": "580acdca",
+      "trainingTasks": 18,
+      "learning": {
+        "primitiveEvaluations": 2031526,
+        "signatureEvaluations": 94327,
+        "sortComparisons": 278746,
+        "wallMs": 260.2786339999998,
+        "cpuMs": 318.865
+      },
+      "baseline": {
+        "value": {
+          "rows": [
+            {
+              "taskId": "Q00",
+              "signature": "-55,-17,-3,-1,1,15,53",
+              "found": true,
+              "cost": 9,
+              "program": "(((x + x) × (x × x)) + -1)"
+            },
+            {
+              "taskId": "Q01",
+              "signature": "79,22,1,-2,-5,-26,-83",
+              "found": true,
+              "cost": 9,
+              "program": "(-2 − ((3 × x) × (x × x)))"
+            },
+            {
+              "taskId": "Q02",
+              "signature": "81,24,3,0,-3,-24,-81",
+              "found": true,
+              "cost": 9,
+              "program": "(((-1 + -2) × (x × x)) × x)"
+            },
+            {
+              "taskId": "Q03",
+              "signature": "-57,-19,-5,-3,-1,13,51",
+              "found": true,
+              "cost": 9,
+              "program": "(((x + x) × (x × x)) − 3)"
+            },
+            {
+              "taskId": "Q04",
+              "signature": "53,15,1,-1,-3,-17,-55",
+              "found": true,
+              "cost": 9,
+              "program": "(((-2 × x) × (x × x)) + -1)"
+            },
+            {
+              "taskId": "Q05",
+              "signature": "84,27,6,3,0,-21,-78",
+              "found": true,
+              "cost": 9,
+              "program": "((1 − ((x × x) × x)) × 3)"
+            },
+            {
+              "taskId": "Q06",
+              "signature": "55,17,3,1,-1,-15,-53",
+              "found": true,
+              "cost": 9,
+              "program": "(((-2 × x) × (x × x)) + 1)"
+            },
+            {
+              "taskId": "Q07",
+              "signature": "57,19,5,3,1,-13,-51",
+              "found": true,
+              "cost": 9,
+              "program": "(((-2 × x) × (x × x)) + 3)"
+            },
+            {
+              "taskId": "Q08",
+              "signature": "80,23,2,-1,-4,-25,-82",
+              "found": true,
+              "cost": 9,
+              "program": "(-1 − ((3 × x) × (x × x)))"
+            },
+            {
+              "taskId": "Q09",
+              "signature": "78,21,0,-3,-6,-27,-84",
+              "found": true,
+              "cost": 9,
+              "program": "((-1 − ((x × x) × x)) × 3)"
+            },
+            {
+              "taskId": "Q10",
+              "signature": "-80,-23,-2,1,4,25,82",
+              "found": true,
+              "cost": 9,
+              "program": "(((3 × x) × (x × x)) + 1)"
+            },
+            {
+              "taskId": "Q11",
+              "signature": "-51,-13,1,3,5,19,57",
+              "found": true,
+              "cost": 9,
+              "program": "(((x + x) × (x × x)) + 3)"
+            },
+            {
+              "taskId": "Q12",
+              "signature": "-56,-18,-4,-2,0,14,52",
+              "found": true,
+              "cost": 9,
+              "program": "(((x + x) × (x × x)) + -2)"
+            },
+            {
+              "taskId": "Q13",
+              "signature": "56,18,4,2,0,-14,-52",
+              "found": true,
+              "cost": 9,
+              "program": "(((-2 × x) × (x × x)) + 2)"
+            },
+            {
+              "taskId": "Q14",
+              "signature": "-78,-21,0,3,6,27,84",
+              "found": true,
+              "cost": 9,
+              "program": "(((3 × x) × (x × x)) + 3)"
+            },
+            {
+              "taskId": "Q15",
+              "signature": "82,25,4,1,-2,-23,-80",
+              "found": true,
+              "cost": 9,
+              "program": "(1 − ((3 × x) × (x × x)))"
+            },
+            {
+              "taskId": "Q16",
+              "signature": "51,13,-1,-3,-5,-19,-57",
+              "found": true,
+              "cost": 9,
+              "program": "(((-2 × x) × (x × x)) − 3)"
+            },
+            {
+              "taskId": "Q17",
+              "signature": "-84,-27,-6,-3,0,21,78",
+              "found": true,
+              "cost": 9,
+              "program": "((((x × x) × x) + -1) × 3)"
+            },
+            {
+              "taskId": "Q18",
+              "signature": "-83,-26,-5,-2,1,22,79",
+              "found": true,
+              "cost": 9,
+              "program": "(((3 × x) × (x × x)) + -2)"
+            },
+            {
+              "taskId": "Q19",
+              "signature": "-79,-22,-1,2,5,26,83",
+              "found": true,
+              "cost": 9,
+              "program": "(((3 × x) × (x × x)) + 2)"
+            }
+          ],
+          "tableSize": 3372,
+          "tablesBuilt": 1,
+          "lookups": 20
+        },
+        "stats": {
+          "primitiveEvaluations": 785071,
+          "signatureEvaluations": 29496,
+          "sortComparisons": 75391,
+          "wallMs": 90.69465100000025,
+          "cpuMs": 98.563
+        }
+      },
+      "learned": {
+        "value": {
+          "rows": [
+            {
+              "taskId": "Q00",
+              "signature": "-55,-17,-3,-1,1,15,53",
+              "found": true,
+              "cost": 8,
+              "program": "(((x + x) × op(x)) + -1)"
+            },
+            {
+              "taskId": "Q01",
+              "signature": "79,22,1,-2,-5,-26,-83",
+              "found": true,
+              "cost": 8,
+              "program": "(-2 − ((3 × op(x)) × x))"
+            },
+            {
+              "taskId": "Q02",
+              "signature": "81,24,3,0,-3,-24,-81",
+              "found": true,
+              "cost": 8,
+              "program": "((-1 + -2) × (op(x) × x))"
+            },
+            {
+              "taskId": "Q03",
+              "signature": "-57,-19,-5,-3,-1,13,51",
+              "found": true,
+              "cost": 8,
+              "program": "(((x + x) × op(x)) − 3)"
+            },
+            {
+              "taskId": "Q04",
+              "signature": "53,15,1,-1,-3,-17,-55",
+              "found": true,
+              "cost": 8,
+              "program": "(((-2 × op(x)) × x) + -1)"
+            },
+            {
+              "taskId": "Q05",
+              "signature": "84,27,6,3,0,-21,-78",
+              "found": true,
+              "cost": 8,
+              "program": "((1 − (op(x) × x)) × 3)"
+            },
+            {
+              "taskId": "Q06",
+              "signature": "55,17,3,1,-1,-15,-53",
+              "found": true,
+              "cost": 8,
+              "program": "(((-2 × op(x)) × x) + 1)"
+            },
+            {
+              "taskId": "Q07",
+              "signature": "57,19,5,3,1,-13,-51",
+              "found": true,
+              "cost": 8,
+              "program": "(((-2 × op(x)) × x) + 3)"
+            },
+            {
+              "taskId": "Q08",
+              "signature": "80,23,2,-1,-4,-25,-82",
+              "found": true,
+              "cost": 8,
+              "program": "(-1 − ((3 × op(x)) × x))"
+            },
+            {
+              "taskId": "Q09",
+              "signature": "78,21,0,-3,-6,-27,-84",
+              "found": true,
+              "cost": 8,
+              "program": "((-1 − (op(x) × x)) × 3)"
+            },
+            {
+              "taskId": "Q10",
+              "signature": "-80,-23,-2,1,4,25,82",
+              "found": true,
+              "cost": 8,
+              "program": "(((3 × op(x)) × x) + 1)"
+            },
+            {
+              "taskId": "Q11",
+              "signature": "-51,-13,1,3,5,19,57",
+              "found": true,
+              "cost": 8,
+              "program": "(((x + x) × op(x)) + 3)"
+            },
+            {
+              "taskId": "Q12",
+              "signature": "-56,-18,-4,-2,0,14,52",
+              "found": true,
+              "cost": 8,
+              "program": "(((x + x) × op(x)) + -2)"
+            },
+            {
+              "taskId": "Q13",
+              "signature": "56,18,4,2,0,-14,-52",
+              "found": true,
+              "cost": 8,
+              "program": "(((-2 × op(x)) × x) + 2)"
+            },
+            {
+              "taskId": "Q14",
+              "signature": "-78,-21,0,3,6,27,84",
+              "found": true,
+              "cost": 8,
+              "program": "(((3 × op(x)) × x) + 3)"
+            },
+            {
+              "taskId": "Q15",
+              "signature": "82,25,4,1,-2,-23,-80",
+              "found": true,
+              "cost": 8,
+              "program": "(1 − ((3 × op(x)) × x))"
+            },
+            {
+              "taskId": "Q16",
+              "signature": "51,13,-1,-3,-5,-19,-57",
+              "found": true,
+              "cost": 8,
+              "program": "(((-2 × op(x)) × x) − 3)"
+            },
+            {
+              "taskId": "Q17",
+              "signature": "-84,-27,-6,-3,0,21,78",
+              "found": true,
+              "cost": 8,
+              "program": "(((op(x) × x) + -1) × 3)"
+            },
+            {
+              "taskId": "Q18",
+              "signature": "-83,-26,-5,-2,1,22,79",
+              "found": true,
+              "cost": 8,
+              "program": "(((3 × op(x)) × x) + -2)"
+            },
+            {
+              "taskId": "Q19",
+              "signature": "-79,-22,-1,2,5,26,83",
+              "found": true,
+              "cost": 8,
+              "program": "(((3 × op(x)) × x) + 2)"
+            }
+          ],
+          "tableSize": 29707,
+          "tablesBuilt": 1,
+          "lookups": 20
+        },
+        "stats": {
+          "primitiveEvaluations": 3902549,
+          "signatureEvaluations": 118577,
+          "sortComparisons": 310833,
+          "wallMs": 454.19174599999997,
+          "cpuMs": 489.894
+        }
+      },
+      "total": {
+        "primitiveEvaluations": 5934075,
+        "signatureEvaluations": 212904,
+        "sortComparisons": 589579,
+        "wallMs": 714.4703799999997,
+        "cpuMs": 808.759
+      }
+    }
+  ]
+}
